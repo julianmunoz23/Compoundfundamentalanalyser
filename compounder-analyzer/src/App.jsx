@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, ReferenceLine, Legend,
+  BarChart, Bar,
 } from "recharts";
 
 const T = {
@@ -26,14 +26,14 @@ const css=`
   .tbtn:hover{color:${T.goldLight};}
   .btn{cursor:pointer;border:none;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:8px;transition:all 0.2s;font-size:13px;}
   .btn-gold{background:${T.gold};color:#0a0c10;padding:10px 20px;}.btn-gold:hover{background:${T.goldLight};transform:translateY(-1px);}
-  .btn-seg{cursor:pointer;border:1px solid ${T.border};font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:7px 16px;border-radius:6px;transition:all 0.2s;background:${T.accent};color:${T.muted};}
-  .btn-seg-on{background:${T.gold}22!important;color:${T.gold}!important;border-color:${T.goldDim}!important;}
+  .btn-gold:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+  .seg{cursor:pointer;border:1px solid ${T.border};font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 12px;border-radius:6px;transition:all 0.2s;background:${T.accent};color:${T.muted};}
+  .seg-on{background:${T.gold}22!important;color:${T.gold}!important;border-color:${T.goldDim}!important;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   .fi{animation:fadeIn 0.3s ease both;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .sp{animation:spin 0.8s linear infinite;display:inline-block;}
-  @keyframes countUp{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
-  .count{animation:countUp 0.5s ease both;}
+  .trow:hover{background:${T.accent}!important;}
 `;
 
 const CRITERIA={
@@ -81,9 +81,9 @@ const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTr
 const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
 
 function fmt(n){
-  if(n>=1e9)return`$${(n/1e9).toFixed(2)}B`;
-  if(n>=1e6)return`$${(n/1e6).toFixed(2)}M`;
-  if(n>=1e3)return`$${(n/1e3).toFixed(1)}K`;
+  if(Math.abs(n)>=1e9)return`$${(n/1e9).toFixed(2)}B`;
+  if(Math.abs(n)>=1e6)return`$${(n/1e6).toFixed(2)}M`;
+  if(Math.abs(n)>=1e3)return`$${(n/1e3).toFixed(1)}K`;
   return`$${n.toFixed(0)}`;
 }
 
@@ -108,241 +108,257 @@ function MRow({c,value,onChange}){
   </div>;
 }
 
-// ── COMPOUND INTEREST CALCULATOR ─────────────────────────────────────────────
+// ── COMPOUND CALCULATOR ───────────────────────────────────────────────────────
 function CompoundTab(){
-  const [cfg,setCfg]=useState({
-    initial:10000,
-    rate:12,
-    rateType:"annual",   // annual | monthly
-    contrib:500,
-    contribFreq:"monthly", // monthly | annual
-    years:20,
-  });
+  const [cfg,setCfg]=useState({initial:10000,rate:12,rateType:"annual",contrib:500,contribFreq:"monthly",years:20});
+  const [showTable,setShowTable]=useState(true);
   const set=(k,v)=>setCfg(p=>({...p,[k]:v}));
 
-  // Compute year-by-year data
-  const data=useCallback(()=>{
-    const annualRate=cfg.rateType==="monthly"?Math.pow(1+cfg.rate/100,12)-1:cfg.rate/100;
-    const annualContrib=cfg.contribFreq==="monthly"?cfg.contrib*12:cfg.contrib;
-    let balance=cfg.initial;
-    const rows=[];
-    let totalContrib=cfg.initial;
-    for(let y=1;y<=cfg.years;y++){
-      const interestEarned=balance*annualRate + annualContrib*annualRate/2;
-      balance=balance*(1+annualRate)+annualContrib;
-      totalContrib+=annualContrib;
-      rows.push({
-        year:`Año ${y}`,
-        y,
+  const annualRate = cfg.rateType==="monthly" ? Math.pow(1+cfg.rate/100,12)-1 : cfg.rate/100;
+  const annualContrib = cfg.contribFreq==="monthly" ? cfg.contrib*12 : cfg.contrib;
+
+  const data = useCallback(()=>{
+    let balance=cfg.initial, totalContrib=cfg.initial, totalInterestAcc=0;
+    return Array.from({length:cfg.years},(_,i)=>{
+      const interestThisYear = balance*annualRate + annualContrib*(annualRate/2);
+      balance = balance*(1+annualRate)+annualContrib;
+      totalContrib += annualContrib;
+      totalInterestAcc += interestThisYear;
+      return{
+        year:i+1, label:`Año ${i+1}`,
+        capital:Math.round(cfg.initial + annualContrib*(i+1)),
+        aportesAcum:Math.round(totalContrib),
+        interesAcum:Math.round(totalInterestAcc),
+        interesAnual:Math.round(interestThisYear),
         balance:Math.round(balance),
-        contributed:Math.round(totalContrib),
-        interest:Math.round(balance-totalContrib),
-        interestThisYear:Math.round(interestEarned),
-      });
-    }
-    return rows;
-  },[cfg])();
+        mult:+(balance/cfg.initial).toFixed(2),
+      };
+    });
+  },[cfg,annualRate,annualContrib])();
 
-  const finalBalance=data[data.length-1]?.balance||0;
-  const totalContributed=data[data.length-1]?.contributed||0;
-  const totalInterest=data[data.length-1]?.interest||0;
-  const xMultiple=(finalBalance/cfg.initial).toFixed(1);
-  const annualRateDisplay=cfg.rateType==="monthly"?(Math.pow(1+cfg.rate/100,12)-1)*100:cfg.rate;
+  const last=data[data.length-1]||{};
+  const annualPct=(annualRate*100);
 
-  const CustomTooltip=({active,payload,label})=>{
+  const TT=({active,payload,label})=>{
     if(!active||!payload?.length)return null;
-    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:14,minWidth:200}}>
+    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:14,minWidth:210}}>
       <div style={{fontSize:12,color:T.gold,marginBottom:8,fontFamily:"'Playfair Display',serif"}}>{label}</div>
-      {payload.map(p=><div key={p.name} style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,marginBottom:4}}>
-        <span style={{color:T.muted}}>{p.name==="balance"?"💰 Balance total":p.name==="contributed"?"💵 Aportado":"✨ Interés ganado"}</span>
-        <Mn sz={12} c={p.name==="balance"?T.gold:p.name==="contributed"?T.blue:T.green}>{fmt(p.value)}</Mn>
+      {payload.map(p=><div key={p.dataKey} style={{display:"flex",justifyContent:"space-between",gap:12,fontSize:11,marginBottom:4}}>
+        <span style={{color:T.muted}}>{p.dataKey==="balance"?"💰 Balance":p.dataKey==="aportesAcum"?"💵 Capital aportado":"✨ Interés acumulado"}</span>
+        <Mn sz={11} c={p.dataKey==="balance"?T.gold:p.dataKey==="aportesAcum"?T.blue:T.green}>{fmt(p.value)}</Mn>
       </div>)}
     </div>;
   };
 
-  const SliderField=({label,k,min,max,step=1,prefix="",suffix=""})=>(
-    <div style={{marginBottom:14}}>
-      <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-        <span style={{fontSize:12,color:T.muted}}>{label}</span>
-        <Mn sz={13} c={T.gold}>{prefix}{cfg[k].toLocaleString("en")}{suffix}</Mn>
-      </div>
-      <input type="range" min={min} max={max} step={step} value={cfg[k]} onChange={e=>set(k,parseFloat(e.target.value))}/>
-    </div>
-  );
+  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
 
-  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:20}}>
-    {/* KPI Cards */}
+    {/* KPIs */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:"Balance Final",v:fmt(finalBalance),c:T.gold,sub:`en ${cfg.years} años`,icon:"🏆"},
-        {l:"Total Aportado",v:fmt(totalContributed),c:T.blue,sub:"capital invertido",icon:"💵"},
-        {l:"Interés Ganado",v:fmt(totalInterest),c:T.green,sub:`${((totalInterest/totalContributed)*100).toFixed(0)}% de retorno`,icon:"✨"},
-        {l:"Multiplicador",v:`${xMultiple}x`,c:T.purple,sub:`TEA: ${annualRateDisplay.toFixed(1)}%`,icon:"🚀"},
+        {l:"Balance Final",v:fmt(last.balance||0),c:T.gold,sub:`en ${cfg.years} años`,icon:"🏆"},
+        {l:"Capital Aportado",v:fmt(last.aportesAcum||0),c:T.blue,sub:"tu dinero invertido",icon:"💵"},
+        {l:"Interés Generado",v:fmt(last.interesAcum||0),c:T.green,sub:`${last.balance?((last.interesAcum/last.balance)*100).toFixed(0):0}% del total`,icon:"✨"},
+        {l:"Multiplicador",v:`${last.mult||1}x`,c:T.purple,sub:`TEA: ${annualPct.toFixed(2)}%`,icon:"🚀"},
       ].map(({l,v,c,sub,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.15}}>{icon}</div>
+        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
         <Lbl>{l}</Lbl>
-        <div className="count" style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:c,fontWeight:700,marginBottom:4}}>{v}</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:c,fontWeight:700,marginBottom:3}}>{v}</div>
         <div style={{fontSize:10,color:T.muted}}>{sub}</div>
       </Card>)}
     </div>
 
-    <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:18}}>
+    <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18}}>
+
       {/* Controls */}
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>⚙️ Configura tu Cálculo</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>⚙️ Parámetros</div>
 
-          {/* Initial value */}
-          <div style={{marginBottom:16}}>
-            <Lbl>Valor del portafolio hoy</Lbl>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{color:T.muted,fontFamily:"'DM Mono',monospace",fontSize:14}}>$</span>
-              <input type="number" value={cfg.initial} min={100} max={10000000} step={100}
-                onChange={e=>set("initial",parseFloat(e.target.value)||0)}
-                style={{fontWeight:700,fontSize:15}}/>
-            </div>
-            <input type="range" min={0} max={1000000} step={500} value={cfg.initial} onChange={e=>set("initial",parseFloat(e.target.value))} style={{marginTop:8}}/>
+          <Lbl>Portafolio inicial</Lbl>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+            <span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span>
+            <input type="number" value={cfg.initial} min={0} max={10000000} step={100} onChange={e=>set("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/>
           </div>
+          <input type="range" min={0} max={500000} step={500} value={cfg.initial} onChange={e=>set("initial",parseFloat(e.target.value))} style={{marginBottom:16}}/>
 
-          {/* Rate */}
-          <div style={{marginBottom:16}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <Lbl s={{marginBottom:0}}>Tasa esperada</Lbl>
-              <div style={{display:"flex",gap:4}}>
-                {["annual","monthly"].map(t=><button key={t} className={`btn-seg ${cfg.rateType===t?"btn-seg-on":""}`} onClick={()=>set("rateType",t)} style={{fontSize:10,padding:"4px 10px"}}>
-                  {t==="annual"?"Anual":"Mensual"}
-                </button>)}
-              </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <Lbl s={{marginBottom:0}}>Tasa esperada</Lbl>
+            <div style={{display:"flex",gap:4}}>
+              {["annual","monthly"].map(t=><button key={t} className={`seg ${cfg.rateType===t?"seg-on":""}`} onClick={()=>set("rateType",t)}>{t==="annual"?"Anual":"Mensual"}</button>)}
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <input type="number" value={cfg.rate} min={0.1} max={cfg.rateType==="monthly"?5:100} step={0.1}
-                onChange={e=>set("rate",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:15}}/>
-              <span style={{color:T.muted,fontFamily:"'DM Mono',monospace",fontSize:13}}>% {cfg.rateType==="annual"?"/ año":"/ mes"}</span>
-            </div>
-            <input type="range" min={0.1} max={cfg.rateType==="monthly"?5:100} step={0.1} value={cfg.rate} onChange={e=>set("rate",parseFloat(e.target.value))}/>
-            {cfg.rateType==="monthly"&&<div style={{fontSize:10,color:T.green,marginTop:4}}>≡ {((Math.pow(1+cfg.rate/100,12)-1)*100).toFixed(2)}% efectiva anual</div>}
           </div>
-
-          {/* Contributions */}
-          <div style={{marginBottom:16}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-              <Lbl s={{marginBottom:0}}>Aportes</Lbl>
-              <div style={{display:"flex",gap:4}}>
-                {["monthly","annual"].map(t=><button key={t} className={`btn-seg ${cfg.contribFreq===t?"btn-seg-on":""}`} onClick={()=>set("contribFreq",t)} style={{fontSize:10,padding:"4px 10px"}}>
-                  {t==="monthly"?"Mensuales":"Anuales"}
-                </button>)}
-              </div>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-              <span style={{color:T.muted,fontFamily:"'DM Mono',monospace",fontSize:14}}>$</span>
-              <input type="number" value={cfg.contrib} min={0} max={100000} step={50}
-                onChange={e=>set("contrib",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:15}}/>
-              <span style={{color:T.muted,fontSize:11}}>/{cfg.contribFreq==="monthly"?"mes":"año"}</span>
-            </div>
-            <input type="range" min={0} max={50000} step={50} value={cfg.contrib} onChange={e=>set("contrib",parseFloat(e.target.value))}/>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+            <input type="number" value={cfg.rate} min={0.01} max={cfg.rateType==="monthly"?5:100} step={0.1} onChange={e=>set("rate",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/>
+            <span style={{color:T.muted,fontSize:11,whiteSpace:"nowrap"}}>% /{cfg.rateType==="annual"?"año":"mes"}</span>
           </div>
+          <input type="range" min={0.1} max={cfg.rateType==="monthly"?5:100} step={0.1} value={cfg.rate} onChange={e=>set("rate",parseFloat(e.target.value))} style={{marginBottom:4}}/>
+          {cfg.rateType==="monthly"&&<div style={{fontSize:10,color:T.green,marginBottom:12}}>≡ {((Math.pow(1+cfg.rate/100,12)-1)*100).toFixed(2)}% efectiva anual</div>}
+          <div style={{marginBottom:16}}/>
 
-          <SliderField label="Años de capitalización" k="years" min={1} max={50} suffix=" años"/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <Lbl s={{marginBottom:0}}>Aportes periódicos</Lbl>
+            <div style={{display:"flex",gap:4}}>
+              {["monthly","annual"].map(t=><button key={t} className={`seg ${cfg.contribFreq===t?"seg-on":""}`} onClick={()=>set("contribFreq",t)}>{t==="monthly"?"Mensuales":"Anuales"}</button>)}
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
+            <span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span>
+            <input type="number" value={cfg.contrib} min={0} max={100000} step={50} onChange={e=>set("contrib",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/>
+            <span style={{color:T.muted,fontSize:11}}>/{cfg.contribFreq==="monthly"?"mes":"año"}</span>
+          </div>
+          <input type="range" min={0} max={20000} step={50} value={cfg.contrib} onChange={e=>set("contrib",parseFloat(e.target.value))} style={{marginBottom:16}}/>
+
+          <Lbl>Años de capitalización</Lbl>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+            <span style={{fontSize:12,color:T.muted}}>Horizonte</span>
+            <Mn sz={13} c={T.gold}>{cfg.years} años</Mn>
+          </div>
+          <input type="range" min={1} max={50} step={1} value={cfg.years} onChange={e=>set("years",parseInt(e.target.value))}/>
         </Card>
 
-        {/* Magic numbers */}
-        <Card s={{background:`linear-gradient(135deg, ${T.card}, ${T.accent})`}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>✨ La Magia del Interés Compuesto</div>
+        <Card s={{background:`${T.gold}08`,border:`1px solid ${T.goldDim}44`}}>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:12}}>✨ La Magia del Compounding</div>
           {[
-            {l:"Sin aportes adicionales",v:fmt(cfg.initial*Math.pow(1+annualRateDisplay/100,cfg.years))},
-            {l:"Solo con aportes (sin interés)",v:fmt(totalContributed)},
-            {l:"Con interés compuesto",v:fmt(finalBalance),highlight:true},
-            {l:"Diferencia vs sin interés",v:`+${fmt(totalInterest)}`,pos:true},
-          ].map(({l,v,highlight,pos})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid ${T.border}22`,alignItems:"center"}}>
-            <span style={{fontSize:11,color:highlight?T.text:T.muted}}>{l}</span>
-            <Mn sz={highlight?15:12} c={pos?T.green:highlight?T.gold:T.muted} s={highlight?{fontWeight:700}:{}}>{v}</Mn>
+            {l:"Sin aportes adicionales",v:fmt(cfg.initial*Math.pow(1+annualRate,cfg.years))},
+            {l:"Solo aportes (sin interés)",v:fmt(last.aportesAcum||0)},
+            {l:"Con interés compuesto 🏆",v:fmt(last.balance||0),hi:true},
+            {l:"Ganancia del interés",v:`+${fmt(last.interesAcum||0)}`,pos:true},
+          ].map(({l,v,hi,pos})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${T.border}22`,alignItems:"center"}}>
+            <span style={{fontSize:11,color:hi?T.text:T.muted}}>{l}</span>
+            <Mn sz={hi?14:11} c={pos?T.green:hi?T.gold:T.muted} s={hi?{fontWeight:700}:{}}>{v}</Mn>
           </div>)}
+          <div style={{marginTop:10,fontSize:11,color:T.muted,lineHeight:1.6}}>
+            📐 <span style={{color:T.goldDim}}>Regla del 72:</span> tu dinero se duplica cada <span style={{color:T.gold}}>{(72/annualPct).toFixed(1)} años</span>
+          </div>
         </Card>
       </div>
 
       {/* Charts */}
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
-        {/* Area Chart - Balance growth */}
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:4}}>📈 Crecimiento del Portafolio — Año a Año</div>
-          <div style={{fontSize:11,color:T.muted,marginBottom:16}}>La zona dorada es el interés reinvertido — la verdadera magia</div>
-          <div style={{height:260}}>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>📈 Crecimiento del Portafolio</div>
+          <div style={{fontSize:11,color:T.muted,marginBottom:14}}>La zona dorada es el interés reinvertido — la magia del compounding</div>
+          <div style={{height:240}}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{top:5,right:10,left:10,bottom:0}}>
+              <AreaChart data={data} margin={{top:5,right:5,left:10,bottom:0}}>
                 <defs>
-                  <linearGradient id="gInterest" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={T.gold} stopOpacity={0.5}/>
-                    <stop offset="95%" stopColor={T.gold} stopOpacity={0.05}/>
-                  </linearGradient>
-                  <linearGradient id="gContrib" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={T.blue} stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor={T.blue} stopOpacity={0.05}/>
-                  </linearGradient>
+                  <linearGradient id="gI" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.gold} stopOpacity={0.45}/><stop offset="95%" stopColor={T.gold} stopOpacity={0.02}/></linearGradient>
+                  <linearGradient id="gC" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.blue} stopOpacity={0.4}/><stop offset="95%" stopColor={T.blue} stopOpacity={0.02}/></linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
-                <XAxis dataKey="year" tick={{fill:T.muted,fontSize:9}} interval={Math.floor(cfg.years/5)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmt(v)} width={70}/>
-                <Tooltip content={<CustomTooltip/>}/>
-                <Area type="monotone" dataKey="contributed" name="contributed" stroke={T.blue} fill="url(#gContrib)" strokeWidth={1.5}/>
-                <Area type="monotone" dataKey="balance" name="balance" stroke={T.gold} fill="url(#gInterest)" strokeWidth={2.5}/>
+                <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.floor(cfg.years/5)}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmt(v)} width={72}/>
+                <Tooltip content={<TT/>}/>
+                <Area type="monotone" dataKey="aportesAcum" stroke={T.blue} fill="url(#gC)" strokeWidth={1.5}/>
+                <Area type="monotone" dataKey="balance" stroke={T.gold} fill="url(#gI)" strokeWidth={2.5}/>
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div style={{display:"flex",gap:16,marginTop:10,justifyContent:"center"}}>
-            {[{c:T.gold,l:"Balance total"},{c:T.blue,l:"Capital aportado"},{c:T.green,l:"Interés generado (diferencia)"}].map(({c,l})=>(
-              <div key={l} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:c}}/><span style={{fontSize:10,color:T.muted}}>{l}</span></div>
+          <div style={{display:"flex",gap:18,marginTop:8,justifyContent:"center"}}>
+            {[{c:T.gold,l:"Balance total"},{c:T.blue,l:"Capital aportado"},{c:T.green,l:"Interés (diferencia)"}].map(({c,l})=>(
+              <div key={l} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:9,height:9,borderRadius:2,background:c}}/><span style={{fontSize:10,color:T.muted}}>{l}</span></div>
             ))}
           </div>
         </Card>
 
-        {/* Bar chart - interest per year */}
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:4}}>📊 Interés Generado por Año</div>
-          <div style={{fontSize:11,color:T.muted,marginBottom:14}}>Cada año los rendimientos son mayores — el efecto bola de nieve</div>
-          <div style={{height:200}}>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>📊 Interés Generado por Año</div>
+          <div style={{fontSize:11,color:T.muted,marginBottom:12}}>El efecto bola de nieve — cada año los rendimientos son mayores</div>
+          <div style={{height:180}}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{top:5,right:10,left:10,bottom:0}}>
+              <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
-                <XAxis dataKey="year" tick={{fill:T.muted,fontSize:9}} interval={Math.floor(cfg.years/5)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmt(v)} width={70}/>
+                <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.floor(cfg.years/5)}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmt(v)} width={72}/>
                 <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmt(v),"Interés anual"]}/>
-                <Bar dataKey="interestThisYear" name="Interés anual" radius={[3,3,0,0]}
-                  fill={T.green} opacity={0.85}/>
+                <Bar dataKey="interesAnual" fill={T.green} opacity={0.85} radius={[3,3,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
-
-        {/* Milestone cards */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-          {[5,10,20,cfg.years].filter((y,i,a)=>a.indexOf(y)===i&&y<=cfg.years).slice(0,4).map(y=>{
-            const row=data[y-1];
-            if(!row)return null;
-            return<div key={y} style={{background:T.accent,borderRadius:10,padding:14,border:`1px solid ${T.border}`,textAlign:"center"}}>
-              <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>Año {y}</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:3}}>{fmt(row.balance)}</div>
-              <div style={{fontSize:10,color:T.green}}>×{(row.balance/cfg.initial).toFixed(1)} inicial</div>
-            </div>;
-          })}
-        </div>
       </div>
     </div>
 
-    {/* Bottom insight */}
-    <Card s={{background:`${T.gold}08`,border:`1px solid ${T.goldDim}44`}}>
-      <div style={{display:"flex",alignItems:"center",gap:16}}>
-        <div style={{fontSize:32}}>💡</div>
+    {/* DETAIL TABLE */}
+    <Card s={{padding:0}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${T.border}`}}>
         <div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:4}}>
-            Regla del 72 — Tu dinero se duplica cada {(72/annualRateDisplay).toFixed(1)} años a una tasa de {annualRateDisplay.toFixed(1)}% anual
-          </div>
-          <div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>
-            Con ${cfg.initial.toLocaleString("en")} iniciales + ${cfg.contribFreq==="monthly"?`$${cfg.contrib.toLocaleString("en")}/mes`:`$${cfg.contrib.toLocaleString("en")}/año`} de aportes, 
-            en <strong style={{color:T.text}}>{cfg.years} años</strong> habrás aportado <strong style={{color:T.blue}}>{fmt(totalContributed)}</strong> y 
-            el interés compuesto habrá generado <strong style={{color:T.green}}>{fmt(totalInterest)}</strong> adicionales — 
-            un total de <strong style={{color:T.gold}}>{fmt(finalBalance)}</strong>. 
-            El <strong style={{color:T.gold}}>{((totalInterest/finalBalance)*100).toFixed(0)}%</strong> de tu riqueza final viene del interés reinvertido, no de tu bolsillo.
-          </div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>📋 Detalle Año a Año</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>Capital inicial · Aportes acumulados · Interés generado · Balance final</div>
+        </div>
+        <button className="seg" onClick={()=>setShowTable(v=>!v)} style={{fontSize:11}}>
+          {showTable?"Ocultar tabla":"Mostrar tabla"}
+        </button>
+      </div>
+
+      {showTable&&<div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
+          <thead>
+            <tr style={{borderBottom:`1px solid ${T.border}`,background:T.accent}}>
+              {["Año","Capital Inicial","Aportes del Año","Interés del Año","Interés Acum.","Balance Final","Multiplicador"].map(h=>(
+                <th key={h} style={{padding:"10px 14px",textAlign:"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,whiteSpace:"nowrap",
+                  ...(h==="Año"?{textAlign:"center"}:{})}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((r,i)=>{
+              const highlight=r.year%5===0||r.year===cfg.years;
+              return<tr key={r.year} className="trow" style={{borderBottom:`1px solid ${T.border}22`,background:highlight?`${T.gold}08`:"transparent",transition:"background 0.15s"}}>
+                <td style={{padding:"9px 14px",textAlign:"center"}}>
+                  <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",
+                    background:highlight?`${T.gold}33`:T.accent,border:`1px solid ${highlight?T.goldDim:T.border}`}}>
+                    <Mn sz={11} c={highlight?T.gold:T.muted}>{r.year}</Mn>
+                  </div>
+                </td>
+                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>{fmt(cfg.initial)}</Mn></td>
+                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmt(annualContrib)}</Mn></td>
+                <td style={{padding:"9px 14px",textAlign:"right"}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+                    <Mn sz={12} c={T.green}>{fmt(r.interesAnual)}</Mn>
+                    <div style={{width:Math.min((r.interesAnual/last.interesAnual)*60,60),height:2,background:T.green,borderRadius:2,opacity:0.5}}/>
+                  </div>
+                </td>
+                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={12} c={`${T.green}cc`}>{fmt(r.interesAcum)}</Mn></td>
+                <td style={{padding:"9px 14px",textAlign:"right"}}>
+                  <Mn sz={highlight?14:12} c={highlight?T.gold:T.text} s={highlight?{fontWeight:700}:{}}>{fmt(r.balance)}</Mn>
+                </td>
+                <td style={{padding:"9px 14px",textAlign:"right"}}>
+                  <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,
+                    background:r.mult>=5?`${T.gold}22`:r.mult>=2?`${T.green}15`:`${T.blue}15`,
+                    color:r.mult>=5?T.gold:r.mult>=2?T.green:T.blue,
+                    border:`1px solid ${r.mult>=5?T.goldDim:r.mult>=2?T.green+"44":T.blue+"44"}`}}>
+                    ×{r.mult}
+                  </span>
+                </td>
+              </tr>;
+            })}
+          </tbody>
+          <tfoot>
+            <tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
+              <td style={{padding:"12px 14px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
+              <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>{fmt(cfg.initial)}</Mn></td>
+              <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmt(annualContrib*cfg.years)}</Mn></td>
+              <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={12} c={T.green}>—</Mn></td>
+              <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={13} c={T.green} s={{fontWeight:700}}>{fmt(last.interesAcum||0)}</Mn></td>
+              <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmt(last.balance||0)}</Mn></td>
+              <td style={{padding:"12px 14px",textAlign:"right"}}>
+                <span style={{fontSize:12,padding:"3px 10px",borderRadius:20,background:`${T.gold}22`,color:T.gold,border:`1px solid ${T.goldDim}`,fontWeight:700}}>×{last.mult}</span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>}
+    </Card>
+
+    {/* Insight */}
+    <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`,padding:18}}>
+      <div style={{display:"flex",alignItems:"flex-start",gap:14}}>
+        <div style={{fontSize:28,flexShrink:0}}>💡</div>
+        <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
+          Con <Mn sz={12} c={T.gold}>{fmt(cfg.initial)}</Mn> iniciales y aportes de <Mn sz={12} c={T.blue}>{cfg.contribFreq==="monthly"?`${fmt(cfg.contrib)}/mes`:`${fmt(cfg.contrib)}/año`}</Mn> al <Mn sz={12} c={T.green}>{annualPct.toFixed(2)}% anual</Mn>,
+          en <Mn sz={12} c={T.text}>{cfg.years} años</Mn> habrás puesto <Mn sz={12} c={T.blue}>{fmt(last.aportesAcum||0)}</Mn> de tu bolsillo y el interés compuesto habrá añadido <Mn sz={12} c={T.green}>{fmt(last.interesAcum||0)}</Mn> adicionales —
+          el <Mn sz={12} c={T.gold}>{last.balance?((last.interesAcum/last.balance)*100).toFixed(0):0}%</Mn> de tu riqueza final lo generó el dinero trabajando por ti, no tú.
         </div>
       </div>
     </Card>
@@ -365,18 +381,26 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
     if(!company.trim()){setErr("Ingresa un ticker primero.");return;}
     setLoading(true);setErr("");setInfo(null);
     try{
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
-          messages:[{role:"user",content:`Analiza "${company}" y responde SOLO con JSON válido sin markdown:\n{"metrics":{"revenueCAGR":<n>,"fcfCAGR":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfEbitda":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economías de Escala":<1-5>,"Switching Costs":<1-5>,"Efectos de Red":<1-5>,"Marca Dominante":<1-5>,"Tecnología Propietaria":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<Tecnología|Salud|Consumo|Finanzas|Industria|Energía|Otro>","summary":"<tesis 2 oraciones español>","catalysts":["<c1>","<c2>","<c3>"]}`}]})});
-      const d=await r.json();
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          messages:[{role:"user",content:`Analiza la empresa o ticker "${company}" desde una perspectiva de inversión fundamental estilo Buffett/Munger. Responde SOLO con JSON válido, sin markdown, sin explicación:\n{"metrics":{"revenueCAGR":<número %>,"fcfCAGR":<número %>,"tamGrowth":<número %>,"roic":<número %>,"grossMargin":<número %>,"opMargin":<número %>,"fcfEbitda":<número %>,"debtEbitda":<número x>,"interestCover":<número x>},"moat":{"Economías de Escala":<1-5>,"Switching Costs":<1-5>,"Efectos de Red":<1-5>,"Marca Dominante":<1-5>,"Tecnología Propietaria":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<Tecnología|Salud|Consumo|Finanzas|Industria|Energía|Otro>","summary":"<2 oraciones en español: tesis de inversión y riesgo principal>","catalysts":["<catalizador 1>","<catalizador 2>","<catalizador 3>"]}`}],
+        }),
+      });
+      const d=await res.json();
+      if(d.error)throw new Error(d.error.message);
       const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
       const p=JSON.parse(txt);
       setM(prev=>({...prev,...p.metrics}));
       setMoat(prev=>({...prev,...p.moat}));
       if(p.sector)setSector(p.sector);
       setInfo(p);
-    }catch(e){setErr("No se pudo analizar. Verifica el ticker.");}
+    }catch(e){
+      setErr(`Error: ${e.message||"No se pudo analizar. Verifica el ticker."}`);
+    }
     setLoading(false);
   };
 
@@ -391,43 +415,51 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
   return<div className="fi" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <Card>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🔍 Análisis con IA</div>
         <div style={{display:"flex",gap:8,marginBottom:14,alignItems:"flex-end"}}>
           <div style={{flex:1}}><Lbl>Ticker / Empresa</Lbl>
             <input type="text" value={company} onChange={e=>setCompany(e.target.value.toUpperCase())}
-              placeholder="NVDA, AAPL, META..." onKeyDown={e=>e.key==="Enter"&&analyze()}
+              placeholder="NVDA, AAPL, META, SHOP..."
+              onKeyDown={e=>e.key==="Enter"&&analyze()}
               style={{fontSize:15,fontWeight:700,letterSpacing:"0.05em"}}/>
           </div>
-          <div style={{width:130}}><Lbl>Sector</Lbl>
+          <div style={{width:120}}><Lbl>Sector</Lbl>
             <select value={sector} onChange={e=>setSector(e.target.value)}>{SECTORS.map(s=><option key={s}>{s}</option>)}</select>
           </div>
           <button className="btn btn-gold" onClick={analyze} disabled={loading}
-            style={{height:40,padding:"0 16px",flexShrink:0,opacity:loading?0.7:1}}>
-            {loading?<span className="sp">⟳</span>:"✦ IA"}
+            style={{height:40,padding:"0 16px",flexShrink:0}}>
+            {loading?<span className="sp">⟳</span>:"✦ Analizar IA"}
           </button>
         </div>
-        {!info&&!loading&&!err&&<div style={{textAlign:"center",padding:"10px 0 6px",fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`}}>
-          Escribe un ticker y pulsa <span style={{color:T.gold}}>✦ IA</span> para autocompletar
+
+        {!info&&!loading&&!err&&<div style={{textAlign:"center",padding:"10px 0",fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`}}>
+          Escribe un ticker y pulsa <span style={{color:T.gold,fontWeight:600}}>✦ Analizar IA</span> — o ajusta los sliders manualmente
         </div>}
-        {loading&&<div style={{textAlign:"center",padding:10,fontSize:12,color:T.gold}}><span className="sp">⟳</span> Analizando {company}...</div>}
+        {loading&&<div style={{textAlign:"center",padding:12,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8}}>
+          <span className="sp">⟳</span>  Analizando <strong>{company}</strong>...
+        </div>}
         {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
         {info&&<div style={{background:T.accent,borderRadius:10,padding:14,border:`1px solid ${T.goldDim}44`}}>
-          <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>✦ {company}</div>
+          <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:7}}>✦ Análisis — {company}</div>
           <div style={{fontSize:13,color:T.text,lineHeight:1.7,marginBottom:10}}>{info.summary}</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
             {(info.catalysts||[]).map((c,i)=><span key={i} style={{fontSize:11,padding:"3px 9px",borderRadius:20,background:`${T.green}15`,color:T.green,border:`1px solid ${T.green}33`}}>{c}</span>)}
           </div>
         </div>}
-        <div style={{display:"flex",alignItems:"center",gap:20,padding:"14px 0",borderTop:`1px solid ${T.border}`,marginTop:8}}>
+
+        <div style={{display:"flex",alignItems:"center",gap:20,padding:"14px 0",borderTop:`1px solid ${T.border}`,marginTop:12}}>
           <Gauge score={score}/>
           <div style={{flex:1}}>
             {catS.map(({cat,s})=><div key={cat} style={{marginBottom:7}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}>
-                <span style={{color:T.muted}}>{cat}</span><Mn sz={11} c={s>=60?T.green:s>=40?T.gold:T.red}>{s}%</Mn></div>
+                <span style={{color:T.muted}}>{cat}</span><Mn sz={11} c={s>=60?T.green:s>=40?T.gold:T.red}>{s}%</Mn>
+              </div>
               <div style={{height:3,background:T.border,borderRadius:2}}><div style={{height:"100%",width:`${s}%`,background:s>=60?T.green:s>=40?T.gold:T.red,borderRadius:2,transition:"width 0.5s"}}/></div>
             </div>)}
           </div>
         </div>
       </Card>
+
       {Object.entries(CRITERIA).map(([cat,cs])=><Card key={cat}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>
           {cat==="growth"?"📈 Crecimiento":cat==="profitability"?"💎 Rentabilidad":cat==="cashflow"?"💵 Flujo de Caja":"🏦 Balance"}
@@ -435,6 +467,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
         {cs.map(c=><MRow key={c.key} c={c} value={m[c.key]} onChange={(k,v)=>setM(p=>({...p,[k]:v}))}/>)}
       </Card>)}
     </div>
+
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <Card>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:16}}>🏰 Moat Analysis</div>
@@ -487,8 +520,7 @@ function ReturnTab(){
       </Card>
       <Card>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>📊 PEG & Valoración</div>
-        <RS l="P/E actual" k="pe" min={5} max={80} u="x"/>
-        <RS l="Crecimiento futuro" k="fg" min={5} max={40} u="%"/>
+        <RS l="P/E actual" k="pe" min={5} max={80} u="x"/><RS l="Crecimiento futuro" k="fg" min={5} max={40} u="%"/>
         <div style={{marginTop:8,padding:12,background:T.accent,borderRadius:8,border:`1px solid ${T.border}`}}>
           {[{l:"PEG",v:(inp.pe/inp.fg).toFixed(2),g:inp.pe/inp.fg<=1.5,u:"x"},{l:"P/E justo",v:inp.fg*2,u:"x"},{l:"Upside",v:(((inp.fg*2/inp.pe)-1)*100).toFixed(0),g:inp.fg*2>inp.pe,u:"%"}].map(({l,v,g,u})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${T.border}22`}}><span style={{fontSize:12,color:T.muted}}>{l}</span><Mn sz={12} c={g===undefined?T.text:g?T.green:T.red}>{v}{u}</Mn></div>)}
         </div>
@@ -504,7 +536,7 @@ function ReturnTab(){
   </div>;
 }
 
-// ── DCF TAB ───────────────────────────────────────────────────────────────────
+// ── DCF ───────────────────────────────────────────────────────────────────────
 function DCFTab(){
   const [d,setD]=useState({rev:1000,rg:20,mt:25,fc:0.85,tg:2.5,w:10,sh:100,ca:200,de:300,yr:10});
   const s=(k,v)=>setD(p=>({...p,[k]:parseFloat(v)||0}));
@@ -528,7 +560,6 @@ function DCFTab(){
       <Card><div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>Flujos Proyectados</div>
         <div style={{height:250}}><ResponsiveContainer width="100%" height="100%"><AreaChart data={flows}><defs><linearGradient id="gF" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.green} stopOpacity={0.3}/><stop offset="95%" stopColor={T.green} stopOpacity={0}/></linearGradient><linearGradient id="gV" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.gold} stopOpacity={0.3}/><stop offset="95%" stopColor={T.gold} stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="y" tick={{fill:T.muted,fontSize:10}}/><YAxis tick={{fill:T.muted,fontSize:10}} tickFormatter={v=>`$${v}M`}/><Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={(v,n)=>[`$${v}M`,n==="f"?"FCF nominal":"FCF descontado"]}/><Area type="monotone" dataKey="f" stroke={T.green} fill="url(#gF)" strokeWidth={2}/><Area type="monotone" dataKey="pv" stroke={T.gold} fill="url(#gV)" strokeWidth={2} strokeDasharray="4 4"/></AreaChart></ResponsiveContainer></div>
       </Card>
-      <Card s={{padding:12}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.muted,lineHeight:2}}><span style={{color:T.gold}}>EV = </span><span style={{color:T.blue}}>${Math.round(sumPV)}M</span> + <span style={{color:T.gold}}>${Math.round(tPV)}M</span> = <span style={{color:T.text}}>${Math.round(ev)}M</span>{"  ·  "}<span style={{color:T.gold}}>Equity = </span>${Math.round(eq)}M{"  ·  "}<span style={{color:T.gold}}>Intrínseco = </span><span style={{color:T.green}}>${ips.toFixed(2)}/acción</span></div></Card>
     </div>
   </div>;
 }
