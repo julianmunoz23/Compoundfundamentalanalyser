@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, LineChart, Line, Legend,
+  BarChart, Bar,
 } from "recharts";
 
 const T = {
@@ -34,20 +34,17 @@ const css=`
   .fi{animation:fadeIn 0.35s ease both;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .sp{animation:spin 0.8s linear infinite;display:inline-block;}
-  @keyframes glow{0%,100%{opacity:0.4;}50%{opacity:1;}}
   .trow:hover td{background:${T.accent};}
   .hero-grad{background:linear-gradient(135deg,#0a0c10 0%,#0f1420 50%,#0a0c10 100%);}
-  @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 `;
 
-// ── UTILS ──────────────────────────────────────────────────────────────────────
-const fmt=(n,dec=0)=>{
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const fmt=(n)=>{
   if(Math.abs(n)>=1e9)return`$${(n/1e9).toFixed(2)}B`;
   if(Math.abs(n)>=1e6)return`$${(n/1e6).toFixed(2)}M`;
   if(Math.abs(n)>=1e3)return`$${(n/1e3).toFixed(1)}K`;
-  return`$${n.toFixed(dec)}`;
+  return`$${n.toFixed(0)}`;
 };
-const fmtN=n=>n.toLocaleString("en-US",{maximumFractionDigits:0});
 
 const CRITERIA={
   growth:[
@@ -93,7 +90,7 @@ function grade(s){
   return{l:"D",c:T.red,label:"Evitar"};
 }
 
-// ── SHARED COMPONENTS ──────────────────────────────────────────────────────────
+// ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
 const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
 const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,fontWeight:500,marginBottom:5,...s}}>{children}</div>;
 const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
@@ -110,7 +107,7 @@ function ScoreRing({score,size=80}){
   </svg>;
 }
 
-// ── HERO SECTION ───────────────────────────────────────────────────────────────
+// ── HERO ──────────────────────────────────────────────────────────────────────
 function Hero({onStart}){
   const TOP_COMPOUNDERS=[
     {t:"NVDA",r:"142%",c:T.green},{t:"MSFT",r:"28%",c:T.green},{t:"AAPL",r:"21%",c:T.green},
@@ -128,37 +125,33 @@ function Hero({onStart}){
         Analyze fundamentals and simulate compound growth in seconds. See exactly how much your money can grow.
       </p>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold" onClick={onStart} style={{fontSize:15,padding:"14px 32px",borderRadius:10}}>
+        <button className="btn btn-gold" onClick={()=>onStart("compound")} style={{fontSize:15,padding:"14px 32px",borderRadius:10}}>
           🚀 Start Analyzing
         </button>
-        <button className="btn btn-outline" onClick={()=>onStart("compound")} style={{fontSize:14,padding:"14px 24px",borderRadius:10}}>
-          💰 Compound Calculator
+        <button className="btn btn-outline" onClick={()=>onStart("score")} style={{fontSize:14,padding:"14px 24px",borderRadius:10}}>
+          🔍 Scorecard IA
         </button>
       </div>
     </div>
-
-    {/* Stats bar */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:40,maxWidth:700,margin:"0 auto 40px"}}>
-      {[
-        {n:"15%+",l:"CAGR objetivo"},
-        {n:"8 criterios",l:"Buffett/Munger"},
-        {n:"IA powered",l:"Análisis en segundos"},
-      ].map(({n,l})=><div key={l} style={{textAlign:"center",padding:"16px",background:T.card,borderRadius:10,border:`1px solid ${T.border}`}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold,marginBottom:4}}>{n}</div>
-        <div style={{fontSize:11,color:T.muted}}>{l}</div>
-      </div>)}
+      {[{n:"15%+",l:"CAGR objetivo"},{n:"8 criterios",l:"Buffett/Munger"},{n:"IA powered",l:"Análisis en segundos"}].map(({n,l})=>(
+        <div key={l} style={{textAlign:"center",padding:"16px",background:T.card,borderRadius:10,border:`1px solid ${T.border}`}}>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold,marginBottom:4}}>{n}</div>
+          <div style={{fontSize:11,color:T.muted}}>{l}</div>
+        </div>
+      ))}
     </div>
-
-    {/* Top compounders ticker */}
     <div style={{marginBottom:16}}>
       <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12}}>Top Compounders — Retorno 1 año</div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-        {TOP_COMPOUNDERS.map(({t,r,c})=><div key={t} onClick={()=>onStart("score",t)} style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}
-          onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.background=T.accent;}}
-          onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.card;}}>
-          <Mn sz={13} c={T.text} s={{fontWeight:700}}>{t}</Mn>
-          <span style={{fontSize:12,color:c}}>+{r}</span>
-        </div>)}
+        {TOP_COMPOUNDERS.map(({t,r,c})=>(
+          <div key={t} onClick={()=>onStart("score",t)} style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;}}>
+            <Mn sz={13} c={T.text} s={{fontWeight:700}}>{t}</Mn>
+            <span style={{fontSize:12,color:c}}>+{r}</span>
+          </div>
+        ))}
       </div>
     </div>
   </div>;
@@ -199,7 +192,6 @@ function CompoundTab(){
   };
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
-    {/* KPIs */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
         {l:"Balance Final",v:fmt(last.balance||0),c:T.gold,sub:`en ${cfg.years} años`,icon:"🏆"},
@@ -215,7 +207,6 @@ function CompoundTab(){
     </div>
 
     <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18}}>
-      {/* Controls */}
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>⚙️ Tu Escenario</div>
@@ -278,7 +269,6 @@ function CompoundTab(){
         </Card>
       </div>
 
-      {/* Charts */}
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>📈 Crecimiento del Portafolio</div>
@@ -294,8 +284,8 @@ function CompoundTab(){
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.floor(cfg.years/5)}/>
                 <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmt(v)} width={72}/>
                 <Tooltip content={<TT/>}/>
-                <Area type="monotone" dataKey="aportesAcum" stroke={T.blue} fill="url(#gC)" strokeWidth={1.5} name="aportesAcum"/>
-                <Area type="monotone" dataKey="balance" stroke={T.gold} fill="url(#gI)" strokeWidth={2.5} name="balance"/>
+                <Area type="monotone" dataKey="aportesAcum" stroke={T.blue} fill="url(#gC)" strokeWidth={1.5}/>
+                <Area type="monotone" dataKey="balance" stroke={T.gold} fill="url(#gI)" strokeWidth={2.5}/>
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -322,7 +312,6 @@ function CompoundTab(){
       </div>
     </div>
 
-    {/* Milestone hitos */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
       {[5,10,20,cfg.years].filter((y,i,a)=>a.indexOf(y)===i&&y<=cfg.years).slice(0,4).map(y=>{
         const row=data[y-1];if(!row)return null;
@@ -334,7 +323,6 @@ function CompoundTab(){
       })}
     </div>
 
-    {/* Tabla detallada */}
     <Card s={{padding:0}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${T.border}`}}>
         <div>
@@ -386,7 +374,6 @@ function CompoundTab(){
       </div>}
     </Card>
 
-    {/* Insight */}
     <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`,padding:18}}>
       <div style={{display:"flex",alignItems:"flex-start",gap:14}}>
         <div style={{fontSize:26,flexShrink:0}}>💡</div>
@@ -400,7 +387,7 @@ function CompoundTab(){
   </div>;
 }
 
-// ── WHAT IF SCENARIOS ──────────────────────────────────────────────────────────
+// ── WHAT IF ────────────────────────────────────────────────────────────────────
 function WhatIfTab(){
   const SCENARIOS=[
     {ticker:"NVDA",name:"NVIDIA",year:2014,invested:10000,cagr:68,finalValue:3820000,color:T.green,desc:"Dominio en GPUs + boom de IA"},
@@ -410,10 +397,8 @@ function WhatIfTab(){
     {ticker:"TSLA",name:"Tesla",year:2013,invested:10000,cagr:38,finalValue:1200000,color:T.green,desc:"EV + energía + software"},
     {ticker:"COST",name:"Costco",year:2010,invested:10000,cagr:19,finalValue:115000,color:"#f39c12",desc:"Membership moat + retail"},
   ];
-  const [custom,setCustom]=useState({ticker:"",initial:10000,cagr:20,years:10});
-  const [selected,setSelected]=useState(null);
+  const [custom,setCustom]=useState({initial:10000,cagr:20,years:10});
   const sc=(k,v)=>setCustom(p=>({...p,[k]:v}));
-
   const customFinal=custom.initial*Math.pow(1+custom.cagr/100,custom.years);
   const customData=Array.from({length:custom.years},(_,i)=>({y:`${i+1}`,v:Math.round(custom.initial*Math.pow(1+custom.cagr/100,i+1))}));
 
@@ -424,10 +409,8 @@ function WhatIfTab(){
       </div>
       <div style={{fontSize:13,color:T.muted}}>Explora el poder del compounding en los mejores negocios de la última década</div>
     </div>
-
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-      {SCENARIOS.map(s=><Card key={s.ticker} s={{cursor:"pointer",transition:"all 0.2s",border:`1px solid ${selected?.ticker===s.ticker?s.color:T.border}`,background:selected?.ticker===s.ticker?`${s.color}08`:T.card}}
-        onClick={()=>setSelected(selected?.ticker===s.ticker?null:s)}>
+      {SCENARIOS.map(s=><Card key={s.ticker} s={{cursor:"pointer",transition:"all 0.2s",border:`1px solid ${T.border}`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
           <div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.text,marginBottom:2}}>{s.name}</div>
@@ -448,8 +431,6 @@ function WhatIfTab(){
         </div>
       </Card>)}
     </div>
-
-    {/* Custom scenario */}
     <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:18}}>
       <Card>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:16}}>🎯 Tu Escenario Personalizado</div>
@@ -481,7 +462,7 @@ function WhatIfTab(){
             <AreaChart data={customData}>
               <defs><linearGradient id="gW" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.gold} stopOpacity={0.4}/><stop offset="95%" stopColor={T.gold} stopOpacity={0}/></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
-              <XAxis dataKey="y" tick={{fill:T.muted,fontSize:10}} label={{value:"Años",position:"insideBottom",offset:-2,fill:T.muted,fontSize:10}}/>
+              <XAxis dataKey="y" tick={{fill:T.muted,fontSize:10}}/>
               <YAxis tick={{fill:T.muted,fontSize:10}} tickFormatter={v=>fmt(v)} width={72}/>
               <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmt(v),"Valor portafolio"]}/>
               <Area type="monotone" dataKey="v" stroke={T.gold} fill="url(#gW)" strokeWidth={2.5}/>
@@ -490,7 +471,6 @@ function WhatIfTab(){
         </div>
       </Card>
     </div>
-
     <Card s={{background:`${T.blue}08`,border:`1px solid ${T.blue}33`,padding:16}}>
       <div style={{fontSize:12,color:T.muted,lineHeight:1.8,textAlign:"center"}}>
         ⚠️ <span style={{color:T.gold}}>Nota:</span> Los retornos históricos no garantizan resultados futuros. Este simulador es educativo. Los CAGRs mostrados son aproximaciones basadas en datos históricos de precios.
@@ -523,16 +503,26 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
   }));
   const radarD=MOAT_KEYS.map(k=>({subject:k.split(" ")[0],value:moat[k],fullMark:5}));
 
+  // ✅ FUNCIÓN ANALYZE CON HEADERS CORRECTOS PARA VERCEL
   const analyze=async()=>{
     if(!company.trim()){setErr("Ingresa un ticker primero.");return;}
     setLoading(true);setErr("");setInfo(null);
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:{
+          "Content-Type":"application/json",
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
+          "anthropic-version":"2023-06-01",
+          "anthropic-dangerous-direct-browser-access":"true",
+        },
         body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",max_tokens:1200,
-          messages:[{role:"user",content:`Eres un analista de inversiones estilo Buffett/Munger. Analiza "${company}" con datos reales hasta tu fecha de corte. Responde SOLO con JSON válido sin markdown:\n{"metrics":{"revenueCAGR":<CAGR ingresos 3-5y %>,"fcfCAGR":<CAGR FCF %>,"tamGrowth":<crecimiento TAM %>,"roic":<ROIC %>,"grossMargin":<margen bruto %>,"opMargin":<margen operativo %>,"fcfEbitda":<FCF/EBITDA %>,"debtEbitda":<deuda/EBITDA x>,"interestCover":<cobertura intereses x>},"moat":{"Economías de Escala":<1-5>,"Switching Costs":<1-5>,"Efectos de Red":<1-5>,"Marca Dominante":<1-5>,"Tecnología Propietaria":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<Tecnología|Salud|Consumo|Finanzas|Industria|Energía|Otro>","summary":"<2-3 oraciones: tesis principal y riesgo clave>","catalysts":["<catalizador 1>","<catalizador 2>","<catalizador 3>"],"keyMetrics":{"revenueGrowth5y":"<ej: +18% CAGR>","roicDisplay":"<ej: 31%>","fcfMargin":"<ej: 24%>","debtEquity":"<ej: 0.4x>","epsGrowth":"<ej: +22%>","cagr10y":"<ej: 28%>"}}`}],
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1200,
+          messages:[{
+            role:"user",
+            content:`Eres un analista de inversiones estilo Buffett/Munger. Analiza "${company}" con datos reales hasta tu fecha de corte. Responde SOLO con JSON válido sin markdown ni explicación adicional:\n{"metrics":{"revenueCAGR":<CAGR ingresos 3-5y como número>,"fcfCAGR":<CAGR FCF como número>,"tamGrowth":<crecimiento TAM como número>,"roic":<ROIC como número>,"grossMargin":<margen bruto como número>,"opMargin":<margen operativo como número>,"fcfEbitda":<FCF/EBITDA como número>,"debtEbitda":<deuda/EBITDA como número>,"interestCover":<cobertura intereses como número>},"moat":{"Economías de Escala":<1-5>,"Switching Costs":<1-5>,"Efectos de Red":<1-5>,"Marca Dominante":<1-5>,"Tecnología Propietaria":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<Tecnología|Salud|Consumo|Finanzas|Industria|Energía|Otro>","summary":"<2-3 oraciones en español: tesis principal y riesgo clave>","catalysts":["<catalizador 1>","<catalizador 2>","<catalizador 3>"],"keyMetrics":{"revenueGrowth5y":"<ej: +18% CAGR>","roicDisplay":"<ej: 31%>","fcfMargin":"<ej: 24%>","debtEquity":"<ej: 0.4x>","epsGrowth":"<ej: +22%>","cagr10y":"<ej: 28%>"}}`,
+          }],
         }),
       });
       const d=await res.json();
@@ -543,7 +533,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
       setMoat(prev=>({...prev,...p.moat}));
       if(p.sector)setSector(p.sector);
       setInfo(p);
-    }catch(e){setErr(`Error: ${e.message||"No se pudo analizar. Verifica el ticker."}`);}
+    }catch(e){
+      setErr(`Error: ${e.message||"No se pudo analizar. Verifica el ticker y la API key."}`);
+    }
     setLoading(false);
   };
 
@@ -556,13 +548,12 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
   ];
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
-    {/* Search bar */}
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end"}}>
         <div style={{flex:1}}>
           <Lbl>Ticker / Empresa</Lbl>
           <input type="text" value={company} onChange={e=>setCompany(e.target.value.toUpperCase())}
-            placeholder="NVDA, AAPL, MSFT, META..."
+            placeholder="NVDA, AAPL, MSFT, HIMS..."
             onKeyDown={e=>e.key==="Enter"&&analyze()}
             style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
         </div>
@@ -583,7 +574,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
       {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
     </Card>
 
-    {/* Score + key metrics */}
     {info&&<div style={{display:"grid",gridTemplateColumns:"auto 1fr auto",gap:16,alignItems:"start"}}>
       <Card s={{textAlign:"center",padding:20,minWidth:160}}>
         <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Compound Quality Score</div>
@@ -591,7 +581,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{g.label}</div>
         <div style={{fontSize:11,color:T.muted,marginTop:6}}>{checklist.filter(c=>c.p).length}/8 criterios Buffett</div>
       </Card>
-
       <Card s={{background:T.accent}}>
         <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>✦ {company} — Análisis IA</div>
         <div style={{fontSize:13,color:T.text,lineHeight:1.75,marginBottom:12}}>{info.summary}</div>
@@ -609,7 +598,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
           {(info.catalysts||[]).map((c,i)=><span key={i} style={{fontSize:11,padding:"4px 10px",borderRadius:20,background:`${T.green}15`,color:T.green,border:`1px solid ${T.green}33`}}>✓ {c}</span>)}
         </div>
       </Card>
-
       <Card s={{minWidth:180}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:12}}>Score por factor</div>
         {catS.map(({cat,s,weight})=><div key={cat} style={{marginBottom:10}}>
@@ -627,11 +615,8 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector}){
       </Card>
     </div>}
 
-    {!info&&<div style={{display:"flex",alignItems:"center",gap:20,padding:"14px 0"}}>
-      <div style={{textAlign:"center"}}>
-        <ScoreRing score={score} size={100}/>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:12,color:g.c,marginTop:4}}>{g.label}</div>
-      </div>
+    {!info&&<div style={{display:"flex",alignItems:"center",gap:20,padding:"14px 20px",background:T.card,border:`1px solid ${T.border}`,borderRadius:12}}>
+      <ScoreRing score={score} size={100}/>
       <div style={{flex:1}}>
         {catS.map(({cat,s})=><div key={cat} style={{marginBottom:8}}>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}><span style={{color:T.muted}}>{cat}</span><Mn sz={11} c={s>=60?T.green:s>=40?T.gold:T.red}>{s}%</Mn></div>
@@ -756,7 +741,7 @@ const TABS=[
 ];
 
 export default function App(){
-  const [tab,setTab]=useState(null); // null = hero
+  const [tab,setTab]=useState(null);
   const [m,setM]=useState(defM());
   const [moat,setMoat]=useState(defMoat());
   const [company,setCompany]=useState("");
@@ -771,16 +756,12 @@ export default function App(){
 
   return<div style={{minHeight:"100vh",background:T.bg}}>
     <style>{css}</style>
-
-    {/* Header */}
     <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100}}>
       <div style={{maxWidth:1380,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
-          <div style={{display:"flex",alignItems:"center",gap:16}}>
-            <div onClick={()=>setTab(null)} style={{cursor:"pointer"}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,color:T.gold,letterSpacing:"0.02em"}}>Compounder Analyst</div>
-              <div style={{fontSize:9,color:T.muted,letterSpacing:"0.15em",textTransform:"uppercase",marginTop:1}}>Buffett · Munger · High-Growth Framework</div>
-            </div>
+          <div onClick={()=>setTab(null)} style={{cursor:"pointer"}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,color:T.gold,letterSpacing:"0.02em"}}>Compounder Analyst</div>
+            <div style={{fontSize:9,color:T.muted,letterSpacing:"0.15em",textTransform:"uppercase",marginTop:1}}>Buffett · Munger · High-Growth Framework</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:14}}>
             <div style={{textAlign:"right"}}><div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em"}}>CAGR objetivo</div><Mn sz={17} c={T.gold}>≥ 15%</Mn></div>
@@ -793,8 +774,6 @@ export default function App(){
         </div>}
       </div>
     </div>
-
-    {/* Content */}
     {!tab&&<Hero onStart={handleStart}/>}
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab/>}
@@ -803,7 +782,6 @@ export default function App(){
       {tab==="ret"&&<ReturnTab/>}
       {tab==="dcf"&&<DCFTab/>}
     </div>}
-
     <div style={{borderTop:`1px solid ${T.border}`,padding:"14px 28px",maxWidth:1380,margin:"0 auto"}}>
       <div style={{fontSize:9,color:T.muted,textAlign:"center"}}>
         <span style={{color:T.goldDim}}>Compounder Analyst</span> · Inspirado en Buffett · Munger · Solo educativo — no constituye asesoramiento financiero.
@@ -811,9 +789,3 @@ export default function App(){
     </div>
   </div>;
 }
-headers: {
-  "Content-Type": "application/json",
-  "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
-  "anthropic-version": "2023-06-01",
-  "anthropic-dangerous-direct-browser-access": "true"
-},
