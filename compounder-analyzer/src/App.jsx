@@ -918,8 +918,9 @@ const TABS=[
 ];
 const FREE_LIMIT=2;
 
-function getCount(){try{return parseInt(localStorage.getItem("compoundr_count")||"0");}catch{return 0;}}
-function incCount(){try{const n=getCount()+1;localStorage.setItem("compoundr_count",String(n));return n;}catch{return 999;}}
+function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
+function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_count")||"0");}catch{return 0;}}
+function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("compoundr_count",String(n));return n;}catch{return 999;}}
 
 export default function App(){
   const [tab,setTab]=useState(null);
@@ -928,6 +929,24 @@ export default function App(){
   const [company,setCompany]=useState("");
   const [sector,setSector]=useState("Technology");
   const [showPaywall,setShowPaywall]=useState(false);
+  const [adminMode,setAdminMode]=useState(isAdmin());
+
+  useState(()=>{
+    const handler=(e)=>{
+      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){
+        localStorage.setItem("compoundr_admin","true");
+        setAdminMode(true);
+        alert("✅ Admin mode ON — unlimited access");
+      }
+      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){
+        localStorage.removeItem("compoundr_admin");
+        setAdminMode(false);
+        alert("🔒 Admin mode OFF");
+      }
+    };
+    window.addEventListener("keydown",handler);
+    return()=>window.removeEventListener("keydown",handler);
+  });
 
   const canAnalyze=()=>{
     const c=getCount();
@@ -954,12 +973,11 @@ export default function App(){
             <div style={{fontSize:9,color:T.muted,letterSpacing:"0.15em",textTransform:"uppercase",marginTop:1}}>Buffett · Munger · High-Growth Framework</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
-              🆓 {Math.max(0,FREE_LIMIT-getCount())} free analyses left
-            </div>
-            <button className="btn btn-gold" onClick={()=>alert("💳 Subscribe for unlimited analyses — coming soon!")} style={{fontSize:12,padding:"8px 18px"}}>
-              🚀 Go Premium
-            </button>
+            {adminMode
+              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin — unlimited access</div>
+              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>🆓 {Math.max(0,FREE_LIMIT-getCount())} free analyses left</div>
+              <button className="btn btn-gold" onClick={()=>alert("💳 Subscribe for unlimited analyses — coming soon!")} style={{fontSize:12,padding:"8px 18px"}}>🚀 Go Premium</button></>
+            }
           </div>
         </div>
         {tab&&<div style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2}}>
