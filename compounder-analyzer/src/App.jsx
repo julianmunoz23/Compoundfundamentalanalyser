@@ -20,7 +20,6 @@ const css=`
   input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:${T.border};border-radius:2px;outline:none;}
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:${T.gold};border-radius:50%;cursor:pointer;}
   input[type=range]:disabled{opacity:0.35;cursor:not-allowed;}
-  input[type=range]:disabled::-webkit-slider-thumb{background:${T.muted};cursor:not-allowed;}
   input[type=number],input[type=text],select{background:${T.accent};border:1px solid ${T.border};color:${T.text};border-radius:6px;padding:8px 12px;font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;transition:border-color 0.2s;}
   input:focus,select:focus{border-color:${T.goldDim};}
   select option{background:${T.surface};}
@@ -36,72 +35,66 @@ const css=`
   .fi{animation:fadeIn 0.35s ease both;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .sp{animation:spin 0.8s linear infinite;display:inline-block;}
-  .trow:hover td{background:${T.accent};}
+  .trow:hover td{background:${T.accent}55;}
   .hero-grad{background:linear-gradient(135deg,#0a0c10 0%,#0f1420 50%,#0a0c10 100%);}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
   .ad-pulse{animation:pulse 3s ease-in-out infinite;}
 `;
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
-const fmtFull=(n)=>{
+// Show full dollar values with commas, no abbreviation
+const fmt=(n)=>{
   if(n===undefined||n===null||isNaN(n))return"$0";
+  const sign=n<0?"-":"";
+  return sign+"$"+Math.abs(Math.round(n)).toLocaleString("en-US");
+};
+// Chart axis uses short labels to avoid clutter
+const fmtShort=(n)=>{
+  if(!n)return"$0";
   const abs=Math.abs(n);
-  if(abs>=1e12)return`$${(n/1e12).toFixed(3).replace(/\.?0+$/,"")}T`;
-  if(abs>=1e9)return`$${(n/1e9).toFixed(3).replace(/\.?0+$/,"")}B`;
-  if(abs>=1e6)return`$${(n/1e6).toFixed(3).replace(/\.?0+$/,"")}M`;
-  if(abs>=1e3)return`$${(n/1e3).toFixed(1).replace(/\.?0+$/,"")}K`;
-  return`$${n.toFixed(0)}`;
+  if(abs>=1e9)return`$${(n/1e9).toFixed(1)}B`;
+  if(abs>=1e6)return`$${(n/1e6).toFixed(1)}M`;
+  if(abs>=1e3)return`$${(n/1e3).toFixed(0)}K`;
+  return`$${n}`;
 };
 
-// ── AD BANNER COMPONENT ───────────────────────────────────────────────────────
-// Replace the inner div with your Google AdSense <ins> tag
+// ── AD BANNER ─────────────────────────────────────────────────────────────────
 function AdBanner({size="leaderboard"}){
-  const sizes={
-    leaderboard:{w:"100%",h:90,label:"728×90 — Leaderboard"},
-    rectangle:{w:"100%",h:250,label:"336×280 — Large Rectangle"},
-    sidebar:{w:"100%",h:600,label:"300×600 — Half Page"},
-  };
-  const {w,h,label}=sizes[size]||sizes.leaderboard;
+  const h=size==="rectangle"?250:size==="sidebar"?600:90;
   return(
-    <div style={{width:w,minHeight:h,background:`${T.surface}`,border:`1px dashed ${T.border}`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",position:"relative"}}>
-      {/* ── REPLACE THIS DIV WITH YOUR GOOGLE ADSENSE CODE ── */}
+    <div style={{width:"100%",minHeight:h,background:T.surface,border:`1px dashed ${T.border}`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center"}}>
       <div className="ad-pulse" style={{textAlign:"center",padding:16}}>
-        <div style={{fontSize:10,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>Advertisement</div>
-        <div style={{fontSize:11,color:T.border}}>{label}</div>
+        <div style={{fontSize:10,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:4}}>Advertisement</div>
+        <div style={{fontSize:10,color:T.border}}>{size==="rectangle"?"336×280":size==="sidebar"?"300×600":"728×90"}</div>
       </div>
-      {/* ── END ADSENSE PLACEHOLDER ── */}
     </div>
   );
 }
 
-// ── PAYWALL MODAL ─────────────────────────────────────────────────────────────
-function PaywallModal({onClose,onGoTo}){
+// ── PAYWALL ───────────────────────────────────────────────────────────────────
+function PaywallModal({onClose}){
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-      <div style={{background:T.card,border:`1px solid ${T.goldDim}`,borderRadius:16,padding:40,maxWidth:480,width:"100%",textAlign:"center",position:"relative"}}>
+      <div style={{background:T.card,border:`1px solid ${T.goldDim}`,borderRadius:16,padding:40,maxWidth:480,width:"100%",textAlign:"center"}}>
         <div style={{fontSize:40,marginBottom:16}}>🔒</div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:12,fontWeight:700}}>
-          Unlock Full Access
-        </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:12,fontWeight:700}}>Unlock Full Access</div>
         <div style={{fontSize:14,color:T.muted,lineHeight:1.8,marginBottom:28}}>
           You've used your <span style={{color:T.text,fontWeight:600}}>2 free AI analyses</span>.<br/>
           Subscribe to get unlimited stock analysis, expected return modeling, and DCF valuations.
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
-          {["Unlimited AI Stock Analysis","Expected Return Modeling","DCF Valuations","Wall Street Consensus Data","Analyst Price Targets","Priority AI Processing"].map(f=>(
+          {["Unlimited AI Analysis","Expected Return Modeling","DCF Valuations","Wall Street Consensus","Analyst Price Targets","Priority AI Processing"].map(f=>(
             <div key={f} style={{fontSize:12,color:T.text,padding:"8px 12px",background:T.accent,borderRadius:8,border:`1px solid ${T.border}`,textAlign:"left"}}>
               <span style={{color:T.green,marginRight:6}}>✓</span>{f}
             </div>
           ))}
         </div>
-        <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:16}}>
-          <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10}}
-            onClick={()=>alert("💳 Payment integration coming soon!\n\nFor now, contact us to get early access.")}>
-            🚀 Subscribe — $9.99/mo
-          </button>
-        </div>
+        <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,marginBottom:12}}
+          onClick={()=>alert("💳 Payment integration coming soon!\nContact us for early access.")}>
+          🚀 Subscribe — $9.99/mo
+        </button><br/>
         <button onClick={onClose} style={{fontSize:12,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
-          Maybe later — go back to Compound Calculator
+          Maybe later
         </button>
       </div>
     </div>
@@ -130,37 +123,17 @@ const MOAT_KEYS=["Economies of Scale","Switching Costs","Network Effects","Brand
 const SECTORS=["Technology","Healthcare","Consumer","Finance","Industrials","Energy","Other"];
 const defM=()=>({revenueCAGR:20,fcfGrowth:25,tamGrowth:12,roic:25,grossMargin:55,opMargin:22,fcfMarginPct:20,debtEbitda:1.2,interestCover:10});
 const defMoat=()=>Object.fromEntries(MOAT_KEYS.map(k=>[k,3]));
+function sm(c,v){if(c.invert){if(v<=c.threshold)return 100;if(v>=c.max)return 0;return Math.round((1-(v-c.threshold)/(c.max-c.threshold))*100);}if(v>=c.threshold*1.5)return 100;if(v>=c.threshold)return Math.round(60+((v-c.threshold)/(c.threshold*0.5))*40);return Math.round((v/c.threshold)*60);}
+function calcScore(m,moat){let tw=0,ts=0;Object.values(CRITERIA).flat().forEach(c=>{const s=sm(c,m[c.key]||0);ts+=s*c.weight;tw+=c.weight;});const moatAvg=Object.values(moat).reduce((a,v)=>a+v,0)/(MOAT_KEYS.length*5)*100;ts+=moatAvg*10;tw+=10;return Math.round(ts/tw);}
+function grade(s){if(s>=85)return{l:"A+",c:T.green,label:"Elite Compounder"};if(s>=75)return{l:"A",c:T.green,label:"High Quality"};if(s>=65)return{l:"B+",c:T.gold,label:"Good Business"};if(s>=55)return{l:"B",c:T.gold,label:"Promising"};if(s>=45)return{l:"C",c:"#f39c12",label:"Needs Improvement"};return{l:"D",c:T.red,label:"Avoid"};}
 
-function sm(c,v){
-  if(c.invert){if(v<=c.threshold)return 100;if(v>=c.max)return 0;return Math.round((1-(v-c.threshold)/(c.max-c.threshold))*100);}
-  if(v>=c.threshold*1.5)return 100;
-  if(v>=c.threshold)return Math.round(60+((v-c.threshold)/(c.threshold*0.5))*40);
-  return Math.round((v/c.threshold)*60);
-}
-function calcScore(m,moat){
-  let tw=0,ts=0;
-  Object.values(CRITERIA).flat().forEach(c=>{const s=sm(c,m[c.key]||0);ts+=s*c.weight;tw+=c.weight;});
-  const moatAvg=Object.values(moat).reduce((a,v)=>a+v,0)/(MOAT_KEYS.length*5)*100;
-  ts+=moatAvg*10;tw+=10;
-  return Math.round(ts/tw);
-}
-function grade(s){
-  if(s>=85)return{l:"A+",c:T.green,label:"Elite Compounder"};
-  if(s>=75)return{l:"A",c:T.green,label:"High Quality"};
-  if(s>=65)return{l:"B+",c:T.gold,label:"Good Business"};
-  if(s>=55)return{l:"B",c:T.gold,label:"Promising"};
-  if(s>=45)return{l:"C",c:"#f39c12",label:"Needs Improvement"};
-  return{l:"D",c:T.red,label:"Avoid"};
-}
-
-// ── SHARED ─────────────────────────────────────────────────────────────────────
+// ── SHARED ────────────────────────────────────────────────────────────────────
 const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
 const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,fontWeight:500,marginBottom:5,...s}}>{children}</div>;
 const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
 
 function ScoreRing({score,size=80}){
-  const g=grade(score);
-  const r=size*0.38,cx=size/2,cy=size/2;
+  const g=grade(score);const r=size*0.38,cx=size/2,cy=size/2;
   const arc=v=>{const a=-135+(v/100)*270,rd=x=>x*Math.PI/180;return`M ${cx+r*Math.cos(rd(-135))} ${cy+r*Math.sin(rd(-135))} A ${r} ${r} 0 ${a>45?1:0} 1 ${cx+r*Math.cos(rd(a))} ${cy+r*Math.sin(rd(a))}`;};
   return<svg width={size} height={size*0.78} viewBox={`0 0 ${size} ${size*0.78}`}>
     <path d={arc(100)} fill="none" stroke={T.border} strokeWidth={size*0.065} strokeLinecap="round"/>
@@ -170,34 +143,16 @@ function ScoreRing({score,size=80}){
   </svg>;
 }
 
-// ── AI FETCH HELPER ────────────────────────────────────────────────────────────
+// ── AI HELPER ─────────────────────────────────────────────────────────────────
 async function callAI(prompt){
-  const res=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,
-      "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true",
-    },
-    body:JSON.stringify({
-      model:"claude-sonnet-4-20250514",
-      max_tokens:1400,
-      messages:[{role:"user",content:prompt}],
-    }),
-  });
-  const d=await res.json();
-  if(d.error)throw new Error(d.error.message);
-  const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
-  return JSON.parse(txt);
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
+  const d=await res.json();if(d.error)throw new Error(d.error.message);
+  const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();return JSON.parse(txt);
 }
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
 function Hero({onStart}){
-  const TOP=[
-    {t:"NVDA",r:"142%",c:T.green},{t:"MSFT",r:"28%",c:T.green},{t:"AAPL",r:"21%",c:T.green},
-    {t:"COST",r:"38%",c:T.green},{t:"AMZN",r:"81%",c:T.green},{t:"META",r:"194%",c:T.green},
-  ];
+  const TOP=[{t:"NVDA",r:"142%",c:T.green},{t:"MSFT",r:"28%",c:T.green},{t:"AAPL",r:"21%",c:T.green},{t:"COST",r:"38%",c:T.green},{t:"AMZN",r:"81%",c:T.green},{t:"META",r:"194%",c:T.green}];
   return<div className="hero-grad fi" style={{padding:"60px 28px 50px",maxWidth:1380,margin:"0 auto"}}>
     <div style={{textAlign:"center",marginBottom:48}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"6px 16px",marginBottom:20}}>
@@ -214,7 +169,6 @@ function Hero({onStart}){
         <button className="btn btn-outline" onClick={()=>onStart("score")} style={{fontSize:14,padding:"14px 24px",borderRadius:10}}>🎯 Analyze a Stock</button>
       </div>
     </div>
-    {/* Ad banner on hero */}
     <div style={{maxWidth:800,margin:"0 auto 40px"}}><AdBanner size="leaderboard"/></div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:700,margin:"0 auto 40px"}}>
       {[{n:"Free",l:"Compound Calculator"},{n:"AI Powered",l:"Stock Analyzer"},{n:"Premium",l:"Unlimited Analyses"}].map(({n,l})=>(
@@ -228,10 +182,8 @@ function Hero({onStart}){
       <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12}}>Top Compounders — 1Y Return</div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
         {TOP.map(({t,r,c})=>(
-          <div key={t} onClick={()=>onStart("score",t)}
-            style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;}}
-            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;}}>
+          <div key={t} onClick={()=>onStart("score",t)} style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;}}>
             <Mn sz={13} c={T.text} s={{fontWeight:700}}>{t}</Mn>
             <span style={{fontSize:12,color:c}}>+{r}</span>
           </div>
@@ -241,80 +193,109 @@ function Hero({onStart}){
   </div>;
 }
 
-// ── COMPOUND CALCULATOR (FREE) ────────────────────────────────────────────────
+// ── COMPOUND CALCULATOR ────────────────────────────────────────────────────────
+// FIX 1: Monthly compounding formula (matches industry standard)
+function calcCompound(cfg){
+  // Always compound monthly for accuracy
+  const monthlyRate=cfg.rateType==="monthly"?cfg.rate/100:(cfg.rate/100)/12;
+  const monthlyContrib=cfg.contribFreq==="monthly"?cfg.contrib:cfg.contrib/12;
+  let balance=cfg.initial,totalContrib=cfg.initial,totalInt=0;
+  return Array.from({length:cfg.years},(_,yi)=>{
+    let yearInt=0;
+    for(let m=0;m<12;m++){
+      const intM=balance*monthlyRate;
+      balance=balance+intM+monthlyContrib;
+      yearInt+=intM;
+      totalContrib+=monthlyContrib;
+    }
+    totalInt+=yearInt;
+    return{year:yi+1,label:`Y${yi+1}`,contributed:Math.round(totalContrib),interest:Math.round(totalInt),interestAnual:Math.round(yearInt),balance:Math.round(balance),mult:+(balance/cfg.initial).toFixed(2)};
+  });
+}
+
+// Age examples using 10% annual (S&P 500 historical avg), $1000/month, retire at 65
+function calcAgeExample(startAge,monthlyContrib=1000,annualRate=10){
+  const years=65-startAge;const monthlyRate=(annualRate/100)/12;
+  let balance=0;
+  for(let m=0;m<years*12;m++){balance=balance*(1+monthlyRate)+monthlyContrib;}
+  return Math.round(balance);
+}
+
 function CompoundTab(){
-  const [draft,setDraft]=useState({initial:10000,rate:12,rateType:"annual",contrib:500,contribFreq:"monthly",years:20});
-  const [cfg,setCfg]=useState({initial:10000,rate:12,rateType:"annual",contrib:500,contribFreq:"monthly",years:20});
+  const [draft,setDraft]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
+  const [cfg,setCfg]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
   const [showTable,setShowTable]=useState(true);
   const setD=(k,v)=>setDraft(p=>({...p,[k]:v}));
 
-  const annualRate=cfg.rateType==="monthly"?Math.pow(1+cfg.rate/100,12)-1:cfg.rate/100;
-  const annualContrib=cfg.contribFreq==="monthly"?cfg.contrib*12:cfg.contrib;
-
-  const data=useCallback(()=>{
-    let balance=cfg.initial,totalContrib=cfg.initial,totalInt=0;
-    return Array.from({length:cfg.years},(_,i)=>{
-      const intY=balance*annualRate+annualContrib*(annualRate/2);
-      balance=balance*(1+annualRate)+annualContrib;
-      totalContrib+=annualContrib;totalInt+=intY;
-      return{year:i+1,label:`Y${i+1}`,contributed:Math.round(totalContrib),interest:Math.round(totalInt),interestAnual:Math.round(intY),balance:Math.round(balance),mult:+(balance/cfg.initial).toFixed(2)};
-    });
-  },[cfg,annualRate,annualContrib])();
-
+  const effectiveAnnualRate=cfg.rateType==="monthly"?((Math.pow(1+cfg.rate/100,12)-1)*100):cfg.rate;
+  const data=useCallback(()=>calcCompound(cfg),[cfg])();
   const last=data[data.length-1]||{};
-  const annualPct=annualRate*100;
-  const doubleYears=(72/annualPct).toFixed(1);
+  const doubleYears=(72/effectiveAnnualRate).toFixed(1);
+  const annualContrib=cfg.contribFreq==="monthly"?cfg.contrib*12:cfg.contrib;
 
   const StackedTT=({active,payload,label})=>{
     if(!active||!payload?.length)return null;
     const cap=payload.find(p=>p.dataKey==="contributed")?.value||0;
     const int=payload.find(p=>p.dataKey==="interest")?.value||0;
-    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:14,minWidth:210}}>
+    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:14,minWidth:230}}>
       <div style={{fontSize:12,color:T.gold,marginBottom:8,fontFamily:"'Playfair Display',serif"}}>{label}</div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}><span style={{color:T.muted}}>💵 Capital</span><Mn sz={11} c={T.blue}>{fmtFull(cap)}</Mn></div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6}}><span style={{color:T.muted}}>✨ Interest</span><Mn sz={11} c={T.green}>{fmtFull(int)}</Mn></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}><span style={{color:T.muted}}>💵 Capital Invested</span><Mn sz={11} c={T.blue}>{fmt(cap)}</Mn></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6}}><span style={{color:T.muted}}>✨ Interest Earned</span><Mn sz={11} c={T.green}>{fmt(int)}</Mn></div>
       <div style={{borderTop:`1px solid ${T.border}33`,paddingTop:6,display:"flex",justifyContent:"space-between"}}>
-        <span style={{fontSize:11,color:T.muted}}>Total</span>
-        <Mn sz={12} c={T.gold} s={{fontWeight:700}}>{fmtFull(cap+int)}</Mn>
+        <span style={{fontSize:11,color:T.muted}}>Total Balance</span>
+        <Mn sz={12} c={T.gold} s={{fontWeight:700}}>{fmt(cap+int)}</Mn>
       </div>
-      {int>cap&&<div style={{marginTop:5,fontSize:10,color:T.green,textAlign:"center"}}>✨ Interest exceeds capital!</div>}
+      {int>cap&&<div style={{marginTop:5,fontSize:10,color:T.green,textAlign:"center",padding:"3px 0",borderTop:`1px solid ${T.green}22`,marginTop:6}}>✨ Interest exceeds capital!</div>}
     </div>;
   };
 
+  // Age examples data
+  const AGE_EXAMPLES=[20,25,30,35,40,45,50].map(age=>({
+    age,years:65-age,
+    value:calcAgeExample(age,1000,10),
+    valueVOO:calcAgeExample(age,1000,11),
+  }));
+
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
-    {/* Free badge */}
-    <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:8,alignSelf:"flex-start"}}>
-      <span style={{fontSize:11,color:T.green,fontWeight:600}}>✓ FREE — No account required</span>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:8}}>
+        <span style={{fontSize:11,color:T.green,fontWeight:600}}>✓ FREE — No account required · Monthly compounding (industry standard)</span>
+      </div>
     </div>
+
+    {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:"Final Balance",v:fmtFull(last.balance||0),c:T.gold,sub:`in ${cfg.years} years`,icon:"🏆"},
-        {l:"Total Invested",v:fmtFull(last.contributed||0),c:T.blue,sub:"your money",icon:"💵"},
-        {l:"Interest Earned",v:fmtFull(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
+        {l:"Final Balance",v:fmt(last.balance||0),c:T.gold,sub:`in ${cfg.years} years`,icon:"🏆"},
+        {l:"Total Invested",v:fmt(last.contributed||0),c:T.blue,sub:"your money",icon:"💵"},
+        {l:"Interest Earned",v:fmt(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
         {l:"Multiplier",v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
       ].map(({l,v,c,sub,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
         <Lbl>{l}</Lbl>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:c,fontWeight:700,marginBottom:3}}>{v}</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,marginBottom:3,wordBreak:"break-all"}}>{v}</div>
         <div style={{fontSize:10,color:T.muted}}>{sub}</div>
       </Card>)}
     </div>
 
     <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18}}>
+      {/* Controls */}
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>⚙️ Your Scenario</div>
           <Lbl>Initial Investment</Lbl>
           <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span><input type="number" value={draft.initial} min={0} step={100} onChange={e=>setD("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/></div>
-          <input type="range" min={0} max={500000} step={500} value={draft.initial} onChange={e=>setD("initial",parseFloat(e.target.value))} style={{marginBottom:16}}/>
+          <input type="range" min={0} max={1000000} step={1000} value={draft.initial} onChange={e=>setD("initial",parseFloat(e.target.value))} style={{marginBottom:16}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-            <Lbl s={{marginBottom:0}}>Expected Rate</Lbl>
+            <Lbl s={{marginBottom:0}}>Annual Rate</Lbl>
             <div style={{display:"flex",gap:4}}>{["annual","monthly"].map(t=><button key={t} className={`seg ${draft.rateType===t?"seg-on":""}`} onClick={()=>setD("rateType",t)}>{t==="annual"?"Annual":"Monthly"}</button>)}</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><input type="number" value={draft.rate} min={0.01} max={draft.rateType==="monthly"?5:100} step={0.1} onChange={e=>setD("rate",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/><span style={{color:T.muted,fontSize:11,whiteSpace:"nowrap"}}>% /{draft.rateType==="annual"?"yr":"mo"}</span></div>
           <input type="range" min={0.1} max={draft.rateType==="monthly"?5:100} step={0.1} value={draft.rate} onChange={e=>setD("rate",parseFloat(e.target.value))} style={{marginBottom:4}}/>
-          {draft.rateType==="monthly"&&<div style={{fontSize:10,color:T.green,marginBottom:12}}>≡ {((Math.pow(1+draft.rate/100,12)-1)*100).toFixed(2)}% effective annual</div>}
-          <div style={{marginBottom:14}}/>
+          {draft.rateType==="monthly"
+            ?<div style={{fontSize:10,color:T.green,marginBottom:12}}>≡ {((Math.pow(1+draft.rate/100,12)-1)*100).toFixed(2)}% effective annual</div>
+            :<div style={{fontSize:10,color:T.muted,marginBottom:12}}>≡ {(draft.rate/12).toFixed(3)}% per month (compounded monthly)</div>}
+          <div style={{marginBottom:8}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <Lbl s={{marginBottom:0}}>Contributions (DCA)</Lbl>
             <div style={{display:"flex",gap:4}}>{["monthly","annual"].map(t=><button key={t} className={`seg ${draft.contribFreq===t?"seg-on":""}`} onClick={()=>setD("contribFreq",t)}>{t==="monthly"?"Mo":"Yr"}</button>)}</div>
@@ -324,27 +305,27 @@ function CompoundTab(){
           <Lbl>Investment Horizon</Lbl>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:12,color:T.muted}}>Years</span><Mn sz={13} c={T.gold}>{draft.years} years</Mn></div>
           <input type="range" min={1} max={50} step={1} value={draft.years} onChange={e=>setD("years",parseInt(e.target.value))} style={{marginBottom:20}}/>
-          <button className="btn btn-gold" onClick={()=>setCfg({...draft})} style={{width:"100%",fontSize:15,padding:"13px 0",borderRadius:10,letterSpacing:"0.04em"}}>
+          <button className="btn btn-gold" onClick={()=>setCfg({...draft})} style={{width:"100%",fontSize:15,padding:"13px 0",borderRadius:10}}>
             🔄 Calculate Results
           </button>
         </Card>
         <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:12}}>✨ The Magic of Compounding</div>
           {[
-            {l:"Without contributions",v:fmtFull(cfg.initial*Math.pow(1+annualRate,cfg.years))},
-            {l:"Capital only (no interest)",v:fmtFull(last.contributed||0)},
-            {l:"With compound interest 🏆",v:fmtFull(last.balance||0),hi:true},
-            {l:"Generated by interest alone",v:`+${fmtFull(last.interest||0)}`,pos:true},
+            {l:"Capital only (no interest)",v:fmt(last.contributed||0)},
+            {l:"With compound interest 🏆",v:fmt(last.balance||0),hi:true},
+            {l:"Generated by interest alone",v:`+${fmt(last.interest||0)}`,pos:true},
           ].map(({l,v,hi,pos})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${T.border}22`,alignItems:"center"}}>
             <span style={{fontSize:11,color:hi?T.text:T.muted}}>{l}</span>
-            <Mn sz={hi?13:11} c={pos?T.green:hi?T.gold:T.muted} s={hi?{fontWeight:700}:{}}>{v}</Mn>
+            <Mn sz={hi?12:11} c={pos?T.green:hi?T.gold:T.muted} s={hi?{fontWeight:700}:{}}>{v}</Mn>
           </div>)}
           <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.7}}>
-            📐 <span style={{color:T.gold}}>Rule of 72:</span> Your money doubles every <span style={{color:T.goldLight}}>{doubleYears} years</span> at {annualPct.toFixed(1)}%
+            📐 <span style={{color:T.gold}}>Rule of 72:</span> Your money doubles every <span style={{color:T.goldLight}}>{doubleYears} years</span> at {effectiveAnnualRate.toFixed(2)}% effective annual
           </div>
         </Card>
       </div>
 
+      {/* Charts */}
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>📊 Capital vs. Interest — The Snowball Effect</div>
@@ -354,7 +335,7 @@ function CompoundTab(){
               <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}} barCategoryGap="10%">
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtFull(v)} width={82}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
                 <Tooltip content={<StackedTT/>}/>
                 <Legend formatter={n=>n==="contributed"?"Capital Invested":"Interest Earned"} wrapperStyle={{fontSize:11,color:T.muted,paddingTop:8}}/>
                 <Bar dataKey="contributed" stackId="a" fill={T.blue} opacity={0.85} name="contributed"/>
@@ -370,71 +351,149 @@ function CompoundTab(){
               <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtFull(v)} width={82}/>
-                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmtFull(v),"Annual Interest"]}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
+                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmt(v),"Annual Interest"]}/>
                 <Bar dataKey="interestAnual" fill={T.green} opacity={0.85} radius={[3,3,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
-        {/* Ad between charts and table */}
         <AdBanner size="rectangle"/>
       </div>
     </div>
 
+    {/* Milestones */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
       {[5,10,20,cfg.years].filter((y,i,a)=>a.indexOf(y)===i&&y<=cfg.years).slice(0,4).map(y=>{
         const row=data[y-1];if(!row)return null;
         const intAhead=row.interest>row.contributed;
         return<Card key={y} s={{padding:14,textAlign:"center",background:`${T.gold}06`,border:`1px solid ${T.goldDim}33`}}>
           <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>Year {y}</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:4}}>{fmtFull(row.balance)}</div>
-          <div style={{fontSize:10,color:T.green,marginBottom:3}}>×{row.mult} initial investment</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:4,wordBreak:"break-all"}}>{fmt(row.balance)}</div>
+          <div style={{fontSize:10,color:T.green,marginBottom:3}}>×{row.mult} initial</div>
           {intAhead?<div style={{fontSize:10,color:T.green,padding:"2px 6px",background:`${T.green}15`,borderRadius:10}}>Interest &gt; Capital ✨</div>
             :<div style={{fontSize:10,color:T.muted}}>{row.balance>0?((row.interest/row.balance)*100).toFixed(0):0}% from interest</div>}
         </Card>;
       })}
     </div>
 
-    <Card s={{padding:0}}>
+    {/* ── FIX 3: IMPROVED TABLE with highlighted interest column ── */}
+    <Card s={{padding:0,overflow:"hidden"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${T.border}`}}>
-        <div><div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>📋 Year-by-Year Detail</div></div>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>📋 Year-by-Year Breakdown</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:3}}>
+            <span style={{color:T.green,fontWeight:600}}>Green column = interest generated</span> — this is what pays for your lifestyle
+          </div>
+        </div>
         <button className="seg" onClick={()=>setShowTable(v=>!v)}>{showTable?"Hide Table":"Show Table"}</button>
       </div>
       {showTable&&<div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-          <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
-            {["Year","Annual Contribution","Interest This Year","Cumul. Interest","Final Balance","×Initial"].map(h=>(
-              <th key={h} style={{padding:"10px 14px",textAlign:"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,...(h==="Year"?{textAlign:"center"}:{})}}>{h}</th>
-            ))}
-          </tr></thead>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:800}}>
+          <thead>
+            <tr style={{background:T.accent}}>
+              <th style={{padding:"12px 16px",textAlign:"center",fontSize:10,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>Year</th>
+              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.blue,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>Annual Contribution</th>
+              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.green,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,background:`${T.green}12`,borderBottom:`2px solid ${T.green}44`}}>✨ Interest This Year</th>
+              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.green,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,background:`${T.green}08`,borderBottom:`2px solid ${T.green}33`}}>Cumulative Interest</th>
+              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.gold,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>Final Balance</th>
+              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>×Initial</th>
+            </tr>
+          </thead>
           <tbody>
             {data.map(r=>{
               const hi=r.year%5===0||r.year===cfg.years;
-              return<tr key={r.year} className="trow" style={{borderBottom:`1px solid ${T.border}22`,background:hi?`${T.gold}07`:"transparent"}}>
-                <td style={{padding:"9px 14px",textAlign:"center"}}>
-                  <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:26,height:26,borderRadius:"50%",background:hi?`${T.gold}33`:T.accent,border:`1px solid ${hi?T.goldDim:T.border}`}}>
-                    <Mn sz={10} c={hi?T.gold:T.muted}>{r.year}</Mn>
+              const intAhead=r.interest>r.contributed;
+              const intPct=r.balance>0?((r.interestAnual/r.balance)*100).toFixed(1):0;
+              return<tr key={r.year} style={{borderBottom:`1px solid ${T.border}22`,background:hi?`${T.gold}09`:"transparent",transition:"background 0.15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background=hi?`${T.gold}12`:`${T.accent}88`}
+                onMouseLeave={e=>e.currentTarget.style.background=hi?`${T.gold}09`:"transparent"}>
+                <td style={{padding:"10px 16px",textAlign:"center"}}>
+                  <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:28,height:28,borderRadius:"50%",background:intAhead?`${T.green}25`:hi?`${T.gold}33`:T.accent,border:`1px solid ${intAhead?T.green:hi?T.goldDim:T.border}`}}>
+                    <Mn sz={10} c={intAhead?T.green:hi?T.gold:T.muted}>{r.year}</Mn>
+                  </div>
+                  {intAhead&&r.year===data.findIndex(d=>d.interest>d.contributed)+1&&<div style={{fontSize:8,color:T.green,marginTop:2,whiteSpace:"nowrap"}}>↑ crossover</div>}
+                </td>
+                <td style={{padding:"10px 16px",textAlign:"right"}}>
+                  <Mn sz={12} c={T.blue}>{fmt(annualContrib)}</Mn>
+                </td>
+                {/* HIGHLIGHTED INTEREST COLUMN */}
+                <td style={{padding:"10px 16px",textAlign:"right",background:`${T.green}08`,borderLeft:`1px solid ${T.green}22`,borderRight:`1px solid ${T.green}22`}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
+                    <Mn sz={13} c={T.green} s={{fontWeight:600}}>{fmt(r.interestAnual)}</Mn>
+                    <div style={{fontSize:9,color:T.green,opacity:0.7}}>{intPct}% of balance/yr</div>
+                    <div style={{width:Math.min((r.interestAnual/(data[data.length-1]?.interestAnual||1))*60,60),height:2,background:T.green,borderRadius:2,opacity:0.5}}/>
                   </div>
                 </td>
-                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmtFull(annualContrib)}</Mn></td>
-                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={12} c={T.green}>{fmtFull(r.interestAnual)}</Mn></td>
-                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={12} c={`${T.green}bb`}>{fmtFull(r.interest)}</Mn></td>
-                <td style={{padding:"9px 14px",textAlign:"right"}}><Mn sz={hi?14:12} c={hi?T.gold:T.text} s={hi?{fontWeight:700}:{}}>{fmtFull(r.balance)}</Mn></td>
-                <td style={{padding:"9px 14px",textAlign:"right"}}><span style={{fontSize:11,padding:"2px 8px",borderRadius:20,background:r.mult>=5?`${T.gold}22`:r.mult>=2?`${T.green}15`:`${T.blue}15`,color:r.mult>=5?T.gold:r.mult>=2?T.green:T.blue}}>×{r.mult}</span></td>
+                <td style={{padding:"10px 16px",textAlign:"right",background:`${T.green}04`}}>
+                  <Mn sz={12} c={intAhead?T.green:`${T.green}99`}>{fmt(r.interest)}</Mn>
+                  <div style={{fontSize:9,color:T.muted,marginTop:2}}>{r.balance>0?((r.interest/r.balance)*100).toFixed(0):0}% of balance</div>
+                </td>
+                <td style={{padding:"10px 16px",textAlign:"right"}}>
+                  <Mn sz={hi?14:12} c={hi?T.gold:T.text} s={hi?{fontWeight:700}:{}}>{fmt(r.balance)}</Mn>
+                </td>
+                <td style={{padding:"10px 16px",textAlign:"right"}}>
+                  <span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:r.mult>=10?`${T.gold}22`:r.mult>=5?`${T.gold}15`:r.mult>=2?`${T.green}15`:`${T.blue}15`,color:r.mult>=10?T.gold:r.mult>=5?T.gold:r.mult>=2?T.green:T.blue,fontWeight:r.mult>=5?700:400}}>×{r.mult}</span>
+                </td>
               </tr>;
             })}
           </tbody>
-          <tfoot><tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
-            <td style={{padding:"12px 14px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
-            <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmtFull(annualContrib*cfg.years)}</Mn></td>
-            <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>—</Mn></td>
-            <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={13} c={T.green} s={{fontWeight:700}}>{fmtFull(last.interest||0)}</Mn></td>
-            <td style={{padding:"12px 14px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmtFull(last.balance||0)}</Mn></td>
-            <td style={{padding:"12px 14px",textAlign:"right"}}><span style={{fontSize:12,padding:"3px 10px",borderRadius:20,background:`${T.gold}22`,color:T.gold,border:`1px solid ${T.goldDim}`,fontWeight:700}}>×{last.mult}</span></td>
-          </tr></tfoot>
+          <tfoot>
+            <tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
+              <td style={{padding:"12px 16px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmt(annualContrib*cfg.years)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}10`}}><Mn sz={12} c={T.muted}>—</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}06`}}><Mn sz={14} c={T.green} s={{fontWeight:700}}>{fmt(last.interest||0)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmt(last.balance||0)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><span style={{fontSize:12,padding:"3px 10px",borderRadius:20,background:`${T.gold}22`,color:T.gold,border:`1px solid ${T.goldDim}`,fontWeight:700}}>×{last.mult}</span></td>
+            </tr>
+          </tfoot>
         </table>
       </div>}
+    </Card>
+
+    {/* ── FIX 4: AGE & COMPOUNDING SECTION ── */}
+    <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
+      <div style={{textAlign:"center",marginBottom:24}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold,marginBottom:8}}>⏰ The Cost of Waiting</div>
+        <div style={{fontSize:13,color:T.muted,maxWidth:600,margin:"0 auto",lineHeight:1.7}}>
+          Investing <strong style={{color:T.text}}>$1,000/month</strong> at <strong style={{color:T.green}}>10% annual</strong> (S&P 500 / VOO historical average), compounded monthly until age 65.
+          <br/>Every decade you wait costs you <span style={{color:T.red}}>millions</span>.
+        </div>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
+        {AGE_EXAMPLES.slice(0,4).map(({age,years,value})=>{
+          const best=AGE_EXAMPLES[0].value;
+          const pct=Math.round((value/best)*100);
+          const missed=best-value;
+          return<div key={age} style={{background:T.card,borderRadius:12,padding:16,border:`1px solid ${age<=25?T.goldDim:age<=35?T.border:T.border}44`,position:"relative",overflow:"hidden"}}>
+            {age===20&&<div style={{position:"absolute",top:0,right:0,background:T.gold,color:"#0a0c10",fontSize:9,padding:"3px 8px",borderRadius:"0 12px 0 8px",fontWeight:700}}>BEST</div>}
+            <div style={{fontSize:11,color:T.muted,marginBottom:6}}>Start at <span style={{color:T.text,fontWeight:600}}>age {age}</span></div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:age<=25?T.gold:age<=35?T.green:T.muted,fontWeight:700,marginBottom:4,wordBreak:"break-all"}}>{fmt(value)}</div>
+            <div style={{fontSize:10,color:T.muted,marginBottom:8}}>{years} years of investing</div>
+            <div style={{height:3,background:T.border,borderRadius:2,marginBottom:6}}><div style={{height:"100%",width:`${pct}%`,background:age<=25?T.gold:age<=35?T.green:T.muted,borderRadius:2}}/></div>
+            {age>20&&<div style={{fontSize:10,color:T.red}}>−{fmt(missed)} vs age 20</div>}
+          </div>;
+        })}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+        {AGE_EXAMPLES.slice(4).map(({age,years,value})=>{
+          const best=AGE_EXAMPLES[0].value;
+          const missed=best-value;
+          return<div key={age} style={{background:T.card,borderRadius:12,padding:14,border:`1px solid ${T.border}44`,opacity:0.85}}>
+            <div style={{fontSize:11,color:T.muted,marginBottom:4}}>Start at <span style={{color:T.text,fontWeight:600}}>age {age}</span></div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.muted,fontWeight:700,wordBreak:"break-all"}}>{fmt(value)}</div>
+            <div style={{fontSize:10,color:T.red,marginTop:4}}>−{fmt(missed)} vs age 20</div>
+            <div style={{fontSize:10,color:T.muted,marginTop:2}}>{years} years investing</div>
+          </div>;
+        })}
+      </div>
+      <div style={{marginTop:20,padding:14,background:T.accent,borderRadius:10,border:`1px solid ${T.border}`,textAlign:"center"}}>
+        <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
+          📌 Starting at <span style={{color:T.gold}}>age 20</span> vs <span style={{color:T.red}}>age 40</span> with the same $1,000/month = difference of <span style={{color:T.gold,fontWeight:700}}>{fmt(AGE_EXAMPLES[0].value-AGE_EXAMPLES[4].value)}</span> at retirement.<br/>
+          <span style={{color:T.green}}>The best time to start was yesterday. The second best time is today.</span>
+        </div>
+      </div>
     </Card>
   </div>;
 }
@@ -453,7 +512,6 @@ function WhatIfTab(){
   const sc=(k,v)=>setCustom(p=>({...p,[k]:v}));
   const customFinal=custom.initial*Math.pow(1+custom.cagr/100,custom.years);
   const customData=Array.from({length:custom.years},(_,i)=>({y:`Y${i+1}`,v:Math.round(custom.initial*Math.pow(1+custom.cagr/100,i+1))}));
-
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:20}}>
     <div style={{textAlign:"center",padding:"10px 0 6px"}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:6}}>What if you had invested <span style={{color:T.gold}}>$10,000</span>...</div>
@@ -461,16 +519,16 @@ function WhatIfTab(){
     </div>
     <AdBanner size="leaderboard"/>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-      {SCENARIOS.map(s=><Card key={s.ticker} s={{border:`1px solid ${T.border}`}}>
+      {SCENARIOS.map(s=><Card key={s.ticker}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
           <div><div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.text,marginBottom:2}}>{s.name}</div><div style={{fontSize:10,color:T.muted}}>{s.ticker} · since {s.year}</div></div>
-          <div style={{textAlign:"right"}}><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:s.color,fontWeight:700}}>{fmtFull(s.finalValue)}</div><div style={{fontSize:10,color:s.color}}>CAGR ~{s.cagr}%</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:s.color,fontWeight:700}}>{fmt(s.finalValue)}</div><div style={{fontSize:10,color:s.color}}>CAGR ~{s.cagr}%</div></div>
         </div>
         <div style={{height:3,background:T.border,borderRadius:2,marginBottom:8}}><div style={{height:"100%",width:`${Math.min((s.finalValue/4000000)*100,100)}%`,background:s.color,borderRadius:2}}/></div>
         <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{s.desc}</div>
         <div style={{marginTop:10,padding:"6px 10px",background:T.accent,borderRadius:6,display:"flex",justifyContent:"space-between"}}>
           <span style={{fontSize:11,color:T.muted}}>$10,000 invested</span>
-          <Mn sz={11} c={s.color} s={{fontWeight:700}}>→ {fmtFull(s.finalValue)}</Mn>
+          <Mn sz={11} c={s.color} s={{fontWeight:700}}>→ {fmt(s.finalValue)}</Mn>
         </div>
       </Card>)}
     </div>
@@ -488,7 +546,7 @@ function WhatIfTab(){
         <input type="range" min={1} max={40} step={1} value={custom.years} onChange={e=>sc("years",parseInt(e.target.value))}/>
         <div style={{marginTop:16,padding:14,background:`${T.gold}08`,borderRadius:10,border:`1px solid ${T.goldDim}44`,textAlign:"center"}}>
           <div style={{fontSize:11,color:T.muted,marginBottom:4}}>Your result in {custom.years} years</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,fontWeight:700}}>{fmtFull(customFinal)}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,fontWeight:700}}>{fmt(customFinal)}</div>
           <div style={{fontSize:11,color:T.green,marginTop:4}}>×{(customFinal/custom.initial).toFixed(1)} your initial investment</div>
         </div>
       </Card>
@@ -500,8 +558,8 @@ function WhatIfTab(){
               <defs><linearGradient id="gW" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.gold} stopOpacity={0.4}/><stop offset="95%" stopColor={T.gold} stopOpacity={0}/></linearGradient></defs>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
               <XAxis dataKey="y" tick={{fill:T.muted,fontSize:10}}/>
-              <YAxis tick={{fill:T.muted,fontSize:10}} tickFormatter={v=>fmtFull(v)} width={82}/>
-              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmtFull(v),"Portfolio Value"]}/>
+              <YAxis tick={{fill:T.muted,fontSize:10}} tickFormatter={v=>fmtShort(v)} width={82}/>
+              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmt(v),"Portfolio Value"]}/>
               <Area type="monotone" dataKey="v" stroke={T.gold} fill="url(#gW)" strokeWidth={2.5}/>
             </AreaChart>
           </ResponsiveContainer>
@@ -511,7 +569,7 @@ function WhatIfTab(){
   </div>;
 }
 
-// ── SCORECARD (PREMIUM) ────────────────────────────────────────────────────────
+// ── SCORECARD ─────────────────────────────────────────────────────────────────
 function MRow({c,value,onChange,locked}){
   const s=sm(c,value),pass=c.invert?value<=c.threshold:value>=c.threshold;
   return<div style={{display:"grid",gridTemplateColumns:"1fr 85px 50px 28px",alignItems:"center",gap:8,padding:"8px 0",borderBottom:`1px solid ${T.border}22`}}>
@@ -527,30 +585,22 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const [info,setInfo]=useState(null);
   const [err,setErr]=useState("");
   const [locked,setLocked]=useState(false);
-  const score=calcScore(m,moat);
-  const g=grade(score);
-  const catS=Object.entries(CRITERIA).map(([cat,cs])=>({
-    cat:cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet",
-    s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length),
-    weight:cat==="growth"?35:cat==="profitability"?35:cat==="cashflow"?20:10,
-  }));
+  const score=calcScore(m,moat);const g=grade(score);
+  const catS=Object.entries(CRITERIA).map(([cat,cs])=>({cat:cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet",s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length)}));
   const radarD=MOAT_KEYS.map(k=>({subject:k.split(" ")[0],value:moat[k],fullMark:5}));
 
   const analyze=async()=>{
     if(!company.trim()){setErr("Enter a ticker first.");return;}
-    if(!canAnalyze()){return;}
+    if(!canAnalyze())return;
     setLoading(true);setErr("");setInfo(null);setLocked(false);
     try{
       const p=await callAI(`You are a Buffett/Munger investment analyst. Analyze "${company}" using real data up to your knowledge cutoff.
-For FCF: use FCF GROWTH RATE (3-5Y CAGR %) — NOT a ratio. E.g. DUOL FCF grew from near-zero to $200M+, that is 60%+ CAGR.
-Include analyst consensus from Yahoo Finance, TradingView, Wall Street.
+FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. E.g. DUOL FCF grew from near-zero to $200M+, ~60%+ CAGR.
+Include analyst consensus: rating (Strong Buy/Buy/Hold/Sell), price target, upside %, number of analysts.
 Respond ONLY with valid JSON, no markdown:
-{"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR % number>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<Technology|Healthcare|Consumer|Finance|Industrials|Energy|Other>","summary":"<2-3 sentences: thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"},"analystConsensus":{"rating":"<Strong Buy|Buy|Overweight|Hold|Underweight|Sell>","priceTarget":"<e.g. $120>","upsideDownside":"<e.g. +18% upside>","numAnalysts":"<e.g. 24 analysts>","revenueNextYear":"<e.g. +22% YoY>","epsNextYear":"<e.g. +31% YoY>","source":"<source>"}}`);
-      setM(prev=>({...prev,...p.metrics}));
-      setMoat(prev=>({...prev,...p.moat}));
-      if(p.sector)setSector(p.sector);
-      setInfo(p);setLocked(true);
-      onAnalysis();
+{"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR % number>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"},"analystConsensus":{"rating":"<Strong Buy|Buy|Overweight|Hold|Underweight|Sell>","priceTarget":"<e.g. $120>","upsideDownside":"<e.g. +18% upside>","numAnalysts":"<e.g. 24 analysts>","revenueNextYear":"<e.g. +22% YoY>","epsNextYear":"<e.g. +31% YoY>","source":"<source>"}}`);
+      setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
+      if(p.sector)setSector(p.sector);setInfo(p);setLocked(true);onAnalysis();
     }catch(e){setErr(`Error: ${e.message||"Could not analyze."}`);}
     setLoading(false);
   };
@@ -561,16 +611,16 @@ Respond ONLY with valid JSON, no markdown:
     {l:"FCF Growth Rate ≥ 15%",p:m.fcfGrowth>=15},{l:"FCF Margin ≥ 15%",p:m.fcfMarginPct>=15},
     {l:"Debt/EBITDA ≤ 2x",p:m.debtEbitda<=2},{l:"Avg Moat ≥ 3/5",p:Object.values(moat).reduce((a,v)=>a+v,0)/MOAT_KEYS.length>=3},
   ];
-  const ratingColor=r=>{if(!r)return T.muted;if(r.includes("Buy")||r.includes("Over"))return T.green;if(r.includes("Sell")||r.includes("Under"))return T.red;return T.gold;};
+
+  const ratingColor=r=>{if(!r)return T.muted;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return T.green;if(r.includes("Sell")||r.includes("Under"))return T.red;return T.gold;};
+  const ratingBg=r=>{if(!r)return T.border;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return`${T.green}20`;if(r.includes("Sell")||r.includes("Under"))return`${T.red}20`;return`${T.gold}20`;};
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
-    {/* Premium badge */}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}55`,borderRadius:8}}>
-      <span style={{fontSize:12,color:T.gold}}>🎯 <strong>AI Stock Analyzer</strong> — Deep fundamental analysis powered by AI</span>
-      <span style={{fontSize:11,color:T.muted}}>2 free analyses · then subscribe for unlimited</span>
+      <span style={{fontSize:12,color:T.gold}}>🎯 <strong>AI Stock Analyzer</strong> — Buffett/Munger fundamental analysis + Wall Street consensus</span>
+      <span style={{fontSize:11,color:T.muted}}>2 free · then subscribe</span>
     </div>
 
-    {/* Search */}
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:200}}>
@@ -583,13 +633,43 @@ Respond ONLY with valid JSON, no markdown:
         </button>
         {locked&&<button className="seg" onClick={()=>setLocked(false)} style={{height:44,color:T.gold,borderColor:T.goldDim}}>🔓 Unlock</button>}
       </div>
-      {!info&&!loading&&!err&&<div style={{textAlign:"center",paddingTop:10,fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`,marginTop:12}}>Enter any ticker → AI will analyze fundamentals, moat, and analyst forecasts</div>}
+      {!info&&!loading&&!err&&<div style={{textAlign:"center",paddingTop:10,fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`,marginTop:12}}>
+        Enter any ticker → AI analyzes fundamentals, moat, and Wall Street consensus (Buy/Hold/Sell + price target)
+      </div>}
       {loading&&<div style={{textAlign:"center",padding:12,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Analyzing <strong>{company}</strong>...</div>}
       {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
       {locked&&<div style={{padding:"6px 10px",background:`${T.green}10`,borderRadius:6,fontSize:11,color:T.green,border:`1px solid ${T.green}33`,marginTop:10}}>🔒 Metrics locked to AI data — click Unlock to edit</div>}
     </Card>
 
     {info&&<>
+      {/* ── FIX 5: ANALYST CONSENSUS — Buy/Hold/Sell prominently shown ── */}
+      {info.analystConsensus&&<div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:16,alignItems:"stretch"}}>
+        {/* Big rating badge */}
+        <div style={{background:ratingBg(info.analystConsensus.rating),border:`2px solid ${ratingColor(info.analystConsensus.rating)}44`,borderRadius:12,padding:"20px 28px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minWidth:160}}>
+          <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Wall St. Consensus</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:ratingColor(info.analystConsensus.rating),fontWeight:700,marginBottom:4,textAlign:"center"}}>{info.analystConsensus.rating||"—"}</div>
+          <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{info.analystConsensus.numAnalysts||""}</div>
+          <div style={{fontSize:18,color:T.gold,fontWeight:700}}>{info.analystConsensus.priceTarget||"—"}</div>
+          <div style={{fontSize:11,color:(info.analystConsensus.upsideDownside||"").startsWith("+")?T.green:T.red,marginTop:4}}>{info.analystConsensus.upsideDownside||""}</div>
+        </div>
+        {/* Forecast grid */}
+        <Card s={{background:`${T.blue}08`,border:`1px solid ${T.blue}33`,padding:16}}>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.blue,marginBottom:12}}>📡 Analyst Forecasts — Next 12 Months</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:10}}>
+            {[
+              {l:"Revenue Growth (next yr)",v:info.analystConsensus.revenueNextYear,c:T.green},
+              {l:"EPS Growth (next yr)",v:info.analystConsensus.epsNextYear,c:T.green},
+              {l:"Price Target",v:info.analystConsensus.priceTarget,c:T.gold},
+              {l:"Upside / Downside",v:info.analystConsensus.upsideDownside,c:(info.analystConsensus.upsideDownside||"").startsWith("+")?T.green:T.red},
+            ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
+              <Mn sz={15} c={c} s={{fontWeight:600}}>{v||"—"}</Mn>
+            </div>)}
+          </div>
+          <div style={{fontSize:10,color:T.muted}}>Source: {info.analystConsensus.source||"Yahoo Finance / Wall Street consensus"} · Based on AI knowledge cutoff</div>
+        </Card>
+      </div>}
+
       <div style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
         <Card s={{textAlign:"center",padding:18}}>
           <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Quality Score</div>
@@ -615,16 +695,6 @@ Respond ONLY with valid JSON, no markdown:
             </div>}
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{(info.catalysts||[]).map((c,i)=><span key={i} style={{fontSize:11,padding:"4px 10px",borderRadius:20,background:`${T.green}15`,color:T.green,border:`1px solid ${T.green}33`}}>✓ {c}</span>)}</div>
           </Card>
-          {info.analystConsensus&&<Card s={{background:`${T.blue}08`,border:`1px solid ${T.blue}33`}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.blue,marginBottom:14}}>📡 Wall Street Analyst Consensus</div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:10}}>
-              {[{l:"Consensus Rating",v:info.analystConsensus.rating,c:ratingColor(info.analystConsensus.rating)},{l:"Price Target",v:info.analystConsensus.priceTarget,c:T.gold},{l:"Upside / Downside",v:info.analystConsensus.upsideDownside,c:(info.analystConsensus.upsideDownside||"").startsWith("+")?T.green:T.red},{l:"# of Analysts",v:info.analystConsensus.numAnalysts,c:T.muted},{l:"Revenue (next yr)",v:info.analystConsensus.revenueNextYear,c:T.green},{l:"EPS (next yr)",v:info.analystConsensus.epsNextYear,c:T.green}].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
-                <Mn sz={13} c={c} s={{fontWeight:600}}>{v||"—"}</Mn>
-              </div>)}
-            </div>
-            <div style={{fontSize:10,color:T.muted}}>Source: {info.analystConsensus.source||"Yahoo Finance / Wall Street consensus"} · Based on AI knowledge cutoff</div>
-          </Card>}
         </div>
       </div>
       <AdBanner size="leaderboard"/>
@@ -642,9 +712,7 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {Object.entries(CRITERIA).map(([cat,cs])=><Card key={cat}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold}}>
-              {cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow (Growth)":"🏦 Balance Sheet"}
-            </div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold}}>{cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow (Growth)":"🏦 Balance Sheet"}</div>
             {locked&&<span style={{fontSize:9,color:T.muted,background:T.accent,padding:"2px 6px",borderRadius:4}}>🔒 locked</span>}
           </div>
           {cs.map(c=><MRow key={c.key} c={c} value={m[c.key]||0} onChange={(k,v)=>setM(p=>({...p,[k]:v}))} locked={locked}/>)}
@@ -677,7 +745,7 @@ Respond ONLY with valid JSON, no markdown:
   </div>;
 }
 
-// ── EXPECTED RETURN (AI-POWERED) ──────────────────────────────────────────────
+// ── EXPECTED RETURN ───────────────────────────────────────────────────────────
 function ReturnTab({onAnalysis,canAnalyze}){
   const [ticker,setTicker]=useState("");
   const [amount,setAmount]=useState(10000);
@@ -691,15 +759,14 @@ function ReturnTab({onAnalysis,canAnalyze}){
 
   const analyze=async()=>{
     if(!ticker.trim()){setErr("Enter a ticker first.");return;}
-    if(!canAnalyze()){return;}
+    if(!canAnalyze())return;
     setLoading(true);setErr("");setSummary("");
     try{
-      const p=await callAI(`You are an investment analyst. For the stock "${ticker}", estimate the expected annual return components and valuation. Use real data up to your knowledge cutoff. Include Wall Street analyst consensus forecasts (revenue growth, EPS, price target) from Yahoo Finance / FactSet.
+      const p=await callAI(`You are an investment analyst. For the stock "${ticker}", estimate the expected annual return components and valuation based on real data and Wall Street analyst consensus.
 Respond ONLY with valid JSON, no markdown:
-{"rg":<revenue growth contribution to return, number 0-40>,"me":<margin expansion contribution, number -5 to 10>,"mx":<multiple expansion/contraction, number -10 to 15>,"dv":<dividend yield, number 0-6>,"pe":<current P/E ratio, number>,"fg":<analyst consensus EPS growth % next 3Y, number>,"summary":"<2-3 sentences on expected return thesis for ${ticker}, including analyst consensus price target and upside>","priceTarget":"<e.g. $185>","upsideDownside":"<e.g. +22% upside>","analystRating":"<Strong Buy|Buy|Hold|Sell>"}`);
+{"rg":<revenue growth contribution to return, number 0-40>,"me":<margin expansion, number -5 to 10>,"mx":<multiple expansion/contraction, number -10 to 15>,"dv":<dividend yield, number 0-6>,"pe":<current P/E ratio, number>,"fg":<analyst consensus EPS growth % next 3Y, number>,"summary":"<2-3 sentences on expected return thesis for ${ticker}, including analyst price target and upside>"}`);
       setInp({rg:p.rg||18,me:p.me||2,mx:p.mx||3,dv:p.dv||0,pe:p.pe||25,fg:p.fg||15});
-      setSummary(p.summary||"");
-      onAnalysis();
+      setSummary(p.summary||"");onAnalysis();
     }catch(e){setErr(`Error: ${e.message||"Could not analyze."}`);}
     setLoading(false);
   };
@@ -713,22 +780,14 @@ Respond ONLY with valid JSON, no markdown:
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10}}>📐 Expected Return Framework</div>
       <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:16}}>
-        Enter a ticker and amount — AI will pull analyst consensus forecasts and model your expected return using the <span style={{color:T.text}}>Revenue Growth + Margin + Multiple + Dividends</span> framework.
+        Enter a ticker — AI pulls analyst consensus and models your expected return: <span style={{color:T.green}}>Revenue Growth</span> + <span style={{color:T.blue}}>Margin Expansion</span> + <span style={{color:T.gold}}>Multiple Expansion</span> + <span style={{color:T.muted}}>Dividends</span>.
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:12,alignItems:"flex-end"}}>
-        <div>
-          <Lbl>Ticker</Lbl>
-          <input type="text" value={ticker} onChange={e=>setTicker(e.target.value.toUpperCase())} placeholder="NVDA, AAPL, MSFT..." onKeyDown={e=>e.key==="Enter"&&analyze()}/>
-        </div>
-        <div>
-          <Lbl>Initial Investment</Lbl>
-          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span><input type="number" value={amount} min={100} step={100} onChange={e=>setAmount(parseFloat(e.target.value)||0)} style={{fontWeight:700}}/></div>
-        </div>
-        <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 20px"}}>
-          {loading?<span className="sp">⟳</span>:"📐 Analyze"}
-        </button>
+        <div><Lbl>Ticker</Lbl><input type="text" value={ticker} onChange={e=>setTicker(e.target.value.toUpperCase())} placeholder="NVDA, AAPL, MSFT..." onKeyDown={e=>e.key==="Enter"&&analyze()}/></div>
+        <div><Lbl>Initial Investment</Lbl><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span><input type="number" value={amount} min={100} step={100} onChange={e=>setAmount(parseFloat(e.target.value)||0)} style={{fontWeight:700}}/></div></div>
+        <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 20px"}}>{loading?<span className="sp">⟳</span>:"📐 Analyze"}</button>
       </div>
-      {loading&&<div style={{textAlign:"center",padding:10,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Pulling analyst consensus for <strong>{ticker}</strong>...</div>}
+      {loading&&<div style={{textAlign:"center",padding:10,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Analyzing <strong>{ticker}</strong>...</div>}
       {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
       {summary&&<div style={{marginTop:12,padding:12,background:T.accent,borderRadius:8,fontSize:12,color:T.text,lineHeight:1.7,border:`1px solid ${T.border}`}}>{summary}</div>}
     </Card>
@@ -736,19 +795,14 @@ Respond ONLY with valid JSON, no markdown:
     <div style={{display:"grid",gridTemplateColumns:"310px 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:16}}>
-            {ticker?`📈 ${ticker} — Return Breakdown`:"📈 Return Breakdown"}
-          </div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:16}}>{ticker?`📈 ${ticker} — Return Breakdown`:"📈 Return Breakdown"}</div>
           <RS l="Revenue growth" k="rg" min={0} max={40} u="%" c={T.green}/>
           <RS l="Margin expansion" k="me" min={-5} max={10} u="%" c={T.blue}/>
           <RS l="Multiple expansion" k="mx" min={-10} max={15} u="%" c={T.gold}/>
           <RS l="Dividends" k="dv" min={0} max={6} u="%" c={T.muted}/>
           <div style={{background:T.accent,borderRadius:10,padding:16,marginTop:8,border:`1px solid ${T.border}`}}>
             <Lbl>Total Expected Return</Lbl>
-            <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-              <span style={{fontFamily:"'Playfair Display',serif",fontSize:38,color:er>=18?T.green:T.gold,fontWeight:700}}>{er.toFixed(1)}%</span>
-              <span style={{fontSize:12,color:T.muted}}>/year</span>
-            </div>
+            <div style={{display:"flex",alignItems:"baseline",gap:6}}><span style={{fontFamily:"'Playfair Display',serif",fontSize:38,color:er>=18?T.green:T.gold,fontWeight:700}}>{er.toFixed(1)}%</span><span style={{fontSize:12,color:T.muted}}>/year</span></div>
             <div style={{fontSize:11,color:er>=18?T.green:T.red,marginTop:4}}>{er>=20?"✓ Premium ≥20%":er>=18?"✓ Minimum ≥18%":"✗ Below target"}</div>
           </div>
         </Card>
@@ -762,12 +816,8 @@ Respond ONLY with valid JSON, no markdown:
         </Card>
       </div>
       <Card>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:4}}>
-          📈 10-Year Projection{ticker?` — ${ticker}`:""}
-        </div>
-        <div style={{fontSize:11,color:T.muted,marginBottom:16}}>
-          Starting from <strong style={{color:T.gold}}>{fmtFull(amount)}</strong> · <span style={{color:T.gold}}>{er.toFixed(1)}%/yr</span> vs. market at 8%
-        </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:4}}>📈 10-Year Projection{ticker?` — ${ticker}`:""}</div>
+        <div style={{fontSize:11,color:T.muted,marginBottom:16}}>Starting from <strong style={{color:T.gold}}>{fmt(amount)}</strong> · <span style={{color:T.gold}}>{er.toFixed(1)}%/yr</span> vs. market at 8%</div>
         <div style={{height:240}}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={proj}>
@@ -777,15 +827,15 @@ Respond ONLY with valid JSON, no markdown:
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
               <XAxis dataKey="y" tick={{fill:T.muted,fontSize:10}}/>
-              <YAxis tick={{fill:T.muted,fontSize:10}} tickFormatter={v=>fmtFull(v)} width={82}/>
-              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={(v,n)=>[fmtFull(v),n==="p"?`${ticker||"Compounder"} (${er.toFixed(0)}%/yr)`:"Market (8%/yr)"]}/>
+              <YAxis tick={{fill:T.muted,fontSize:10}} tickFormatter={v=>fmtShort(v)} width={82}/>
+              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={(v,n)=>[fmt(v),n==="p"?`${ticker||"Compounder"} (${er.toFixed(0)}%/yr)`:"Market (8%/yr)"]}/>
               <Area type="monotone" dataKey="b" stroke={T.muted} fill="url(#gB)" strokeWidth={1.5} strokeDasharray="4 4"/>
               <Area type="monotone" dataKey="p" stroke={T.gold} fill="url(#gP)" strokeWidth={2.5}/>
             </AreaChart>
           </ResponsiveContainer>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginTop:16}}>
-          {[3,5,10].map(y=>{const pv=amount*Math.pow(1+er/100,y),bv=amount*Math.pow(1.08,y);return<div key={y} style={{background:T.accent,borderRadius:10,padding:14,border:`1px solid ${T.border}`}}><div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>Year {y}</div><Mn sz={18} c={T.gold} s={{display:"block",marginBottom:3}}>{fmtFull(pv)}</Mn><div style={{fontSize:10,color:T.green}}>+{fmtFull(pv-bv)} vs market</div></div>;})}
+          {[3,5,10].map(y=>{const pv=amount*Math.pow(1+er/100,y),bv=amount*Math.pow(1.08,y);return<div key={y} style={{background:T.accent,borderRadius:10,padding:14,border:`1px solid ${T.border}`}}><div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:5}}>Year {y}</div><Mn sz={16} c={T.gold} s={{display:"block",marginBottom:3,wordBreak:"break-all"}}>{fmt(pv)}</Mn><div style={{fontSize:10,color:T.green}}>+{fmt(pv-bv)} vs market</div></div>;})}
         </div>
       </Card>
     </div>
@@ -793,7 +843,7 @@ Respond ONLY with valid JSON, no markdown:
   </div>;
 }
 
-// ── DCF (AI-POWERED) ──────────────────────────────────────────────────────────
+// ── DCF ───────────────────────────────────────────────────────────────────────
 function DCFTab({onAnalysis,canAnalyze}){
   const [ticker,setTicker]=useState("");
   const [loading,setLoading]=useState(false);
@@ -804,15 +854,14 @@ function DCFTab({onAnalysis,canAnalyze}){
 
   const analyze=async()=>{
     if(!ticker.trim()){setErr("Enter a ticker first.");return;}
-    if(!canAnalyze()){return;}
+    if(!canAnalyze())return;
     setLoading(true);setErr("");setDcfSummary("");
     try{
-      const p=await callAI(`You are a financial analyst. For the stock "${ticker}", provide real DCF model inputs based on actual company data up to your knowledge cutoff.
+      const p=await callAI(`You are a financial analyst. For "${ticker}", provide real DCF model inputs based on actual company data up to your knowledge cutoff.
 Respond ONLY with valid JSON, no markdown:
-{"rev":<latest annual revenue in millions USD, number>,"rg":<expected revenue growth rate next 5Y %, number>,"mt":<FCF margin %, number>,"fc":<FCF conversion ratio 0.5-1, number>,"tg":<terminal growth rate 1-4%, number>,"w":<WACC %, number 6-15>,"sh":<shares outstanding in millions, number>,"ca":<cash and equivalents in millions, number>,"de":<total debt in millions, number>,"yr":10,"summary":"<2-3 sentences explaining the DCF assumptions for ${ticker} and what the model tells us about valuation>"}`);
+{"rev":<latest annual revenue in millions USD>,"rg":<expected revenue growth rate next 5Y %>,"mt":<FCF margin %>,"fc":<FCF conversion ratio 0.5-1>,"tg":<terminal growth rate 1-4%>,"w":<WACC % 6-15>,"sh":<shares outstanding in millions>,"ca":<cash in millions>,"de":<total debt in millions>,"yr":10,"summary":"<2-3 sentences explaining the DCF assumptions and valuation conclusion for ${ticker}>"}`);
       setD({rev:p.rev||1000,rg:p.rg||20,mt:p.mt||20,fc:p.fc||0.85,tg:p.tg||2.5,w:p.w||10,sh:p.sh||100,ca:p.ca||200,de:p.de||300,yr:10});
-      setDcfSummary(p.summary||"");
-      onAnalysis();
+      setDcfSummary(p.summary||"");onAnalysis();
     }catch(e){setErr(`Error: ${e.message||"Could not analyze."}`);}
     setLoading(false);
   };
@@ -826,22 +875,16 @@ Respond ONLY with valid JSON, no markdown:
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10}}>📊 AI-Powered DCF Valuation</div>
       <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:16}}>
-        Enter a ticker — AI will pull real company data (revenue, margins, debt, shares) and build the DCF model automatically. A DCF estimates <strong style={{color:T.text}}>intrinsic value per share</strong> by discounting future Free Cash Flows to today's dollars.
+        Enter a ticker — AI fills real company data automatically. A DCF estimates <strong style={{color:T.text}}>intrinsic value per share</strong> by discounting future Free Cash Flows to today's dollars.
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"flex-end"}}>
-        <div>
-          <Lbl>Company Ticker</Lbl>
-          <input type="text" value={ticker} onChange={e=>setTicker(e.target.value.toUpperCase())} placeholder="NVDA, AAPL, DUOL, MSFT..." onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em"}}/>
-        </div>
-        <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 24px"}}>
-          {loading?<span className="sp">⟳</span>:"📊 Build DCF"}
-        </button>
+        <div><Lbl>Company Ticker</Lbl><input type="text" value={ticker} onChange={e=>setTicker(e.target.value.toUpperCase())} placeholder="NVDA, AAPL, DUOL..." onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em"}}/></div>
+        <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 24px"}}>{loading?<span className="sp">⟳</span>:"📊 Build DCF"}</button>
       </div>
       {loading&&<div style={{textAlign:"center",padding:10,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Building DCF for <strong>{ticker}</strong>...</div>}
       {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
       {dcfSummary&&<div style={{marginTop:12,padding:12,background:T.accent,borderRadius:8,fontSize:12,color:T.text,lineHeight:1.7,border:`1px solid ${T.border}`}}>{dcfSummary}</div>}
     </Card>
-
     <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
@@ -852,29 +895,19 @@ Respond ONLY with valid JSON, no markdown:
           <F l="FCF Conversion" k="fc" u="x" min={0.5} max={1} st={0.05}/>
           <F l="Terminal Growth" k="tg" u="%" min={1} max={4} st={0.5}/>
           <F l="WACC" k="w" u="%" min={6} max={15} st={0.5}/>
-          <F l="Projection Years" k="yr" u="" min={5} max={15}/>
+          <F l="Years" k="yr" u="" min={5} max={15}/>
         </Card>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>🏦 Balance Sheet</div>
           <F l="Cash (M$)" k="ca" u="M" min={0} max={200000} st={100}/>
           <F l="Total Debt (M$)" k="de" u="M" min={0} max={200000} st={100}/>
           <F l="Shares (M)" k="sh" u="M" min={1} max={10000} st={10}/>
-          <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.6}}>
-            Equity Value = EV + Cash − Debt<br/>Intrinsic/Share = Equity ÷ Shares
-          </div>
+          <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.6}}>EV = Discounted FCFs + Terminal Value PV<br/>Intrinsic/Share = (EV + Cash − Debt) ÷ Shares</div>
         </Card>
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-          {[
-            {l:"Sum of Discounted FCFs",v:`$${Math.round(sumPV)}M`,c:T.blue,sub:"PV of projected flows"},
-            {l:"Terminal Value (PV)",v:`$${Math.round(tPV)}M`,c:T.gold,sub:`${sumPV+tPV>0?((tPV/(sumPV+tPV))*100).toFixed(0):0}% of total`},
-            {l:"Intrinsic Value / Share",v:`$${ips.toFixed(2)}`,c:T.green,sub:ticker?`${ticker} DCF estimate`:"per share"},
-          ].map(({l,v,c,sub})=><Card key={l} s={{padding:14,textAlign:"center"}}>
-            <Lbl s={{textAlign:"center"}}>{l}</Lbl>
-            <Mn sz={20} c={c}>{v}</Mn>
-            <div style={{fontSize:10,color:T.muted,marginTop:4}}>{sub}</div>
-          </Card>)}
+          {[{l:"Sum of Discounted FCFs",v:`$${Math.round(sumPV)}M`,c:T.blue,sub:"PV of projected flows"},{l:"Terminal Value (PV)",v:`$${Math.round(tPV)}M`,c:T.gold,sub:`${sumPV+tPV>0?((tPV/(sumPV+tPV))*100).toFixed(0):0}% of total`},{l:"Intrinsic Value / Share",v:`$${ips.toFixed(2)}`,c:T.green,sub:ticker?`${ticker} estimate`:"per share"}].map(({l,v,c,sub})=><Card key={l} s={{padding:14,textAlign:"center"}}><Lbl s={{textAlign:"center"}}>{l}</Lbl><Mn sz={20} c={c}>{v}</Mn><div style={{fontSize:10,color:T.muted,marginTop:4}}>{sub}</div></Card>)}
         </div>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>FCF Projections{ticker?` — ${ticker}`:""}</div>
@@ -895,13 +928,7 @@ Respond ONLY with valid JSON, no markdown:
             </ResponsiveContainer>
           </div>
         </Card>
-        <Card s={{padding:14}}>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.muted,lineHeight:2.2}}>
-            <span style={{color:T.gold}}>Enterprise Value</span> = <span style={{color:T.blue}}>${Math.round(sumPV)}M</span> + <span style={{color:T.gold}}>${Math.round(tPV)}M</span> = <span style={{color:T.text,fontWeight:700}}>${Math.round(ev)}M</span>{"   ·   "}
-            <span style={{color:T.gold}}>Equity Value</span> = ${Math.round(eq)}M{"   ·   "}
-            <span style={{color:T.green,fontWeight:700}}>Intrinsic = ${ips.toFixed(2)}/share</span>
-          </div>
-        </Card>
+        <Card s={{padding:14}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.muted,lineHeight:2.2}}><span style={{color:T.gold}}>EV</span> = <span style={{color:T.blue}}>${Math.round(sumPV)}M</span> + <span style={{color:T.gold}}>${Math.round(tPV)}M</span> = <span style={{color:T.text,fontWeight:700}}>${Math.round(ev)}M</span>{"   ·   "}<span style={{color:T.gold}}>Equity</span> = ${Math.round(eq)}M{"   ·   "}<span style={{color:T.green,fontWeight:700}}>Intrinsic = ${ips.toFixed(2)}/share</span></div></Card>
         <AdBanner size="rectangle"/>
       </div>
     </div>
@@ -909,13 +936,7 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[
-  {id:"compound",l:"💰 Compound Calculator"},
-  {id:"whatif",l:"🚀 What If?"},
-  {id:"score",l:"🎯 Analyze a Stock"},
-  {id:"ret",l:"📐 Expected Return"},
-  {id:"dcf",l:"📊 DCF Valuation"},
-];
+const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
 const FREE_LIMIT=2;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
@@ -933,38 +954,19 @@ export default function App(){
 
   useState(()=>{
     const handler=(e)=>{
-      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){
-        localStorage.setItem("compoundr_admin","true");
-        setAdminMode(true);
-        alert("✅ Admin mode ON — unlimited access");
-      }
-      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){
-        localStorage.removeItem("compoundr_admin");
-        setAdminMode(false);
-        alert("🔒 Admin mode OFF");
-      }
+      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){localStorage.setItem("compoundr_admin","true");setAdminMode(true);alert("✅ Admin mode ON — unlimited access");}
+      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){localStorage.removeItem("compoundr_admin");setAdminMode(false);alert("🔒 Admin mode OFF");}
     };
-    window.addEventListener("keydown",handler);
-    return()=>window.removeEventListener("keydown",handler);
+    window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
   });
 
-  const canAnalyze=()=>{
-    const c=getCount();
-    if(c>=FREE_LIMIT){setShowPaywall(true);return false;}
-    return true;
-  };
+  const canAnalyze=()=>{const c=getCount();if(c>=FREE_LIMIT){setShowPaywall(true);return false;}return true;};
   const onAnalysis=()=>{incCount();};
-
-  const handleStart=(targetTab="compound",ticker="")=>{
-    setTab(targetTab||"compound");
-    if(ticker)setCompany(ticker);
-  };
+  const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
 
   return<div style={{minHeight:"100vh",background:T.bg}}>
     <style>{css}</style>
-    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} onGoTo={setTab}/>}
-
-    {/* Navbar — NO external links */}
+    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}}/>}
     <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100}}>
       <div style={{maxWidth:1380,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
@@ -981,14 +983,10 @@ export default function App(){
           </div>
         </div>
         {tab&&<div style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2}}>
-          {TABS.map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
-            style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11}}>
-            {t.l}
-          </button>)}
+          {TABS.map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)} style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11}}>{t.l}</button>)}
         </div>}
       </div>
     </div>
-
     {!tab&&<Hero onStart={handleStart}/>}
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab/>}
@@ -997,16 +995,9 @@ export default function App(){
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="dcf"&&<DCFTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
-
-    {/* Footer ad */}
-    <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}>
-      <AdBanner size="leaderboard"/>
-    </div>
-
+    <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"14px 28px",maxWidth:1380,margin:"0 auto"}}>
-      <div style={{fontSize:9,color:T.muted,textAlign:"center"}}>
-        <span style={{color:T.goldDim}}>Compounder Analyst</span> · Inspired by Buffett · Munger · Educational only — not financial advice.
-      </div>
+      <div style={{fontSize:9,color:T.muted,textAlign:"center"}}><span style={{color:T.goldDim}}>Compounder Analyst</span> · Inspired by Buffett · Munger · Educational only — not financial advice.</div>
     </div>
   </div>;
 }
