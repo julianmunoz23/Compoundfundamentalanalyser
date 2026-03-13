@@ -282,12 +282,20 @@ function calcCompound(cfg){
   });
 }
 
-// Age examples using 10% annual (S&P 500 historical avg), $1000/month, retire at 65
-function calcAgeExample(startAge,monthlyContrib=1000,annualRate=10){
-  const years=65-startAge;const monthlyRate=(annualRate/100)/12;
-  let balance=0;
-  for(let m=0;m<years*12;m++){balance=balance*(1+monthlyRate)+monthlyContrib;}
-  return Math.round(balance);
+// Goal: reach $1,000,000 — how much/month needed starting at each age (by 65)
+// and how many years at $200/month to hit $1M
+function calcMonthlyNeeded(startAge,goal=1000000,annualRate=10){
+  const r=(annualRate/100)/12;
+  const n=(65-startAge)*12;
+  if(n<=0)return Infinity;
+  return Math.round(goal*r/((Math.pow(1+r,n)-1)));
+}
+function calcYearsTo1M(startAge,monthly=200,annualRate=10){
+  const r=(annualRate/100)/12;
+  const goal=1000000;
+  if(monthly<=0)return Infinity;
+  const months=Math.log(1+goal*r/monthly)/Math.log(1+r);
+  return {years:months/12, reachAge:Math.round(startAge+months/12)};
 }
 
 function CompoundTab(){
@@ -318,11 +326,13 @@ function CompoundTab(){
     </div>;
   };
 
-  // Age examples data
-  const AGE_EXAMPLES=[20,25,30,35,40,45,50].map(age=>({
-    age,years:65-age,
-    value:calcAgeExample(age,1000,10),
-    valueVOO:calcAgeExample(age,1000,11),
+  // Million dollar goal data per starting age
+  const MILLION_DATA=[20,25,30,35,40,50].map(age=>({
+    age,
+    yearsTo65:65-age,
+    monthlyNeeded:calcMonthlyNeeded(age),
+    reach200:calcYearsTo1M(age,200),
+    dailyCost:Math.ceil(calcMonthlyNeeded(age)/30),
   }));
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
@@ -521,46 +531,85 @@ function CompoundTab(){
       </div>}
     </Card>
 
-    {/* ── FIX 4: AGE & COMPOUNDING SECTION ── */}
-    <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
-      <div style={{textAlign:"center",marginBottom:24}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold,marginBottom:8}}>⏰ The Cost of Waiting</div>
-        <div style={{fontSize:13,color:T.muted,maxWidth:600,margin:"0 auto",lineHeight:1.7}}>
-          Investing <strong style={{color:T.text}}>$1,000/month</strong> at <strong style={{color:T.green}}>10% annual</strong> (S&P 500 / VOO historical average), compounded monthly until age 65.
-          <br/>Every decade you wait costs you <span style={{color:T.red}}>millions</span>.
+    {/* ── MILLION DOLLAR GOAL SECTION ── */}
+    <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`,padding:0,overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{textAlign:"center",padding:"28px 24px 20px",borderBottom:`1px solid ${T.border}33`}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"5px 14px",marginBottom:14}}>
+          <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>🎯 Your Path to $1,000,000</span>
+        </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.text,marginBottom:10,fontWeight:700}}>
+          How much do you need to save<br/><span style={{color:T.gold}}>to reach your first million?</span>
+        </div>
+        <div style={{fontSize:13,color:T.muted,maxWidth:560,margin:"0 auto",lineHeight:1.7}}>
+          At <strong style={{color:T.green}}>10% annual</strong> (S&P 500 / VOO historical average), compounded monthly.
+          The earlier you start, the less you need to save per month — time does the heavy lifting.
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:16}}>
-        {AGE_EXAMPLES.slice(0,4).map(({age,years,value})=>{
-          const best=AGE_EXAMPLES[0].value;
-          const pct=Math.round((value/best)*100);
-          const missed=best-value;
-          return<div key={age} style={{background:T.card,borderRadius:12,padding:16,border:`1px solid ${age<=25?T.goldDim:age<=35?T.border:T.border}44`,position:"relative",overflow:"hidden"}}>
-            {age===20&&<div style={{position:"absolute",top:0,right:0,background:T.gold,color:"#0a0c10",fontSize:9,padding:"3px 8px",borderRadius:"0 12px 0 8px",fontWeight:700}}>BEST</div>}
-            <div style={{fontSize:11,color:T.muted,marginBottom:6}}>Start at <span style={{color:T.text,fontWeight:600}}>age {age}</span></div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:age<=25?T.gold:age<=35?T.green:T.muted,fontWeight:700,marginBottom:4,wordBreak:"break-all"}}>{fmt(value)}</div>
-            <div style={{fontSize:10,color:T.muted,marginBottom:8}}>{years} years of investing</div>
-            <div style={{height:3,background:T.border,borderRadius:2,marginBottom:6}}><div style={{height:"100%",width:`${pct}%`,background:age<=25?T.gold:age<=35?T.green:T.muted,borderRadius:2}}/></div>
-            {age>20&&<div style={{fontSize:10,color:T.red}}>−{fmt(missed)} vs age 20</div>}
+
+      {/* Cards grid */}
+      <div style={{padding:"20px 24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+        {MILLION_DATA.map(({age,yearsTo65,monthlyNeeded,reach200,dailyCost})=>{
+          const isEasy=age<=25;
+          const isMid=age>25&&age<=35;
+          const cardColor=isEasy?T.gold:isMid?T.green:age<=45?T.blue:T.red;
+          const canReach=reach200.reachAge<=75;
+          return<div key={age} style={{background:T.card,borderRadius:14,overflow:"hidden",border:`1px solid ${cardColor}33`,position:"relative"}}>
+            {/* Top color stripe */}
+            <div style={{height:4,background:cardColor,width:"100%"}}/>
+            <div style={{padding:16}}>
+              {/* Age badge */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <div style={{fontSize:22,fontFamily:"'Playfair Display',serif",color:cardColor,fontWeight:700}}>Age {age}</div>
+                {isEasy&&<div style={{fontSize:9,background:T.gold,color:"#0a0c10",padding:"3px 8px",borderRadius:10,fontWeight:700,letterSpacing:"0.08em"}}>BEST TIME</div>}
+              </div>
+
+              {/* Monthly needed */}
+              <div style={{marginBottom:14,padding:"12px",background:T.accent,borderRadius:10,border:`1px solid ${cardColor}22`}}>
+                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Monthly savings needed</div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:cardColor,fontWeight:700}}>${monthlyNeeded.toLocaleString()}</div>
+                <div style={{fontSize:10,color:T.muted,marginTop:2}}>~${dailyCost}/day · to reach $1M by age 65</div>
+              </div>
+
+              {/* Divider */}
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,textAlign:"center"}}>— or investing just $200/month —</div>
+
+              {/* At $200/month */}
+              <div style={{padding:"10px 12px",background:canReach?`${T.green}10`:`${T.red}08`,borderRadius:8,border:`1px solid ${canReach?T.green:T.red}22`}}>
+                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Reach $1M at age</div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:canReach?T.green:T.red,fontWeight:700}}>Age {reach200.reachAge}</div>
+                <div style={{fontSize:10,color:T.muted,marginTop:2}}>in {reach200.years.toFixed(0)} years of investing</div>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{marginTop:10}}>
+                <div style={{height:3,background:T.border,borderRadius:2}}>
+                  <div style={{height:"100%",width:`${Math.min((MILLION_DATA[0].monthlyNeeded/monthlyNeeded)*100,100)}%`,background:cardColor,borderRadius:2,transition:"width 0.5s"}}/>
+                </div>
+                <div style={{fontSize:9,color:T.muted,marginTop:4,textAlign:"right"}}>{yearsTo65} years until 65</div>
+              </div>
+            </div>
           </div>;
         })}
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-        {AGE_EXAMPLES.slice(4).map(({age,years,value})=>{
-          const best=AGE_EXAMPLES[0].value;
-          const missed=best-value;
-          return<div key={age} style={{background:T.card,borderRadius:12,padding:14,border:`1px solid ${T.border}44`,opacity:0.85}}>
-            <div style={{fontSize:11,color:T.muted,marginBottom:4}}>Start at <span style={{color:T.text,fontWeight:600}}>age {age}</span></div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.muted,fontWeight:700,wordBreak:"break-all"}}>{fmt(value)}</div>
-            <div style={{fontSize:10,color:T.red,marginTop:4}}>−{fmt(missed)} vs age 20</div>
-            <div style={{fontSize:10,color:T.muted,marginTop:2}}>{years} years investing</div>
-          </div>;
-        })}
-      </div>
-      <div style={{marginTop:20,padding:14,background:T.accent,borderRadius:10,border:`1px solid ${T.border}`,textAlign:"center"}}>
-        <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
-          📌 Starting at <span style={{color:T.gold}}>age 20</span> vs <span style={{color:T.red}}>age 40</span> with the same $1,000/month = difference of <span style={{color:T.gold,fontWeight:700}}>{fmt(AGE_EXAMPLES[0].value-AGE_EXAMPLES[4].value)}</span> at retirement.<br/>
-          <span style={{color:T.green}}>The best time to start was yesterday. The second best time is today.</span>
+
+      {/* Bottom insight */}
+      <div style={{margin:"0 24px 24px",padding:16,background:T.accent,borderRadius:12,border:`1px solid ${T.border}`}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,textAlign:"center",marginBottom:14}}>
+          {[
+            {age:20,label:"Starting at 20",monthly:MILLION_DATA[0].monthlyNeeded,c:T.gold},
+            {age:30,label:"Starting at 30",monthly:MILLION_DATA[2].monthlyNeeded,c:T.green},
+            {age:40,label:"Starting at 40",monthly:MILLION_DATA[4].monthlyNeeded,c:T.red},
+          ].map(({label,monthly,c})=>(
+            <div key={label}>
+              <div style={{fontSize:10,color:T.muted,marginBottom:4}}>{label}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700}}>${monthly.toLocaleString()}<span style={{fontSize:11,color:T.muted,fontWeight:400}}>/mo</span></div>
+            </div>
+          ))}
+        </div>
+        <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.8,borderTop:`1px solid ${T.border}33`,paddingTop:12}}>
+          ⏰ Waiting from <span style={{color:T.gold}}>age 20 to age 40</span> means you need to save <span style={{color:T.red,fontWeight:700}}>{Math.round(MILLION_DATA[4].monthlyNeeded/MILLION_DATA[0].monthlyNeeded)}x more per month</span> to reach the same goal.<br/>
+          <span style={{color:T.green}}>Starting at 20 with just ${MILLION_DATA[0].monthlyNeeded}/month (~${Math.ceil(MILLION_DATA[0].monthlyNeeded/30)}/day) is all it takes.</span>
         </div>
       </div>
     </Card>
