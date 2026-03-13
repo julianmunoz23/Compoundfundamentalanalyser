@@ -150,6 +150,75 @@ async function callAI(prompt){
   const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();return JSON.parse(txt);
 }
 
+// ── FINNHUB HELPER — Real-time market data ────────────────────────────────────
+const FH="https://finnhub.io/api/v1";
+async function finnhubGet(path,ticker){
+  const key=import.meta.env.VITE_FINNHUB_KEY;
+  const res=await fetch(`${FH}${path}?symbol=${ticker}&token=${key}`);
+  if(!res.ok)throw new Error(`Finnhub ${res.status}`);
+  return res.json();
+}
+
+async function callFinnhub(ticker){
+  try{
+    const [rec,pt,quote,epsEst,revEst]=await Promise.allSettled([
+      finnhubGet("/stock/recommendation",ticker),
+      finnhubGet("/stock/price-target",ticker),
+      finnhubGet("/quote",ticker),
+      finnhubGet("/stock/eps-estimate",ticker),
+      finnhubGet("/stock/revenue-estimate",ticker),
+    ]);
+
+    // Recommendations — most recent period
+    const recData=rec.status==="fulfilled"&&rec.value?.length?rec.value[0]:null;
+    const totalAnalysts=recData?(recData.strongBuy+recData.buy+recData.hold+recData.sell+recData.strongSell):0;
+    const bullish=recData?(recData.strongBuy+recData.buy):0;
+    const bearish=recData?(recData.sell+recData.strongSell):0;
+    let rating="N/A";
+    if(recData){
+      const score=(recData.strongBuy*5+recData.buy*4+recData.hold*3+recData.sell*2+recData.strongSell*1)/Math.max(totalAnalysts,1);
+      if(score>=4.5)rating="Strong Buy";
+      else if(score>=3.8)rating="Buy";
+      else if(score>=2.8)rating="Hold";
+      else if(score>=2.0)rating="Sell";
+      else rating="Strong Sell";
+    }
+
+    // Price target
+    const ptData=pt.status==="fulfilled"?pt.value:null;
+    const currentPrice=quote.status==="fulfilled"?quote.value?.c:null;
+    const targetMean=ptData?.targetMean||null;
+    const upside=currentPrice&&targetMean?((targetMean-currentPrice)/currentPrice*100).toFixed(1):null;
+
+    // EPS estimate next year
+    const epsData=epsEst.status==="fulfilled"&&epsEst.value?.data?.length?epsEst.value.data[0]:null;
+    const epsGrowth=epsData?.growth!=null?(epsData.growth*100).toFixed(1):null;
+
+    // Revenue estimate next year
+    const revData=revEst.status==="fulfilled"&&revEst.value?.data?.length?revEst.value.data[0]:null;
+    const revGrowth=revData?.growth!=null?(revData.growth*100).toFixed(1):null;
+
+    return{
+      rating,
+      totalAnalysts,
+      bullish,bearish,hold:recData?.hold||0,
+      breakdown:recData?{strongBuy:recData.strongBuy,buy:recData.buy,hold:recData.hold,sell:recData.sell,strongSell:recData.strongSell}:null,
+      currentPrice,
+      targetMean:targetMean?targetMean.toFixed(2):null,
+      targetHigh:ptData?.targetHigh?.toFixed(2)||null,
+      targetLow:ptData?.targetLow?.toFixed(2)||null,
+      upside,
+      epsGrowthNext:epsGrowth?`+${epsGrowth}%`:null,
+      revGrowthNext:revGrowth?`+${revGrowth}%`:null,
+      period:recData?.period||null,
+      source:"Finnhub.io — Live data",
+    };
+  }catch(e){
+    console.warn("Finnhub error:",e.message);
+    return null;
+  }
+}
+
 // ── HERO ──────────────────────────────────────────────────────────────────────
 function Hero({onStart}){
   const TOP=[{t:"NVDA",r:"142%",c:T.green},{t:"MSFT",r:"28%",c:T.green},{t:"AAPL",r:"21%",c:T.green},{t:"COST",r:"38%",c:T.green},{t:"AMZN",r:"81%",c:T.green},{t:"META",r:"194%",c:T.green}];
@@ -583,6 +652,7 @@ function MRow({c,value,onChange,locked}){
 function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze}){
   const [loading,setLoading]=useState(false);
   const [info,setInfo]=useState(null);
+  const [fh,setFh]=useState(null);
   const [err,setErr]=useState("");
   const [locked,setLocked]=useState(false);
   const score=calcScore(m,moat);const g=grade(score);
@@ -592,15 +662,19 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const analyze=async()=>{
     if(!company.trim()){setErr("Enter a ticker first.");return;}
     if(!canAnalyze())return;
-    setLoading(true);setErr("");setInfo(null);setLocked(false);
+    setLoading(true);setErr("");setInfo(null);setFh(null);setLocked(false);
     try{
-      const p=await callAI(`You are a Buffett/Munger investment analyst. Analyze "${company}" using real data up to your knowledge cutoff.
-FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. E.g. DUOL FCF grew from near-zero to $200M+, ~60%+ CAGR.
-Include analyst consensus: rating (Strong Buy/Buy/Hold/Sell), price target, upside %, number of analysts.
-Respond ONLY with valid JSON, no markdown:
-{"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR % number>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"},"analystConsensus":{"rating":"<Strong Buy|Buy|Overweight|Hold|Underweight|Sell>","priceTarget":"<e.g. $120>","upsideDownside":"<e.g. +18% upside>","numAnalysts":"<e.g. 24 analysts>","revenueNextYear":"<e.g. +22% YoY>","epsNextYear":"<e.g. +31% YoY>","source":"<source>"}}`);
-      setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
-      if(p.sector)setSector(p.sector);setInfo(p);setLocked(true);onAnalysis();
+      const [fhResult,aiResult]=await Promise.allSettled([
+        callFinnhub(company),
+        callAI(`You are a Buffett/Munger investment analyst. Analyze "${company}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
+      ]);
+      if(fhResult.status==="fulfilled"&&fhResult.value)setFh(fhResult.value);
+      if(aiResult.status==="fulfilled"){
+        const p=aiResult.value;
+        setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
+        if(p.sector)setSector(p.sector);setInfo(p);
+      }else{throw new Error(aiResult.reason?.message||"AI analysis failed");}
+      setLocked(true);onAnalysis();
     }catch(e){setErr(`Error: ${e.message||"Could not analyze."}`);}
     setLoading(false);
   };
@@ -642,32 +716,57 @@ Respond ONLY with valid JSON, no markdown:
     </Card>
 
     {info&&<>
-      {/* ── FIX 5: ANALYST CONSENSUS — Buy/Hold/Sell prominently shown ── */}
-      {info.analystConsensus&&<div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:16,alignItems:"stretch"}}>
-        {/* Big rating badge */}
-        <div style={{background:ratingBg(info.analystConsensus.rating),border:`2px solid ${ratingColor(info.analystConsensus.rating)}44`,borderRadius:12,padding:"20px 28px",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minWidth:160}}>
-          <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Wall St. Consensus</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:ratingColor(info.analystConsensus.rating),fontWeight:700,marginBottom:4,textAlign:"center"}}>{info.analystConsensus.rating||"—"}</div>
-          <div style={{fontSize:11,color:T.muted,marginBottom:8}}>{info.analystConsensus.numAnalysts||""}</div>
-          <div style={{fontSize:18,color:T.gold,fontWeight:700}}>{info.analystConsensus.priceTarget||"—"}</div>
-          <div style={{fontSize:11,color:(info.analystConsensus.upsideDownside||"").startsWith("+")?T.green:T.red,marginTop:4}}>{info.analystConsensus.upsideDownside||""}</div>
+      {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
+      {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+          <span style={{fontSize:10,color:T.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>🟢 LIVE — Finnhub.io Real-Time Data</span>
+          {fh.period&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
         </div>
-        {/* Forecast grid */}
-        <Card s={{background:`${T.blue}08`,border:`1px solid ${T.blue}33`,padding:16}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.blue,marginBottom:12}}>📡 Analyst Forecasts — Next 12 Months</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:10}}>
-            {[
-              {l:"Revenue Growth (next yr)",v:info.analystConsensus.revenueNextYear,c:T.green},
-              {l:"EPS Growth (next yr)",v:info.analystConsensus.epsNextYear,c:T.green},
-              {l:"Price Target",v:info.analystConsensus.priceTarget,c:T.gold},
-              {l:"Upside / Downside",v:info.analystConsensus.upsideDownside,c:(info.analystConsensus.upsideDownside||"").startsWith("+")?T.green:T.red},
-            ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
-              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
-              <Mn sz={15} c={c} s={{fontWeight:600}}>{v||"—"}</Mn>
-            </div>)}
+        <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20,alignItems:"center"}}>
+          {/* Big rating */}
+          <div style={{textAlign:"center",padding:"16px 10px",background:ratingBg(fh.rating),borderRadius:12,border:`1px solid ${ratingColor(fh.rating)}33`}}>
+            <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Wall St. Consensus</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:ratingColor(fh.rating),fontWeight:700,marginBottom:6}}>{fh.rating}</div>
+            <div style={{fontSize:12,color:T.muted,marginBottom:10}}>{fh.totalAnalysts} analysts</div>
+            {fh.currentPrice&&<div style={{fontSize:13,color:T.text,marginBottom:4}}>Current: <span style={{color:T.gold,fontWeight:700}}>${fh.currentPrice.toFixed(2)}</span></div>}
+            {fh.targetMean&&<div style={{fontSize:13,color:T.text}}>Target: <span style={{color:T.gold,fontWeight:700}}>${fh.targetMean}</span></div>}
+            {fh.upside&&<div style={{fontSize:14,color:parseFloat(fh.upside)>=0?T.green:T.red,fontWeight:700,marginTop:6}}>{parseFloat(fh.upside)>=0?"+":""}{fh.upside}% upside</div>}
           </div>
-          <div style={{fontSize:10,color:T.muted}}>Source: {info.analystConsensus.source||"Yahoo Finance / Wall Street consensus"} · Based on AI knowledge cutoff</div>
-        </Card>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            {/* Analyst breakdown bar */}
+            {fh.breakdown&&<div>
+              <div style={{fontSize:11,color:T.muted,marginBottom:8}}>Analyst Breakdown — {fh.totalAnalysts} total</div>
+              <div style={{display:"flex",borderRadius:8,overflow:"hidden",height:28,gap:1}}>
+                {[{l:"Strong Buy",v:fh.breakdown.strongBuy,c:"#1a9e3f"},{l:"Buy",v:fh.breakdown.buy,c:T.green},{l:"Hold",v:fh.breakdown.hold,c:T.gold},{l:"Sell",v:fh.breakdown.sell,c:"#e67e22"},{l:"Strong Sell",v:fh.breakdown.strongSell,c:T.red}].filter(x=>x.v>0).map(({l,v,c})=>(
+                  <div key={l} title={`${l}: ${v}`} style={{flex:v,background:c,display:"flex",alignItems:"center",justifyContent:"center",minWidth:v>0?24:0}}>
+                    {v>0&&<span style={{fontSize:10,color:"#fff",fontWeight:700}}>{v}</span>}
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
+                {[{l:"Strong Buy",v:fh.breakdown.strongBuy,c:"#1a9e3f"},{l:"Buy",v:fh.breakdown.buy,c:T.green},{l:"Hold",v:fh.breakdown.hold,c:T.gold},{l:"Sell",v:fh.breakdown.sell,c:"#e67e22"},{l:"Strong Sell",v:fh.breakdown.strongSell,c:T.red}].map(({l,v,c})=>(
+                  <div key={l} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:8,height:8,borderRadius:2,background:c}}/><span style={{fontSize:10,color:T.muted}}>{l}: <span style={{color:T.text,fontWeight:600}}>{v}</span></span></div>
+                ))}
+              </div>
+            </div>}
+            {/* Price targets + estimates */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+              {[
+                {l:"Price Target",v:fh.targetMean?`$${fh.targetMean}`:"—",c:T.gold},
+                {l:"Target High",v:fh.targetHigh?`$${fh.targetHigh}`:"—",c:T.green},
+                {l:"Target Low",v:fh.targetLow?`$${fh.targetLow}`:"—",c:T.red},
+                {l:"EPS Growth (est.)",v:fh.epsGrowthNext||"—",c:T.green},
+              ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
+                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
+                <Mn sz={15} c={c} s={{fontWeight:600}}>{v}</Mn>
+              </div>)}
+            </div>
+            <div style={{fontSize:10,color:T.muted}}>Source: Finnhub.io · Live data updated in real-time · {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
+          </div>
+        </div>
+      </div>}
+      {!fh&&info&&<div style={{padding:"10px 14px",background:`${T.muted}10`,border:`1px solid ${T.border}`,borderRadius:8,fontSize:11,color:T.muted}}>
+        ⚠️ Live Finnhub data not available for {company} — check that <code>VITE_FINNHUB_KEY</code> is set in Vercel environment variables.
       </div>}
 
       <div style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
