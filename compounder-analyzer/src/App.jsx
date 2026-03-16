@@ -1520,7 +1520,61 @@ function PortfolioTab(){
   const [loadingAI,setLoadingAI]=useState(false);
   const [err,setErr]=useState("");
   const [showBrokers,setShowBrokers]=useState(false);
+  const [importMode,setImportMode]=useState("manual"); // manual | paste | csv
+  const [pasteText,setPasteText]=useState("");
+  const [importErr,setImportErr]=useState("");
   const setF=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  // Parse pasted text from Excel / Google Sheets
+  // Accepts: TICKER  SHARES  BUY_PRICE  DATE(optional)
+  const parsePaste=()=>{
+    setImportErr("");
+    const lines=pasteText.trim().split("\n").filter(l=>l.trim());
+    const parsed=[];
+    for(const line of lines){
+      const cols=line.trim().split(/[\t,;]+/).map(c=>c.trim());
+      if(cols.length<3){continue;}
+      const ticker=cols[0].toUpperCase().replace(/[^A-Z]/g,"");
+      const shares=parseFloat(cols[1].replace(/[$,]/g,""));
+      const price=parseFloat(cols[2].replace(/[$,]/g,""));
+      const date=cols[3]||new Date().toISOString().split("T")[0];
+      if(!ticker||isNaN(shares)||isNaN(price)||shares<=0||price<=0){continue;}
+      parsed.push({id:Date.now()+Math.random(),ticker,shares,buyPrice:price,date});
+    }
+    if(!parsed.length){setImportErr("Could not parse any rows. Check format: Ticker | Shares | Buy Price");return;}
+    const updated=[...positions,...parsed];
+    setPositions(updated);save(updated);
+    setPasteText("");setImportMode("manual");
+    setImportErr(`✅ Imported ${parsed.length} position${parsed.length>1?"s":""} successfully!`);
+  };
+
+  // Parse CSV file upload
+  const parseCSV=(e)=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      const lines=ev.target.result.trim().split("\n");
+      const parsed=[];
+      // Skip header row if first cell is not a ticker
+      const startRow=isNaN(parseFloat(lines[0]?.split(",")[1]))?1:0;
+      for(let i=startRow;i<lines.length;i++){
+        const cols=lines[i].split(",").map(c=>c.replace(/"/g,"").trim());
+        if(cols.length<3)continue;
+        const ticker=cols[0].toUpperCase().replace(/[^A-Z]/g,"");
+        const shares=parseFloat(cols[1].replace(/[$,]/g,""));
+        const price=parseFloat(cols[2].replace(/[$,]/g,""));
+        const date=cols[3]||new Date().toISOString().split("T")[0];
+        if(!ticker||isNaN(shares)||isNaN(price)||shares<=0||price<=0)continue;
+        parsed.push({id:Date.now()+Math.random(),ticker,shares,buyPrice:price,date});
+      }
+      if(!parsed.length){setImportErr("CSV format not recognized. Expected: Ticker, Shares, Buy Price, Date");return;}
+      const updated=[...positions,...parsed];
+      setPositions(updated);save(updated);
+      setImportErr(`✅ Imported ${parsed.length} position${parsed.length>1?"s":""} from CSV!`);
+      setImportMode("manual");
+    };
+    reader.readAsText(file);
+  };
 
   // Load saved positions from localStorage
   useState(()=>{
@@ -1571,15 +1625,27 @@ function PortfolioTab(){
     setPrices(results);setLoadingPrices(false);
   };
 
-  // AI portfolio analysis
+  // AI portfolio analysis — with 10-stock paywall
   const analyzePortfolio=async()=>{
     if(!positions.length){setErr("Add at least one position first.");return;}
+    // Group for summary (use grouped tickers)
+    const grp=Object.values(positions.reduce((acc,p)=>{
+      if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCost:0};}
+      acc[p.ticker].totalShares+=p.shares;
+      acc[p.ticker].totalCost+=p.shares*p.buyPrice;
+      return acc;
+    },{})).map(g=>({...g,avgCost:g.totalCost/g.totalShares}));
+    // ── PAYWALL: more than FREE_PORTFOLIO_LIMIT unique tickers ──
+    if(grp.length>FREE_PORTFOLIO_LIMIT){
+      setErr(`🔒 Free plan supports up to ${FREE_PORTFOLIO_LIMIT} stocks in AI analysis. Upgrade to Premium for unlimited portfolio analysis.`);
+      return;
+    }
     setLoadingAI(true);setErr("");setAiAnalysis(null);
-    const summary=positions.map(p=>{
+    const summary=grp.map(p=>{
       const lp=prices[p.ticker];
-      const current=lp?lp.price:p.buyPrice;
-      const pnl=((current-p.buyPrice)/p.buyPrice*100).toFixed(1);
-      return`${p.ticker}: ${p.shares} shares @ $${p.buyPrice} buy price, current ~$${current.toFixed(2)}, P&L ${pnl}%`;
+      const current=lp?lp.price:p.avgCost;
+      const pnl=((current-p.avgCost)/p.avgCost*100).toFixed(1);
+      return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%`;
     }).join(" | ");
     try{
       const p=await callAI(`You are a Buffett/Munger portfolio analyst. Analyze this investor's portfolio:
@@ -1604,22 +1670,63 @@ Provide a concise but actionable analysis. Respond ONLY with valid JSON, no mark
     setLoadingAI(false);
   };
 
-  // Calculations
-  const enriched=positions.map(p=>{
-    const lp=prices[p.ticker];
+  // ── FIX 2: Group positions by ticker — avg cost basis ──
+  const FREE_PORTFOLIO_LIMIT=10;
+  const grouped=Object.values(
+    positions.reduce((acc,p)=>{
+      if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCostBasis:0,entries:[]};}
+      acc[p.ticker].totalShares+=p.shares;
+      acc[p.ticker].totalCostBasis+=p.shares*p.buyPrice;
+      acc[p.ticker].entries.push(p);
+      return acc;
+    },{})
+  ).map(g=>({...g,avgCost:g.totalCostBasis/g.totalShares}));
+
+  // Enrich with live prices
+  const enriched=grouped.map(g=>{
+    const lp=prices[g.ticker];
     const currentPrice=lp?lp.price:null;
-    const totalCost=p.shares*p.buyPrice;
-    const currentValue=currentPrice?p.shares*currentPrice:null;
-    const pnlDollar=currentValue?currentValue-totalCost:null;
-    const pnlPct=pnlDollar?((pnlDollar/totalCost)*100):null;
-    return{...p,currentPrice,totalCost,currentValue,pnlDollar,pnlPct,change:lp?.change,changePct:lp?.changePct};
+    const currentValue=currentPrice?g.totalShares*currentPrice:null;
+    const pnlDollar=currentValue?currentValue-g.totalCostBasis:null;
+    const pnlPct=pnlDollar?((pnlDollar/g.totalCostBasis)*100):null;
+    return{...g,currentPrice,currentValue,pnlDollar,pnlPct,change:lp?.change,changePct:lp?.changePct};
   });
 
-  const totalCost=enriched.reduce((a,p)=>a+p.totalCost,0);
-  const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCost),0);
+  const totalCost=enriched.reduce((a,p)=>a+p.totalCostBasis,0);
+  const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCostBasis),0);
   const totalPnL=totalValue-totalCost;
   const totalPnLPct=totalCost>0?(totalPnL/totalCost*100):0;
   const verdictColor=v=>v==="Hold"||v==="Buy More"?T.green:v==="Watch"?T.gold:T.red;
+
+  // ── PIE CHART data ──
+  const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
+  const pieData=enriched.map((p,i)=>{
+    const val=p.currentValue||p.totalCostBasis;
+    return{ticker:p.ticker,value:val,pct:(val/totalValue*100),color:PIE_COLORS[i%PIE_COLORS.length]};
+  }).sort((a,b)=>b.value-a.value);
+
+  // Simple SVG pie chart
+  function PieChart({data,size=220}){
+    const cx=size/2,cy=size/2,r=size*0.38,ir=size*0.22;
+    let angle=-Math.PI/2;
+    const slices=data.map(d=>{
+      const sweep=(d.pct/100)*2*Math.PI;
+      const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
+      angle+=sweep;
+      const x2=cx+r*Math.cos(angle),y2=cy+r*Math.sin(angle);
+      const ix1=cx+ir*Math.cos(angle-sweep),iy1=cy+ir*Math.sin(angle-sweep);
+      const ix2=cx+ir*Math.cos(angle),iy2=cy+ir*Math.sin(angle);
+      const large=sweep>Math.PI?1:0;
+      return{...d,path:`M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${ir} ${ir} 0 ${large} 0 ${ix1} ${iy1} Z`};
+    });
+    return<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {slices.map((s,i)=><path key={i} d={s.path} fill={s.color} opacity={0.9} stroke={T.bg} strokeWidth={1.5}>
+        <title>{s.ticker}: {s.pct.toFixed(1)}%</title>
+      </path>)}
+      <text x={cx} y={cy-6} textAnchor="middle" fill={T.text} style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:700}}>{enriched.length}</text>
+      <text x={cx} y={cy+10} textAnchor="middle" fill={T.muted} style={{fontFamily:"'DM Sans',sans-serif",fontSize:9}}>stocks</text>
+    </svg>;
+  }
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
 
@@ -1659,34 +1766,106 @@ Provide a concise but actionable analysis. Respond ONLY with valid JSON, no mark
 
       {/* Add Position Form */}
       <Card>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>➕ Add Position</div>
-        <Lbl>Ticker</Lbl>
-        <input type="text" value={form.ticker} onChange={e=>setF("ticker",e.target.value.toUpperCase())}
-          placeholder="NVDA, AAPL, MSFT..." onKeyDown={e=>e.key==="Enter"&&addPosition()}
-          style={{marginBottom:12,fontWeight:700,fontSize:15,letterSpacing:"0.05em"}}/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-          <div>
-            <Lbl>Shares</Lbl>
-            <input type="number" value={form.shares} onChange={e=>setF("shares",e.target.value)}
-              placeholder="10" min={0} step={0.001}/>
-          </div>
-          <div>
-            <Lbl>Buy Price ($)</Lbl>
-            <input type="number" value={form.buyPrice} onChange={e=>setF("buyPrice",e.target.value)}
-              placeholder="150.00" min={0} step={0.01}/>
-          </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:14}}>➕ Add Position</div>
+
+        {/* Mode tabs */}
+        <div style={{display:"flex",gap:6,marginBottom:16}}>
+          {[{id:"manual",l:"✏️ Manual"},{id:"paste",l:"📋 Paste from Excel"},{id:"csv",l:"📂 Import CSV"}].map(({id,l})=>(
+            <button key={id} className={`seg ${importMode===id?"seg-on":""}`} onClick={()=>{setImportMode(id);setImportErr("");}}>
+              {l}
+            </button>
+          ))}
         </div>
-        <Lbl>Date Purchased (optional)</Lbl>
-        <input type="date" value={form.date} onChange={e=>setF("date",e.target.value)} style={{marginBottom:16}}/>
-        <button className="btn btn-gold" onClick={addPosition} style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10}}>
-          ➕ Add to Portfolio
-        </button>
+
+        {importErr&&<div style={{padding:"8px 12px",borderRadius:8,fontSize:12,marginBottom:12,
+          background:importErr.startsWith("✅")?`${T.green}15`:`${T.red}15`,
+          color:importErr.startsWith("✅")?T.green:T.red,
+          border:`1px solid ${importErr.startsWith("✅")?T.green:T.red}33`}}>{importErr}</div>}
+
+        {/* MANUAL */}
+        {importMode==="manual"&&<>
+          <Lbl>Ticker</Lbl>
+          <input type="text" value={form.ticker} onChange={e=>setF("ticker",e.target.value.toUpperCase())}
+            placeholder="NVDA, AAPL, MSFT..." onKeyDown={e=>e.key==="Enter"&&addPosition()}
+            style={{marginBottom:12,fontWeight:700,fontSize:15,letterSpacing:"0.05em"}}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+            <div>
+              <Lbl>Shares</Lbl>
+              <input type="number" value={form.shares} onChange={e=>setF("shares",e.target.value)} placeholder="10" min={0} step={0.001}/>
+            </div>
+            <div>
+              <Lbl>Buy Price ($)</Lbl>
+              <input type="number" value={form.buyPrice} onChange={e=>setF("buyPrice",e.target.value)} placeholder="150.00" min={0} step={0.01}/>
+            </div>
+          </div>
+          <Lbl>Date Purchased (optional)</Lbl>
+          <input type="date" value={form.date} onChange={e=>setF("date",e.target.value)} style={{marginBottom:16}}/>
+          <button className="btn btn-gold" onClick={addPosition} style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10}}>
+            ➕ Add to Portfolio
+          </button>
+        </>}
+
+        {/* PASTE FROM EXCEL / GOOGLE SHEETS */}
+        {importMode==="paste"&&<>
+          <div style={{padding:12,background:`${T.blue}10`,borderRadius:8,border:`1px solid ${T.blue}22`,marginBottom:12}}>
+            <div style={{fontSize:11,color:T.blue,fontWeight:600,marginBottom:6}}>📋 How to paste from Excel or Google Sheets:</div>
+            <div style={{fontSize:11,color:T.muted,lineHeight:1.8}}>
+              1. Your spreadsheet must have columns in this order:<br/>
+              <span style={{fontFamily:"'DM Mono',monospace",color:T.text,background:T.accent,padding:"2px 8px",borderRadius:4}}>
+                Ticker | Shares | Buy Price | Date (optional)
+              </span><br/>
+              2. Select your rows (without the header)<br/>
+              3. Copy (Ctrl+C) and paste below (Ctrl+V)
+            </div>
+            <div style={{marginTop:8,padding:"6px 10px",background:T.accent,borderRadius:6,fontSize:10,color:T.muted,fontFamily:"'DM Mono',monospace"}}>
+              Example:<br/>
+              NVDA{"  "}10{"  "}450.00{"  "}2024-01-15<br/>
+              AAPL{"  "}25{"  "}185.50<br/>
+              MSFT{"  "}5{"  "}380.00
+            </div>
+          </div>
+          <textarea value={pasteText} onChange={e=>setPasteText(e.target.value)}
+            placeholder={"Paste your rows here...
+NVDA	10	450.00
+AAPL	25	185.50"}
+            style={{width:"100%",minHeight:140,background:T.accent,border:`1px solid ${T.border}`,color:T.text,borderRadius:8,padding:12,fontFamily:"'DM Mono',monospace",fontSize:12,outline:"none",resize:"vertical",marginBottom:12,lineHeight:1.6}}/>
+          <button className="btn btn-gold" onClick={parsePaste} disabled={!pasteText.trim()} style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10}}>
+            📋 Import Pasted Data
+          </button>
+        </>}
+
+        {/* CSV UPLOAD */}
+        {importMode==="csv"&&<>
+          <div style={{padding:12,background:`${T.gold}08`,borderRadius:8,border:`1px solid ${T.goldDim}33`,marginBottom:12}}>
+            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:6}}>📂 CSV File Format:</div>
+            <div style={{fontSize:11,color:T.muted,lineHeight:1.8}}>
+              Your CSV must have columns: <span style={{fontFamily:"'DM Mono',monospace",color:T.text}}>Ticker, Shares, Buy Price, Date</span><br/>
+              Works with exports from: <span style={{color:T.text}}>Interactive Brokers, TD Ameritrade, Robinhood, Fidelity, Schwab</span><br/>
+              Header row is detected and skipped automatically.
+            </div>
+            <div style={{marginTop:8,padding:"6px 10px",background:T.accent,borderRadius:6,fontSize:10,color:T.muted,fontFamily:"'DM Mono',monospace"}}>
+              Ticker,Shares,Buy Price,Date<br/>
+              NVDA,10,450.00,2024-01-15<br/>
+              AAPL,25,185.50,2024-03-20
+            </div>
+          </div>
+          <label style={{display:"block",cursor:"pointer"}}>
+            <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"28px 20px",textAlign:"center",background:`${T.gold}05`,marginBottom:12}}>
+              <div style={{fontSize:28,marginBottom:8}}>📂</div>
+              <div style={{fontSize:13,color:T.gold,marginBottom:4}}>Click to select your CSV file</div>
+              <div style={{fontSize:11,color:T.muted}}>or drag and drop here</div>
+            </div>
+            <input type="file" accept=".csv,.txt" onChange={parseCSV} style={{display:"none"}}/>
+          </label>
+          <div style={{fontSize:11,color:T.muted,textAlign:"center"}}>Supported: .csv and .txt files from any broker</div>
+        </>}
+
         <div style={{marginTop:12,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.7}}>
-          💾 Your positions are saved automatically in your browser. Click <span style={{color:T.gold}}>Refresh Prices</span> to get live data from Finnhub.
+          💾 Positions save automatically. Click <span style={{color:T.gold}}>Refresh Prices</span> for live data.
         </div>
       </Card>
 
-      {/* Positions Table */}
+      {/* Positions Table + Pie Chart */}
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {positions.length===0
           ?<Card s={{textAlign:"center",padding:48,background:`${T.gold}06`,border:`1px dashed ${T.goldDim}44`}}>
@@ -1694,66 +1873,109 @@ Provide a concise but actionable analysis. Respond ONLY with valid JSON, no mark
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:8}}>Your portfolio is empty</div>
             <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a Buffett/Munger assessment.</div>
           </Card>
-          :<Card s={{padding:0,overflow:"hidden"}}>
-            <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{positions.length} Position{positions.length!==1?"s":""}</div>
-              {!prices[positions[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ Click "Refresh Prices" for live data</div>}
-            </div>
-            <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
-                <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
-                  {["Ticker","Shares","Buy Price","Current","P&L $","P&L %","Day Change","AI Verdict",""].map(h=>(
-                    <th key={h} style={{padding:"10px 14px",textAlign:"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,...(h==="Ticker"||h===""?{textAlign:"center"}:{})}}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>
-                  {enriched.map(p=>{
-                    const verdict=aiAnalysis?.positions?.find(x=>x.ticker===p.ticker);
-                    return<tr key={p.id} style={{borderBottom:`1px solid ${T.border}22`}}
-                      onMouseEnter={e=>e.currentTarget.style.background=T.accent}
-                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                      <td style={{padding:"10px 14px",textAlign:"center"}}>
-                        <div style={{fontWeight:700,fontSize:14,color:T.text,fontFamily:"'DM Mono',monospace"}}>{p.ticker}</div>
-                        {p.date&&<div style={{fontSize:9,color:T.muted}}>{p.date}</div>}
-                      </td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12}>{p.shares}</Mn></td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.buyPrice.toFixed(2)}</Mn></td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}>
-                        {p.currentPrice
-                          ?<Mn sz={13} c={T.gold} s={{fontWeight:700}}>${p.currentPrice.toFixed(2)}</Mn>
-                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
-                      </td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}>
-                        {p.pnlDollar!=null
-                          ?<Mn sz={13} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toFixed(2)}</Mn>
-                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
-                      </td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}>
-                        {p.pnlPct!=null
-                          ?<span style={{fontSize:12,padding:"2px 8px",borderRadius:20,background:p.pnlPct>=0?`${T.green}18`:`${T.red}18`,color:p.pnlPct>=0?T.green:T.red,fontWeight:600}}>{p.pnlPct>=0?"+":""}{p.pnlPct.toFixed(2)}%</span>
-                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
-                      </td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}>
-                        {p.changePct!=null
-                          ?<span style={{fontSize:11,color:p.changePct>=0?T.green:T.red}}>{p.changePct>=0?"+":""}{p.changePct.toFixed(2)}%</span>
-                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
-                      </td>
-                      <td style={{padding:"10px 14px",textAlign:"right"}}>
-                        {verdict
-                          ?<span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:`${verdictColor(verdict.verdict)}18`,color:verdictColor(verdict.verdict),border:`1px solid ${verdictColor(verdict.verdict)}33`,fontWeight:600,whiteSpace:"nowrap"}}>{verdict.verdict}</span>
-                          :<span style={{fontSize:11,color:T.muted}}>Run AI</span>}
-                      </td>
-                      <td style={{padding:"10px 14px",textAlign:"center"}}>
-                        <button onClick={()=>removePosition(p.id)} style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:14,padding:"2px 6px"}}
-                          onMouseEnter={e=>e.currentTarget.style.color=T.red}
-                          onMouseLeave={e=>e.currentTarget.style.color=T.muted}>✕</button>
-                      </td>
-                    </tr>;
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>}
+          :<>
+            {/* ── PIE CHART ── */}
+            <Card s={{padding:18}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🥧 Portfolio Allocation</div>
+              <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:24,alignItems:"center"}}>
+                <PieChart data={pieData} size={200}/>
+                <div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+                    {pieData.map(({ticker,pct,color,value})=>(
+                      <div key={ticker} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",background:T.accent,borderRadius:8}}>
+                        <div style={{width:10,height:10,borderRadius:2,background:color,flexShrink:0}}/>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <Mn sz={12} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                            <Mn sz={12} c={color} s={{fontWeight:700}}>{pct.toFixed(1)}%</Mn>
+                          </div>
+                          <div style={{fontSize:9,color:T.muted}}>${(value).toLocaleString("en-US",{maximumFractionDigits:0})}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {grouped.length>FREE_PORTFOLIO_LIMIT&&<div style={{marginTop:10,padding:"8px 12px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}44`,borderRadius:8,fontSize:11,color:T.gold}}>
+                    🔒 AI analysis limited to {FREE_PORTFOLIO_LIMIT} stocks on free plan. Upgrade for unlimited.
+                  </div>}
+                </div>
+              </div>
+            </Card>
+
+            {/* ── TABLE (grouped by ticker) ── */}
+            <Card s={{padding:0,overflow:"hidden"}}>
+              <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{grouped.length} Stock{grouped.length!==1?"s":""} · {positions.length} Entr{positions.length!==1?"ies":"y"}</div>
+                  <div style={{fontSize:10,color:T.muted,marginTop:2}}>Multiple buys of the same stock are grouped with average cost basis</div>
+                </div>
+                {!prices[positions[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ Click "Refresh Prices" for live data</div>}
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
+                  <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
+                    {["","Ticker","Shares","Avg Cost","Current Price","Total Cost","Current Value","P&L $","P&L %","Today","AI Verdict",""].map((h,i)=>(
+                      <th key={i} style={{padding:"10px 12px",textAlign:i<=1||i===11?"center":"right",fontSize:9,color:h==="P&L $"||h==="P&L %"?T.green:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
+                    ))}
+                  </tr></thead>
+                  <tbody>
+                    {enriched.map((p,idx)=>{
+                      const verdict=aiAnalysis?.positions?.find(x=>x.ticker===p.ticker);
+                      const pc=pieData.find(x=>x.ticker===p.ticker);
+                      return<tr key={p.ticker} style={{borderBottom:`1px solid ${T.border}22`}}
+                        onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+                        onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                        {/* Color dot */}
+                        <td style={{padding:"10px 8px",textAlign:"center"}}>
+                          <div style={{width:8,height:8,borderRadius:"50%",background:pc?.color||T.muted,margin:"0 auto"}}/>
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"center"}}>
+                          <div style={{fontWeight:700,fontSize:14,color:T.text,fontFamily:"'DM Mono',monospace"}}>{p.ticker}</div>
+                          {p.entries?.length>1&&<div style={{fontSize:9,color:T.muted}}>{p.entries.length} buys</div>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12}>{p.totalShares.toFixed(3)}</Mn></td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.avgCost.toFixed(2)}</Mn></td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                          {p.currentPrice?<Mn sz={13} c={T.gold} s={{fontWeight:700}}>${p.currentPrice.toFixed(2)}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.blue}>${p.totalCostBasis.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                          {p.currentValue?<Mn sz={12} c={T.gold}>${p.currentValue.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                          {p.pnlDollar!=null?<Mn sz={13} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                          {p.pnlPct!=null?<span style={{fontSize:12,padding:"2px 8px",borderRadius:20,background:p.pnlPct>=0?`${T.green}18`:`${T.red}18`,color:p.pnlPct>=0?T.green:T.red,fontWeight:600}}>{p.pnlPct>=0?"+":""}{p.pnlPct.toFixed(2)}%</span>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                          {p.changePct!=null?<span style={{fontSize:11,color:p.changePct>=0?T.green:T.red}}>{p.changePct>=0?"+":""}{p.changePct.toFixed(2)}%</span>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                          {verdict?<span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:`${verdictColor(verdict.verdict)}18`,color:verdictColor(verdict.verdict),border:`1px solid ${verdictColor(verdict.verdict)}33`,fontWeight:600,whiteSpace:"nowrap"}}>{verdict.verdict}</span>:<span style={{fontSize:11,color:T.muted}}>Run AI</span>}
+                        </td>
+                        <td style={{padding:"10px 12px",textAlign:"center"}}>
+                          <button onClick={()=>{const updated=positions.filter(pos=>pos.ticker!==p.ticker);setPositions(updated);save(updated);}}
+                            style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:14,padding:"2px 6px"}}
+                            onMouseEnter={e=>e.currentTarget.style.color=T.red}
+                            onMouseLeave={e=>e.currentTarget.style.color=T.muted}
+                            title="Remove all entries for this ticker">✕</button>
+                        </td>
+                      </tr>;
+                    })}
+                  </tbody>
+                  <tfoot><tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
+                    <td colSpan={2} style={{padding:"12px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
+                    <td colSpan={3}/>
+                    <td style={{padding:"12px",textAlign:"right"}}><Mn sz={13} c={T.blue} s={{fontWeight:700}}>${totalCost.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
+                    <td style={{padding:"12px",textAlign:"right"}}><Mn sz={13} c={T.gold} s={{fontWeight:700}}>${totalValue.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
+                    <td style={{padding:"12px",textAlign:"right"}}><Mn sz={13} c={totalPnL>=0?T.green:T.red} s={{fontWeight:700}}>{totalPnL>=0?"+":""}${Math.abs(totalPnL).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
+                    <td style={{padding:"12px",textAlign:"right"}}><span style={{fontSize:13,padding:"3px 10px",borderRadius:20,background:totalPnLPct>=0?`${T.green}18`:`${T.red}18`,color:totalPnLPct>=0?T.green:T.red,fontWeight:700}}>{totalPnLPct>=0?"+":""}{totalPnLPct.toFixed(2)}%</span></td>
+                    <td colSpan={3}/>
+                  </tr></tfoot>
+                </table>
+              </div>
+            </Card>
+          </>}
 
         {/* AI Analysis result */}
         {aiAnalysis&&<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
