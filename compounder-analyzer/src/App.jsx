@@ -1825,9 +1825,7 @@ Provide a concise but actionable analysis. Respond ONLY with valid JSON, no mark
             </div>
           </div>
           <textarea value={pasteText} onChange={e=>setPasteText(e.target.value)}
-            placeholder={"Paste your rows here...
-NVDA	10	450.00
-AAPL	25	185.50"}
+            placeholder={"Paste your rows here...\nNVDA\t10\t450.00\nAAPL\t25\t185.50"}
             style={{width:"100%",minHeight:140,background:T.accent,border:`1px solid ${T.border}`,color:T.text,borderRadius:8,padding:12,fontFamily:"'DM Mono',monospace",fontSize:12,outline:"none",resize:"vertical",marginBottom:12,lineHeight:1.6}}/>
           <button className="btn btn-gold" onClick={parsePaste} disabled={!pasteText.trim()} style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10}}>
             📋 Import Pasted Data
