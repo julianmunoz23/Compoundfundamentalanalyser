@@ -1504,8 +1504,343 @@ Respond ONLY with valid JSON, no markdown:
   return null;
 }
 
+// ── PORTFOLIO TRACKER ────────────────────────────────────────────────────────
+const BROKERS=[
+  {name:"Interactive Brokers",url:"https://www.interactivebrokers.com",desc:"Best for active investors · Low commissions",badge:"Most Popular"},
+  {name:"eToro",url:"https://www.etoro.com",desc:"Great for beginners · Social trading",badge:"Beginner Friendly"},
+  {name:"Tastytrade",url:"https://tastytrade.com",desc:"Best for options · Commission-free stocks",badge:""},
+];
+
+function PortfolioTab(){
+  const [positions,setPositions]=useState([]);
+  const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:""});
+  const [prices,setPrices]=useState({});
+  const [loadingPrices,setLoadingPrices]=useState(false);
+  const [aiAnalysis,setAiAnalysis]=useState(null);
+  const [loadingAI,setLoadingAI]=useState(false);
+  const [err,setErr]=useState("");
+  const [showBrokers,setShowBrokers]=useState(false);
+  const setF=(k,v)=>setForm(p=>({...p,[k]:v}));
+
+  // Load saved positions from localStorage
+  useState(()=>{
+    try{
+      const saved=localStorage.getItem("compoundr_portfolio");
+      if(saved)setPositions(JSON.parse(saved));
+    }catch(e){}
+  });
+
+  const save=(pos)=>{
+    try{localStorage.setItem("compoundr_portfolio",JSON.stringify(pos));}catch(e){}
+  };
+
+  const addPosition=()=>{
+    if(!form.ticker||!form.shares||!form.buyPrice){setErr("Fill in ticker, shares and buy price.");return;}
+    const newPos={
+      id:Date.now(),
+      ticker:form.ticker.toUpperCase(),
+      shares:parseFloat(form.shares),
+      buyPrice:parseFloat(form.buyPrice),
+      date:form.date||new Date().toISOString().split("T")[0],
+    };
+    const updated=[...positions,newPos];
+    setPositions(updated);save(updated);
+    setForm({ticker:"",shares:"",buyPrice:"",date:""});setErr("");
+  };
+
+  const removePosition=(id)=>{
+    const updated=positions.filter(p=>p.id!==id);
+    setPositions(updated);save(updated);
+  };
+
+  // Fetch live prices from Finnhub for all tickers
+  const fetchPrices=async()=>{
+    if(!positions.length)return;
+    setLoadingPrices(true);
+    const key=import.meta.env.VITE_FINNHUB_KEY;
+    const results={};
+    await Promise.allSettled(
+      [...new Set(positions.map(p=>p.ticker))].map(async ticker=>{
+        try{
+          const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
+          const d=await res.json();
+          if(d.c)results[ticker]={price:d.c,change:d.d,changePct:d.dp,high:d.h,low:d.l};
+        }catch(e){}
+      })
+    );
+    setPrices(results);setLoadingPrices(false);
+  };
+
+  // AI portfolio analysis
+  const analyzePortfolio=async()=>{
+    if(!positions.length){setErr("Add at least one position first.");return;}
+    setLoadingAI(true);setErr("");setAiAnalysis(null);
+    const summary=positions.map(p=>{
+      const lp=prices[p.ticker];
+      const current=lp?lp.price:p.buyPrice;
+      const pnl=((current-p.buyPrice)/p.buyPrice*100).toFixed(1);
+      return`${p.ticker}: ${p.shares} shares @ $${p.buyPrice} buy price, current ~$${current.toFixed(2)}, P&L ${pnl}%`;
+    }).join(" | ");
+    try{
+      const p=await callAI(`You are a Buffett/Munger portfolio analyst. Analyze this investor's portfolio:
+${summary}
+Total positions: ${positions.length}
+Provide a concise but actionable analysis. Respond ONLY with valid JSON, no markdown:
+{
+  "overallScore":"<A+|A|B+|B|C|D>",
+  "overallGrade":"<Elite Compounder|High Quality|Good|Needs Work|Risky>",
+  "summary":"<3-4 sentences overall assessment>",
+  "concentration":"<Concentrated|Balanced|Over-Diversified>",
+  "topSector":"<dominant sector>",
+  "positions":[
+    {"ticker":"<ticker>","verdict":"<Hold|Buy More|Consider Selling|Watch>","reason":"<1 sentence>","buffettScore":"<A+|A|B+|B|C|D>"}
+  ],
+  "suggestions":["<actionable suggestion 1>","<actionable suggestion 2>","<actionable suggestion 3>"],
+  "risk":"<Low|Moderate|High>",
+  "vsMarket":"<Likely to Outperform|In Line|Likely to Underperform>"
+}`);
+      setAiAnalysis(p);
+    }catch(e){setErr(`AI error: ${e.message}`);}
+    setLoadingAI(false);
+  };
+
+  // Calculations
+  const enriched=positions.map(p=>{
+    const lp=prices[p.ticker];
+    const currentPrice=lp?lp.price:null;
+    const totalCost=p.shares*p.buyPrice;
+    const currentValue=currentPrice?p.shares*currentPrice:null;
+    const pnlDollar=currentValue?currentValue-totalCost:null;
+    const pnlPct=pnlDollar?((pnlDollar/totalCost)*100):null;
+    return{...p,currentPrice,totalCost,currentValue,pnlDollar,pnlPct,change:lp?.change,changePct:lp?.changePct};
+  });
+
+  const totalCost=enriched.reduce((a,p)=>a+p.totalCost,0);
+  const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCost),0);
+  const totalPnL=totalValue-totalCost;
+  const totalPnLPct=totalCost>0?(totalPnL/totalCost*100):0;
+  const verdictColor=v=>v==="Hold"||v==="Buy More"?T.green:v==="Watch"?T.gold:T.red;
+
+  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+
+    {/* Header */}
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+      <div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold}}>📁 My Portfolio</div>
+        <div style={{fontSize:12,color:T.muted,marginTop:3}}>Track your positions · Live prices via Finnhub · AI analysis</div>
+      </div>
+      <div style={{display:"flex",gap:10}}>
+        <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
+          {loadingPrices?<><span className="sp">⟳</span> Updating...</>:"🔄 Refresh Prices"}
+        </button>
+        <button className="btn btn-gold" onClick={analyzePortfolio} disabled={loadingAI||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
+          {loadingAI?<><span className="sp">⟳</span> Analyzing...</>:"🤖 AI Analysis"}
+        </button>
+      </div>
+    </div>
+
+    {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
+
+    {/* KPI Cards */}
+    {positions.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+      {[
+        {l:"Total Invested",v:`$${totalCost.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:T.blue,icon:"💵"},
+        {l:"Current Value",v:`$${totalValue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:T.gold,icon:"📊"},
+        {l:"Total P&L",v:`${totalPnL>=0?"+":""}$${totalPnL.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:totalPnL>=0?T.green:T.red,icon:"📈"},
+        {l:"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯"},
+      ].map(({l,v,c,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
+        <Lbl>{l}</Lbl>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
+      </Card>)}
+    </div>}
+
+    <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
+
+      {/* Add Position Form */}
+      <Card>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>➕ Add Position</div>
+        <Lbl>Ticker</Lbl>
+        <input type="text" value={form.ticker} onChange={e=>setF("ticker",e.target.value.toUpperCase())}
+          placeholder="NVDA, AAPL, MSFT..." onKeyDown={e=>e.key==="Enter"&&addPosition()}
+          style={{marginBottom:12,fontWeight:700,fontSize:15,letterSpacing:"0.05em"}}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+          <div>
+            <Lbl>Shares</Lbl>
+            <input type="number" value={form.shares} onChange={e=>setF("shares",e.target.value)}
+              placeholder="10" min={0} step={0.001}/>
+          </div>
+          <div>
+            <Lbl>Buy Price ($)</Lbl>
+            <input type="number" value={form.buyPrice} onChange={e=>setF("buyPrice",e.target.value)}
+              placeholder="150.00" min={0} step={0.01}/>
+          </div>
+        </div>
+        <Lbl>Date Purchased (optional)</Lbl>
+        <input type="date" value={form.date} onChange={e=>setF("date",e.target.value)} style={{marginBottom:16}}/>
+        <button className="btn btn-gold" onClick={addPosition} style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10}}>
+          ➕ Add to Portfolio
+        </button>
+        <div style={{marginTop:12,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.7}}>
+          💾 Your positions are saved automatically in your browser. Click <span style={{color:T.gold}}>Refresh Prices</span> to get live data from Finnhub.
+        </div>
+      </Card>
+
+      {/* Positions Table */}
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {positions.length===0
+          ?<Card s={{textAlign:"center",padding:48,background:`${T.gold}06`,border:`1px dashed ${T.goldDim}44`}}>
+            <div style={{fontSize:36,marginBottom:12}}>📁</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:8}}>Your portfolio is empty</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a Buffett/Munger assessment.</div>
+          </Card>
+          :<Card s={{padding:0,overflow:"hidden"}}>
+            <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{positions.length} Position{positions.length!==1?"s":""}</div>
+              {!prices[positions[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ Click "Refresh Prices" for live data</div>}
+            </div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
+                <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
+                  {["Ticker","Shares","Buy Price","Current","P&L $","P&L %","Day Change","AI Verdict",""].map(h=>(
+                    <th key={h} style={{padding:"10px 14px",textAlign:"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,...(h==="Ticker"||h===""?{textAlign:"center"}:{})}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {enriched.map(p=>{
+                    const verdict=aiAnalysis?.positions?.find(x=>x.ticker===p.ticker);
+                    return<tr key={p.id} style={{borderBottom:`1px solid ${T.border}22`}}
+                      onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                      <td style={{padding:"10px 14px",textAlign:"center"}}>
+                        <div style={{fontWeight:700,fontSize:14,color:T.text,fontFamily:"'DM Mono',monospace"}}>{p.ticker}</div>
+                        {p.date&&<div style={{fontSize:9,color:T.muted}}>{p.date}</div>}
+                      </td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12}>{p.shares}</Mn></td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.buyPrice.toFixed(2)}</Mn></td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}>
+                        {p.currentPrice
+                          ?<Mn sz={13} c={T.gold} s={{fontWeight:700}}>${p.currentPrice.toFixed(2)}</Mn>
+                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
+                      </td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}>
+                        {p.pnlDollar!=null
+                          ?<Mn sz={13} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toFixed(2)}</Mn>
+                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
+                      </td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}>
+                        {p.pnlPct!=null
+                          ?<span style={{fontSize:12,padding:"2px 8px",borderRadius:20,background:p.pnlPct>=0?`${T.green}18`:`${T.red}18`,color:p.pnlPct>=0?T.green:T.red,fontWeight:600}}>{p.pnlPct>=0?"+":""}{p.pnlPct.toFixed(2)}%</span>
+                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
+                      </td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}>
+                        {p.changePct!=null
+                          ?<span style={{fontSize:11,color:p.changePct>=0?T.green:T.red}}>{p.changePct>=0?"+":""}{p.changePct.toFixed(2)}%</span>
+                          :<span style={{fontSize:11,color:T.muted}}>—</span>}
+                      </td>
+                      <td style={{padding:"10px 14px",textAlign:"right"}}>
+                        {verdict
+                          ?<span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:`${verdictColor(verdict.verdict)}18`,color:verdictColor(verdict.verdict),border:`1px solid ${verdictColor(verdict.verdict)}33`,fontWeight:600,whiteSpace:"nowrap"}}>{verdict.verdict}</span>
+                          :<span style={{fontSize:11,color:T.muted}}>Run AI</span>}
+                      </td>
+                      <td style={{padding:"10px 14px",textAlign:"center"}}>
+                        <button onClick={()=>removePosition(p.id)} style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:14,padding:"2px 6px"}}
+                          onMouseEnter={e=>e.currentTarget.style.color=T.red}
+                          onMouseLeave={e=>e.currentTarget.style.color=T.muted}>✕</button>
+                      </td>
+                    </tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>}
+
+        {/* AI Analysis result */}
+        {aiAnalysis&&<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
+          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16}}>
+            <div style={{textAlign:"center",minWidth:90}}>
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Portfolio Score</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:36,color:aiAnalysis.overallScore?.includes("A")?T.green:aiAnalysis.overallScore?.includes("B")?T.gold:T.red,fontWeight:700}}>{aiAnalysis.overallScore}</div>
+              <div style={{fontSize:10,color:T.muted}}>{aiAnalysis.overallGrade}</div>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Assessment</div>
+              <div style={{fontSize:13,color:T.text,lineHeight:1.7,marginBottom:10}}>{aiAnalysis.summary}</div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                {[
+                  {l:"Risk",v:aiAnalysis.risk,c:aiAnalysis.risk==="Low"?T.green:aiAnalysis.risk==="High"?T.red:T.gold},
+                  {l:"Concentration",v:aiAnalysis.concentration,c:T.blue},
+                  {l:"vs S&P 500",v:aiAnalysis.vsMarket,c:aiAnalysis.vsMarket?.includes("Out")?T.green:aiAnalysis.vsMarket?.includes("Under")?T.red:T.gold},
+                  {l:"Top Sector",v:aiAnalysis.topSector,c:T.purple},
+                ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"6px 12px"}}>
+                  <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",marginBottom:2}}>{l}</div>
+                  <Mn sz={12} c={c} s={{fontWeight:600}}>{v}</Mn>
+                </div>)}
+              </div>
+            </div>
+          </div>
+
+          {/* Per-position verdicts */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:14}}>
+            {aiAnalysis.positions?.map(({ticker,verdict,reason,buffettScore})=>(
+              <div key={ticker} style={{background:T.card,borderRadius:10,padding:"10px 12px",border:`1px solid ${verdictColor(verdict)}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <Mn sz={14} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:10,color:T.muted}}>Score: <span style={{color:T.gold,fontWeight:700}}>{buffettScore}</span></span>
+                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:`${verdictColor(verdict)}18`,color:verdictColor(verdict),fontWeight:600}}>{verdict}</span>
+                  </div>
+                </div>
+                <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{reason}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Suggestions */}
+          <div style={{padding:14,background:T.accent,borderRadius:10,border:`1px solid ${T.border}`}}>
+            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:8}}>💡 AI Suggestions</div>
+            {aiAnalysis.suggestions?.map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:8,marginBottom:6,fontSize:12,color:T.muted,lineHeight:1.5}}>
+                <span style={{color:T.gold,flexShrink:0}}>{i+1}.</span>{s}
+              </div>
+            ))}
+          </div>
+        </Card>}
+      </div>
+    </div>
+
+    {/* Broker section */}
+    <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:showBrokers?16:0}}>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>🏦 Ready to Execute Your Portfolio?</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:3}}>Open an account with a trusted broker and start investing today</div>
+        </div>
+        <button className="seg" onClick={()=>setShowBrokers(v=>!v)} style={{color:T.gold,borderColor:T.goldDim}}>
+          {showBrokers?"Hide":"View Brokers →"}
+        </button>
+      </div>
+      {showBrokers&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+        {BROKERS.map(({name,url,desc,badge})=>(
+          <a key={name} href={url} target="_blank" rel="noopener noreferrer"
+            style={{display:"block",textDecoration:"none",background:T.card,borderRadius:12,padding:16,border:`1px solid ${T.border}`,transition:"border-color 0.2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=T.goldDim}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
+            {badge&&<div style={{fontSize:9,background:`${T.green}20`,color:T.green,border:`1px solid ${T.green}33`,padding:"2px 8px",borderRadius:10,display:"inline-block",marginBottom:8}}>{badge}</div>}
+            <div style={{fontSize:14,color:T.text,fontWeight:600,marginBottom:4}}>{name}</div>
+            <div style={{fontSize:11,color:T.muted,lineHeight:1.5,marginBottom:10}}>{desc}</div>
+            <div style={{fontSize:11,color:T.gold}}>Open Account →</div>
+          </a>
+        ))}
+      </div>}
+    </Card>
+
+    <AdBanner size="leaderboard"/>
+  </div>;
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
+const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
 const FREE_LIMIT=2;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
@@ -1562,6 +1897,7 @@ export default function App(){
       {tab==="whatif"&&<WhatIfTab/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
+      {tab==="portfolio"&&<PortfolioTab/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="dcf"&&<DCFTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
