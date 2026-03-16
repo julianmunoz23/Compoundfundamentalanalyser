@@ -532,88 +532,149 @@ function CompoundTab(){
     </Card>
 
     {/* ── MILLION DOLLAR GOAL SECTION ── */}
-    <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`,padding:0,overflow:"hidden"}}>
-      {/* Header */}
-      <div style={{textAlign:"center",padding:"28px 24px 20px",borderBottom:`1px solid ${T.border}33`}}>
-        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"5px 14px",marginBottom:14}}>
-          <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>🎯 Your Path to $1,000,000</span>
-        </div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.text,marginBottom:10,fontWeight:700}}>
-          How much do you need to save<br/><span style={{color:T.gold}}>to reach your first million?</span>
-        </div>
-        <div style={{fontSize:13,color:T.muted,maxWidth:560,margin:"0 auto",lineHeight:1.7}}>
-          At <strong style={{color:T.green}}>10% annual</strong> (S&P 500 / VOO historical average), compounded monthly.
-          The earlier you start, the less you need to save per month — time does the heavy lifting.
-        </div>
-      </div>
-
-      {/* Cards grid */}
-      <div style={{padding:"20px 24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-        {MILLION_DATA.map(({age,yearsTo65,monthlyNeeded,reach200,dailyCost})=>{
-          const isEasy=age<=25;
-          const isMid=age>25&&age<=35;
-          const cardColor=isEasy?T.gold:isMid?T.green:age<=45?T.blue:T.red;
-          const canReach=reach200.reachAge<=75;
-          return<div key={age} style={{background:T.card,borderRadius:14,overflow:"hidden",border:`1px solid ${cardColor}33`,position:"relative"}}>
-            {/* Top color stripe */}
-            <div style={{height:4,background:cardColor,width:"100%"}}/>
-            <div style={{padding:16}}>
-              {/* Age badge */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                <div style={{fontSize:22,fontFamily:"'Playfair Display',serif",color:cardColor,fontWeight:700}}>Age {age}</div>
-                {isEasy&&<div style={{fontSize:9,background:T.gold,color:"#0a0c10",padding:"3px 8px",borderRadius:10,fontWeight:700,letterSpacing:"0.08em"}}>BEST TIME</div>}
-              </div>
-
-              {/* Monthly needed */}
-              <div style={{marginBottom:14,padding:"12px",background:T.accent,borderRadius:10,border:`1px solid ${cardColor}22`}}>
-                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Monthly savings needed</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:cardColor,fontWeight:700}}>${monthlyNeeded.toLocaleString()}</div>
-                <div style={{fontSize:10,color:T.muted,marginTop:2}}>~${dailyCost}/day · to reach $1M by age 65</div>
-              </div>
-
-              {/* Divider */}
-              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8,textAlign:"center"}}>— or investing just $200/month —</div>
-
-              {/* At $200/month */}
-              <div style={{padding:"10px 12px",background:canReach?`${T.green}10`:`${T.red}08`,borderRadius:8,border:`1px solid ${canReach?T.green:T.red}22`}}>
-                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>Reach $1M at age</div>
-                <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:canReach?T.green:T.red,fontWeight:700}}>Age {reach200.reachAge}</div>
-                <div style={{fontSize:10,color:T.muted,marginTop:2}}>in {reach200.years.toFixed(0)} years of investing</div>
-              </div>
-
-              {/* Progress bar */}
-              <div style={{marginTop:10}}>
-                <div style={{height:3,background:T.border,borderRadius:2}}>
-                  <div style={{height:"100%",width:`${Math.min((MILLION_DATA[0].monthlyNeeded/monthlyNeeded)*100,100)}%`,background:cardColor,borderRadius:2,transition:"width 0.5s"}}/>
-                </div>
-                <div style={{fontSize:9,color:T.muted,marginTop:4,textAlign:"right"}}>{yearsTo65} years until 65</div>
-              </div>
-            </div>
-          </div>;
-        })}
-      </div>
-
-      {/* Bottom insight */}
-      <div style={{margin:"0 24px 24px",padding:16,background:T.accent,borderRadius:12,border:`1px solid ${T.border}`}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,textAlign:"center",marginBottom:14}}>
-          {[
-            {age:20,label:"Starting at 20",monthly:MILLION_DATA[0].monthlyNeeded,c:T.gold},
-            {age:30,label:"Starting at 30",monthly:MILLION_DATA[2].monthlyNeeded,c:T.green},
-            {age:40,label:"Starting at 40",monthly:MILLION_DATA[4].monthlyNeeded,c:T.red},
-          ].map(({label,monthly,c})=>(
-            <div key={label}>
-              <div style={{fontSize:10,color:T.muted,marginBottom:4}}>{label}</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700}}>${monthly.toLocaleString()}<span style={{fontSize:11,color:T.muted,fontWeight:400}}>/mo</span></div>
-            </div>
-          ))}
-        </div>
-        <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.8,borderTop:`1px solid ${T.border}33`,paddingTop:12}}>
-          ⏰ Waiting from <span style={{color:T.gold}}>age 20 to age 40</span> means you need to save <span style={{color:T.red,fontWeight:700}}>{Math.round(MILLION_DATA[4].monthlyNeeded/MILLION_DATA[0].monthlyNeeded)}x more per month</span> to reach the same goal.<br/>
-          <span style={{color:T.green}}>Starting at 20 with just ${MILLION_DATA[0].monthlyNeeded}/month (~${Math.ceil(MILLION_DATA[0].monthlyNeeded/30)}/day) is all it takes.</span>
-        </div>
-      </div>
-    </Card>
+    <MillionGoalSection/>
   </div>;
+}
+
+function MillionGoalSection(){
+  const [goal,setGoal]=useState(1000000);
+  const [monthly,setMonthly]=useState(200);
+  const RATE=10;
+  const AGES=[20,25,30,35,40,50];
+
+  // Given age + goal: how much/month needed by 65?
+  const monthlyNeeded=(age)=>{
+    const r=(RATE/100)/12,n=(65-age)*12;
+    if(n<=0)return Infinity;
+    return Math.round(goal*r/(Math.pow(1+r,n)-1));
+  };
+  // Given age + monthly savings: at what age do you hit the goal?
+  const reachAge=(startAge)=>{
+    const r=(RATE/100)/12;
+    if(monthly<=0)return null;
+    const months=Math.log(1+goal*r/monthly)/Math.log(1+r);
+    const age=Math.round(startAge+months/12);
+    return{age,years:Math.round(months/12)};
+  };
+
+  const data=AGES.map(age=>({
+    age,
+    needed:monthlyNeeded(age),
+    daily:Math.ceil(monthlyNeeded(age)/30),
+    reach:reachAge(age),
+    yearsTo65:65-age,
+  }));
+
+  const cardColor=(age)=>age<=22?T.gold:age<=30?T.green:age<=40?T.blue:T.red;
+  const goalFmt=(n)=>"$"+n.toLocaleString("en-US");
+
+  return<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`,padding:0,overflow:"hidden"}}>
+    {/* Header */}
+    <div style={{textAlign:"center",padding:"28px 24px 20px",borderBottom:`1px solid ${T.border}33`}}>
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"5px 14px",marginBottom:14}}>
+        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>🎯 Your Path to Your First Million</span>
+      </div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.text,marginBottom:10,fontWeight:700}}>
+        How much do you need to save<br/><span style={{color:T.gold}}>to reach {goalFmt(goal)}?</span>
+      </div>
+      <div style={{fontSize:13,color:T.muted,maxWidth:560,margin:"0 auto",lineHeight:1.7}}>
+        At <strong style={{color:T.green}}>{RATE}% annual</strong> (S&P 500 / VOO historical average), compounded monthly.
+        The earlier you start, the less you need — time does the heavy lifting.
+      </div>
+    </div>
+
+    {/* Interactive controls */}
+    <div style={{padding:"20px 24px",display:"grid",gridTemplateColumns:"1fr 1fr",gap:20,borderBottom:`1px solid ${T.border}33`,background:`${T.accent}88`}}>
+      <div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+          <span style={{fontSize:12,color:T.muted}}>🎯 Your goal</span>
+          <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{goalFmt(goal)}</Mn>
+        </div>
+        <input type="range" min={100000} max={5000000} step={50000} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
+          <span>$100K</span><span>$1M</span><span>$5M</span>
+        </div>
+      </div>
+      <div>
+        <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+          <span style={{fontSize:12,color:T.muted}}>💵 Your monthly savings</span>
+          <Mn sz={14} c={T.green} s={{fontWeight:700}}>{goalFmt(monthly)}/mo (~${Math.ceil(monthly/30)}/day)</Mn>
+        </div>
+        <input type="range" min={50} max={5000} step={50} value={monthly} onChange={e=>setMonthly(parseInt(e.target.value))}/>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
+          <span>$50/mo</span><span>$500/mo</span><span>$5,000/mo</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Cards grid */}
+    <div style={{padding:"20px 24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+      {data.map(({age,needed,daily,reach,yearsTo65})=>{
+        const cc=cardColor(age);
+        const canReach=reach&&reach.age<=80;
+        return<div key={age} style={{background:T.card,borderRadius:14,overflow:"hidden",border:`1px solid ${cc}33`,position:"relative"}}>
+          <div style={{height:4,background:cc,width:"100%"}}/>
+          <div style={{padding:16}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div style={{fontSize:22,fontFamily:"'Playfair Display',serif",color:cc,fontWeight:700}}>Age {age}</div>
+              {age===20&&<div style={{fontSize:9,background:T.gold,color:"#0a0c10",padding:"3px 8px",borderRadius:10,fontWeight:700}}>BEST TIME</div>}
+            </div>
+
+            {/* How much needed to hit goal by 65 */}
+            <div style={{marginBottom:12,padding:"12px",background:T.accent,borderRadius:10,border:`1px solid ${cc}22`}}>
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>To reach {goalFmt(goal)} by age 65</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:needed>9999?22:28,color:cc,fontWeight:700}}>${needed.toLocaleString()}<span style={{fontSize:12,color:T.muted,fontWeight:400}}>/mo</span></div>
+              <div style={{fontSize:10,color:T.muted,marginTop:2}}>~${daily}/day · {yearsTo65} years of investing</div>
+            </div>
+
+            {/* With your monthly savings, when do you hit goal? */}
+            <div style={{padding:"10px 12px",background:canReach?`${T.green}10`:`${T.red}08`,borderRadius:8,border:`1px solid ${canReach?T.green:T.red}22`}}>
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>
+                Saving ${monthly.toLocaleString()}/mo, you reach {goalFmt(goal)} at
+              </div>
+              {canReach&&reach
+                ?<><div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.green,fontWeight:700}}>Age {reach.age}</div>
+                  <div style={{fontSize:10,color:T.muted,marginTop:2}}>in {reach.years} years from now</div></>
+                :<><div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.red,fontWeight:700}}>Need more savings</div>
+                  <div style={{fontSize:10,color:T.muted,marginTop:2}}>Increase monthly amount to get there</div></>
+              }
+            </div>
+
+            {/* Effort bar */}
+            <div style={{marginTop:10}}>
+              <div style={{height:3,background:T.border,borderRadius:2}}>
+                <div style={{height:"100%",width:`${Math.min((data[0].needed/Math.max(needed,1))*100,100)}%`,background:cc,borderRadius:2}}/>
+              </div>
+              <div style={{fontSize:9,color:T.muted,marginTop:3,textAlign:"right"}}>
+                {age>20?`${Math.round(needed/data[0].needed)}x more than starting at 20`:"Lowest monthly needed"}
+              </div>
+            </div>
+          </div>
+        </div>;
+      })}
+    </div>
+
+    {/* Bottom insight strip */}
+    <div style={{margin:"0 24px 24px",padding:16,background:T.accent,borderRadius:12,border:`1px solid ${T.border}`}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,textAlign:"center",marginBottom:14}}>
+        {[data[0],data[2],data[4]].map(({age,needed})=>(
+          <div key={age}>
+            <div style={{fontSize:10,color:T.muted,marginBottom:4}}>Starting at {age}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:cardColor(age),fontWeight:700}}>
+              ${needed.toLocaleString()}<span style={{fontSize:11,color:T.muted,fontWeight:400}}>/mo</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.9,borderTop:`1px solid ${T.border}33`,paddingTop:12}}>
+        ⏰ Waiting from <span style={{color:T.gold}}>age 20 to age 40</span> means you need <span style={{color:T.red,fontWeight:700}}>{data[4]&&data[0]?Math.round(data[4].needed/data[0].needed):0}x more per month</span> to reach the same {goalFmt(goal)}.<br/>
+        <span style={{color:T.green}}>
+          Starting at 20 costs just ${data[0]?.needed.toLocaleString()}/month (~${data[0]?.daily}/day). 
+          That's a coffee ☕ — not a sacrifice.
+        </span>
+      </div>
+    </div>
+  </Card>;
 }
 
 // ── WHAT IF ───────────────────────────────────────────────────────────────────
@@ -1083,8 +1144,368 @@ Respond ONLY with valid JSON, no markdown:
   </div>;
 }
 
+// ── RISK PROFILE ─────────────────────────────────────────────────────────────
+const QUESTIONS=[
+  {
+    id:"horizon",
+    q:"How long can you keep your money invested without needing it?",
+    opts:[
+      {l:"Less than 2 years",s:1},{l:"2–5 years",s:2},{l:"5–10 years",s:3},{l:"More than 10 years",s:4},
+    ],
+  },
+  {
+    id:"drop",
+    q:"Your portfolio drops 30% in a market crash. What do you do?",
+    opts:[
+      {l:"Sell everything immediately",s:1},{l:"Sell some to reduce exposure",s:2},
+      {l:"Hold and wait for recovery",s:3},{l:"Buy more — it's a discount",s:4},
+    ],
+  },
+  {
+    id:"goal",
+    q:"What is your primary investment goal?",
+    opts:[
+      {l:"Preserve my capital — safety first",s:1},{l:"Steady income with low risk",s:2},
+      {l:"Balanced growth over time",s:3},{l:"Maximum long-term growth",s:4},
+    ],
+  },
+  {
+    id:"experience",
+    q:"How would you describe your investing experience?",
+    opts:[
+      {l:"None — I'm just starting",s:1},{l:"Some — I've bought ETFs or funds",s:2},
+      {l:"Moderate — I follow markets regularly",s:3},{l:"Advanced — I analyze individual stocks",s:4},
+    ],
+  },
+  {
+    id:"income",
+    q:"If you lost your entire investment, how would it affect your life?",
+    opts:[
+      {l:"Devastating — it's most of my savings",s:1},{l:"Very difficult — major setback",s:2},
+      {l:"Tough but manageable",s:3},{l:"Fine — this is money I can afford to lose",s:4},
+    ],
+  },
+  {
+    id:"volatility",
+    q:"Which statement best describes your attitude toward risk?",
+    opts:[
+      {l:"I prefer guaranteed returns even if small",s:1},{l:"I accept modest risk for modest gains",s:2},
+      {l:"I accept higher volatility for higher returns",s:3},{l:"I embrace high risk for maximum upside",s:4},
+    ],
+  },
+  {
+    id:"concentration",
+    q:"How many stocks would you feel comfortable holding?",
+    opts:[
+      {l:"1–3 very safe blue chips only",s:1},{l:"5–10 diversified ETFs and stocks",s:2},
+      {l:"10–20 mix of growth and value",s:3},{l:"20+ including high-growth and emerging",s:4},
+    ],
+  },
+  {
+    id:"age",
+    q:"How old are you?",
+    opts:[
+      {l:"55 or older",s:1},{l:"45–54",s:2},{l:"35–44",s:3},{l:"Under 35",s:4},
+    ],
+  },
+];
+
+const PROFILES={
+  conservative:{
+    label:"Conservative",icon:"🛡️",color:"#4a9eff",
+    desc:"Capital preservation is your priority. You prefer stability over growth and can't afford significant losses. Best suited for bonds, dividend stocks, and low-volatility ETFs.",
+    traits:["Low volatility tolerance","Short to medium time horizon","Income-focused","Safety first"],
+  },
+  moderate:{
+    label:"Moderate",icon:"⚖️",color:"#c9a84c",
+    desc:"You seek a balance between growth and security. Comfortable with some market fluctuations in exchange for long-term returns. A diversified mix of stocks and bonds suits you well.",
+    traits:["Medium volatility tolerance","5–10 year horizon","Balanced growth + income","Diversification focused"],
+  },
+  aggressive:{
+    label:"Aggressive",icon:"🚀",color:"#2ecc71",
+    desc:"You're a growth investor willing to ride market volatility for superior long-term returns. You understand that short-term drops are the price for long-term compounding.",
+    traits:["High volatility tolerance","Long time horizon (10Y+)","Maximum growth focus","Compounders and quality stocks"],
+  },
+};
+
+function ProfileTab({onAnalysis,canAnalyze}){
+  const [step,setStep]=useState("intro"); // intro | quiz | result | portfolio
+  const [answers,setAnswers]=useState({});
+  const [current,setCurrent]=useState(0);
+  const [portfolio,setPortfolio]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState("");
+  const [amount,setAmount]=useState(10000);
+
+  const totalScore=Object.values(answers).reduce((a,v)=>a+v,0);
+  const maxScore=QUESTIONS.length*4;
+  const pct=totalScore/maxScore;
+  const profileKey=pct<=0.4?"conservative":pct<=0.7?"moderate":"aggressive";
+  const profile=PROFILES[profileKey];
+
+  const answer=(score)=>{
+    const q=QUESTIONS[current];
+    const next={...answers,[q.id]:score};
+    setAnswers(next);
+    if(current<QUESTIONS.length-1){setCurrent(c=>c+1);}
+    else{setStep("result");}
+  };
+
+  const getPortfolio=async()=>{
+    if(!canAnalyze())return;
+    setLoading(true);setErr("");
+    try{
+      const p=await callAI(`You are a professional portfolio manager. Based on a ${profile.label} risk profile investor with $${amount.toLocaleString()} to invest, recommend a specific portfolio.
+The investor profile: ${profile.desc}
+Traits: ${profile.traits.join(", ")}
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "allocation":[
+    {"category":"<e.g. US Large Cap Growth>","pct":<number 0-100>,"color":"<hex color>","rationale":"<1 sentence>"},
+    ...5-7 categories that sum to 100
+  ],
+  "stocks":[
+    {"ticker":"<e.g. AAPL>","name":"<full name>","weight":<% of portfolio, number>,"why":"<1 sentence reason>","type":"<Core|Growth|Defensive|Income>"},
+    ...8-12 specific stocks/ETFs
+  ],
+  "etfs":[
+    {"ticker":"<e.g. VOO>","name":"<full name>","weight":<number>,"why":"<1 sentence>"},
+    ...2-4 ETFs
+  ],
+  "expectedReturn":"<e.g. 8-12% annual>",
+  "maxDrawdown":"<e.g. -15% to -25%>",
+  "rebalance":"<e.g. Quarterly>",
+  "summary":"<3-4 sentences explaining the overall strategy and why it fits this risk profile>"
+}`);
+      setPortfolio(p);onAnalysis();setStep("portfolio");
+    }catch(e){setErr(`Error: ${e.message||"Could not generate portfolio."}`);}
+    setLoading(false);
+  };
+
+  const reset=()=>{setStep("intro");setAnswers({});setCurrent(0);setPortfolio(null);setErr("");};
+
+  // ── INTRO ──
+  if(step==="intro")return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    <div style={{textAlign:"center",padding:"40px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
+      <div style={{fontSize:56,marginBottom:16}}>🧬</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:T.gold,marginBottom:12,fontWeight:700}}>What's Your Investor DNA?</div>
+      <div style={{fontSize:15,color:T.muted,maxWidth:580,margin:"0 auto 32px",lineHeight:1.8}}>
+        Answer 8 questions and our AI will identify your risk profile — <span style={{color:T.text}}>Conservative, Moderate, or Aggressive</span> — then build a personalized portfolio of stocks and ETFs tailored to you.
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:600,margin:"0 auto 36px"}}>
+        {Object.values(PROFILES).map(({label,icon,color,traits})=>(
+          <div key={label} style={{background:T.card,border:`1px solid ${color}44`,borderRadius:12,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:28,marginBottom:8}}>{icon}</div>
+            <div style={{fontSize:14,color,fontWeight:700,marginBottom:8}}>{label}</div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.6}}>{traits[0]}</div>
+          </div>
+        ))}
+      </div>
+      <button className="btn btn-gold" onClick={()=>setStep("quiz")} style={{fontSize:16,padding:"14px 40px",borderRadius:12}}>
+        🧬 Start My Risk Profile →
+      </button>
+    </div>
+    <AdBanner size="leaderboard"/>
+  </div>;
+
+  // ── QUIZ ──
+  if(step==="quiz"){
+    const q=QUESTIONS[current];
+    const progress=((current)/QUESTIONS.length)*100;
+    return<div className="fi" style={{display:"flex",flexDirection:"column",gap:16,maxWidth:680,margin:"0 auto",width:"100%"}}>
+      {/* Progress */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+        <span style={{fontSize:12,color:T.muted}}>Question {current+1} of {QUESTIONS.length}</span>
+        <span style={{fontSize:12,color:T.gold}}>{Math.round(progress)}% complete</span>
+      </div>
+      <div style={{height:4,background:T.border,borderRadius:2}}>
+        <div style={{height:"100%",width:`${progress}%`,background:T.gold,borderRadius:2,transition:"width 0.4s ease"}}/>
+      </div>
+
+      {/* Question card */}
+      <Card s={{padding:32,background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
+        <div style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
+          {["⏱️ Time Horizon","📉 Risk Reaction","🎯 Your Goal","📚 Experience","💸 Life Impact","🌊 Volatility","📊 Diversification","🎂 Your Age"][current]}
+        </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:28,lineHeight:1.4}}>
+          {q.q}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {q.opts.map(({l,s})=>(
+            <button key={l} onClick={()=>answer(s)}
+              style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px",textAlign:"left",cursor:"pointer",fontSize:14,color:T.text,transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.background=`${T.gold}12`;e.currentTarget.style.color=T.gold;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.accent;e.currentTarget.style.color=T.text;}}>
+              <span style={{color:T.goldDim,marginRight:10,fontFamily:"'DM Mono',monospace"}}>{["A","B","C","D"][q.opts.indexOf({l,s})]||"•"}</span>
+              {l}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {current>0&&<button onClick={()=>{setCurrent(c=>c-1);const prev={...answers};delete prev[QUESTIONS[current-1].id];setAnswers(prev);}}
+        style={{background:"none",border:"none",color:T.muted,cursor:"pointer",fontSize:12,alignSelf:"flex-start"}}>
+        ← Back
+      </button>}
+    </div>;
+  }
+
+  // ── RESULT ──
+  if(step==="result")return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    {/* Profile reveal */}
+    <div style={{textAlign:"center",padding:"36px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`2px solid ${profile.color}44`}}>
+      <div style={{fontSize:60,marginBottom:12}}>{profile.icon}</div>
+      <div style={{fontSize:12,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Your Investor Profile</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:profile.color,fontWeight:700,marginBottom:16}}>{profile.label} Investor</div>
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${profile.color}15`,border:`1px solid ${profile.color}44`,borderRadius:20,padding:"6px 16px",marginBottom:20}}>
+        <span style={{fontSize:12,color:profile.color}}>Score: {totalScore}/{maxScore} points ({Math.round(pct*100)}%)</span>
+      </div>
+      <div style={{fontSize:15,color:T.muted,maxWidth:600,margin:"0 auto 28px",lineHeight:1.8}}>{profile.desc}</div>
+      <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:28}}>
+        {profile.traits.map(t=><span key={t} style={{fontSize:12,padding:"5px 14px",borderRadius:20,background:`${profile.color}15`,color:profile.color,border:`1px solid ${profile.color}33`}}>✓ {t}</span>)}
+      </div>
+
+      {/* Score breakdown */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,maxWidth:560,margin:"0 auto 28px",textAlign:"left"}}>
+        {QUESTIONS.map(q=><div key={q.id} style={{background:T.card,borderRadius:8,padding:"8px 10px"}}>
+          <div style={{fontSize:9,color:T.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.08em"}}>{q.id}</div>
+          <div style={{display:"flex",gap:4}}>
+            {[1,2,3,4].map(v=><div key={v} style={{flex:1,height:4,borderRadius:2,background:v<=(answers[q.id]||0)?profile.color:T.border}}/>)}
+          </div>
+        </div>)}
+      </div>
+
+      {/* Investment amount */}
+      <div style={{maxWidth:400,margin:"0 auto 24px"}}>
+        <div style={{fontSize:12,color:T.muted,marginBottom:8}}>How much would you like to invest?</div>
+        <div style={{display:"flex",alignItems:"center",gap:8,background:T.accent,borderRadius:10,padding:"10px 14px",border:`1px solid ${T.border}`}}>
+          <span style={{color:T.muted,fontFamily:"monospace",fontSize:16}}>$</span>
+          <input type="number" value={amount} min={1000} step={1000} onChange={e=>setAmount(parseFloat(e.target.value)||1000)}
+            style={{flex:1,fontWeight:700,fontSize:16,textAlign:"center"}}/>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+        <button className="btn btn-gold" onClick={getPortfolio} disabled={loading} style={{fontSize:15,padding:"14px 32px",borderRadius:12}}>
+          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:"🤖 Generate My AI Portfolio →"}
+        </button>
+        <button className="btn btn-outline" onClick={reset} style={{padding:"14px 20px",borderRadius:12}}>Retake Quiz</button>
+      </div>
+      {err&&<div style={{marginTop:12,padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
+    </div>
+    <AdBanner size="leaderboard"/>
+  </div>;
+
+  // ── PORTFOLIO ──
+  if(step==="portfolio"&&portfolio)return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    {/* Header */}
+    <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:20,alignItems:"center",padding:"24px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`2px solid ${profile.color}44`}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontSize:44}}>{profile.icon}</div>
+        <div style={{fontSize:13,color:profile.color,fontWeight:700,marginTop:4}}>{profile.label}</div>
+      </div>
+      <div>
+        <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Portfolio — {profile.label} Investor · ${amount.toLocaleString()}</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.text,marginBottom:10,lineHeight:1.5}}>{portfolio.summary}</div>
+        <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
+          {[
+            {l:"Expected Return",v:portfolio.expectedReturn,c:T.green},
+            {l:"Max Drawdown",v:portfolio.maxDrawdown,c:T.red},
+            {l:"Rebalance",v:portfolio.rebalance,c:T.gold},
+          ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"8px 14px"}}>
+            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:2}}>{l}</div>
+            <Mn sz={14} c={c} s={{fontWeight:600}}>{v}</Mn>
+          </div>)}
+        </div>
+      </div>
+    </div>
+
+    {/* Allocation + Stocks grid */}
+    <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18}}>
+      {/* Allocation breakdown */}
+      <Card>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:16}}>📊 Asset Allocation</div>
+        {(portfolio.allocation||[]).map(({category,pct,color,rationale})=>(
+          <div key={category} style={{marginBottom:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+              <span style={{fontSize:12,color:T.text}}>{category}</span>
+              <Mn sz={12} c={color||T.gold} s={{fontWeight:700}}>{pct}%</Mn>
+            </div>
+            <div style={{height:6,background:T.border,borderRadius:3}}>
+              <div style={{height:"100%",width:`${pct}%`,background:color||T.gold,borderRadius:3,transition:"width 0.6s ease"}}/>
+            </div>
+            <div style={{fontSize:10,color:T.muted,marginTop:3}}>{rationale}</div>
+          </div>
+        ))}
+        <div style={{marginTop:16,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted}}>
+          💡 Rebalance <span style={{color:T.gold}}>{portfolio.rebalance}</span> to maintain target allocation
+        </div>
+      </Card>
+
+      {/* Stocks */}
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Card>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>📈 Recommended Stocks</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+            {(portfolio.stocks||[]).map(({ticker,name,weight,why,type})=>{
+              const typeColor=type==="Core"?T.blue:type==="Growth"?T.green:type==="Defensive"?T.gold:T.purple;
+              const dollarAmt=Math.round(amount*(weight/100));
+              return<div key={ticker} style={{background:T.accent,borderRadius:10,padding:12,border:`1px solid ${T.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                  <div>
+                    <Mn sz={15} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                    <div style={{fontSize:10,color:T.muted,marginTop:1}}>{name}</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:12,color:T.gold,fontWeight:700}}>{weight}%</div>
+                    <div style={{fontSize:10,color:T.muted}}>${dollarAmt.toLocaleString()}</div>
+                  </div>
+                </div>
+                <span style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:`${typeColor}20`,color:typeColor,border:`1px solid ${typeColor}33`}}>{type}</span>
+                <div style={{fontSize:10,color:T.muted,marginTop:6,lineHeight:1.5}}>{why}</div>
+              </div>;
+            })}
+          </div>
+        </Card>
+
+        {/* ETFs */}
+        {portfolio.etfs?.length>0&&<Card>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🗂️ Recommended ETFs</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+            {portfolio.etfs.map(({ticker,name,weight,why})=>(
+              <div key={ticker} style={{background:T.accent,borderRadius:10,padding:12,border:`1px solid ${T.border}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                  <div><Mn sz={15} c={T.text} s={{fontWeight:700}}>{ticker}</Mn><div style={{fontSize:10,color:T.muted,marginTop:1}}>{name}</div></div>
+                  <div style={{textAlign:"right"}}><div style={{fontSize:12,color:T.blue,fontWeight:700}}>{weight}%</div><div style={{fontSize:10,color:T.muted}}>${Math.round(amount*(weight/100)).toLocaleString()}</div></div>
+                </div>
+                <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{why}</div>
+              </div>
+            ))}
+          </div>
+        </Card>}
+      </div>
+    </div>
+
+    <AdBanner size="leaderboard"/>
+
+    <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+      <button className="btn btn-outline" onClick={reset} style={{padding:"12px 24px",borderRadius:10}}>🔄 Retake Quiz</button>
+      <button className="btn btn-gold" onClick={getPortfolio} style={{padding:"12px 24px",borderRadius:10}}>🤖 Regenerate Portfolio</button>
+    </div>
+
+    <Card s={{background:`${T.red}08`,border:`1px solid ${T.red}22`,padding:14}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.8}}>
+        ⚠️ <span style={{color:T.gold}}>Disclaimer:</span> This portfolio is generated by AI for educational purposes only. It does not constitute financial advice. Always consult a licensed financial advisor before investing.
+      </div>
+    </Card>
+  </div>;
+
+  return null;
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
+const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
 const FREE_LIMIT=2;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
@@ -1140,6 +1561,7 @@ export default function App(){
       {tab==="compound"&&<CompoundTab/>}
       {tab==="whatif"&&<WhatIfTab/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
+      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="dcf"&&<DCFTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
