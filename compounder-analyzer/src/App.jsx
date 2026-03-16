@@ -1635,8 +1635,8 @@ function PortfolioTab(){
       acc[p.ticker].totalCost+=p.shares*p.buyPrice;
       return acc;
     },{})).map(g=>({...g,avgCost:g.totalCost/g.totalShares}));
-    // ── PAYWALL: more than FREE_PORTFOLIO_LIMIT unique tickers ──
-    if(grp.length>FREE_PORTFOLIO_LIMIT){
+    // ── PAYWALL: more than FREE_PORTFOLIO_LIMIT unique tickers (bypass for admin) ──
+    if(grp.length>FREE_PORTFOLIO_LIMIT&&!isAdmin()){
       setErr(`🔒 Free plan supports up to ${FREE_PORTFOLIO_LIMIT} stocks in AI analysis. Upgrade to Premium for unlimited portfolio analysis.`);
       return;
     }
@@ -1892,7 +1892,7 @@ Provide a concise but actionable analysis. Respond ONLY with valid JSON, no mark
                       </div>
                     ))}
                   </div>
-                  {grouped.length>FREE_PORTFOLIO_LIMIT&&<div style={{marginTop:10,padding:"8px 12px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}44`,borderRadius:8,fontSize:11,color:T.gold}}>
+                  {grouped.length>FREE_PORTFOLIO_LIMIT&&!isAdmin()&&<div style={{marginTop:10,padding:"8px 12px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}44`,borderRadius:8,fontSize:11,color:T.gold}}>
                     🔒 AI analysis limited to {FREE_PORTFOLIO_LIMIT} stocks on free plan. Upgrade for unlimited.
                   </div>}
                 </div>
