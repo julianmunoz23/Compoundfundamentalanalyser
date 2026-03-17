@@ -36,7 +36,7 @@ const T = {
 };
 
 const css=`
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400&family=DM+Sans:wght@400;500;600&display=swap&font-display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
   body{background:${T.bg};color:${T.text};font-family:'DM Sans',sans-serif;}
   ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:${T.goldDim};border-radius:2px;}
@@ -98,44 +98,69 @@ function AdBanner({size="leaderboard"}){
 function PaywallModal({onClose,context="stock"}){
   const configs={
     stock:{
-      icon:"🔒",title:"Premium Feature",
-      sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free stock analyses</span>.<br/>Subscribe for unlimited access to AI Stock Analysis, Wall Street consensus, and price targets.</>,
-      features:["Unlimited AI Stock Analysis","Live Wall Street Consensus","Analyst Price Targets","FCF & ROIC Deep Dive","Moat Scoring","Expected Return Modeling"],
-      price:"$9.99/mo",cta:"🎯 Unlock Stock Analysis",
+      icon:"🎯",
+      title:"You've seen the potential. Now act on it.",
+      sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
+      features:["Unlimited AI Stock Analyses","Live Wall St. Consensus (Finnhub)","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
+      price:"$9.99/mo",
+      trial:"7-day free trial · Cancel anytime",
+      cta:"🎯 Unlock Unlimited Analysis",
+      proof:"Join investors already using Compounder Analyst",
     },
     portfolio:{
-      icon:"📁",title:"Portfolio AI — Premium",
-      sub:<>Free plan includes <span style={{color:T.text,fontWeight:600}}>3 stock positions</span>.<br/>Upgrade to unlock unlimited portfolio tracking, AI rebalancing, DCA suggestions, and risk profile matching.</>,
-      features:["Unlimited Portfolio Positions","AI Portfolio Analysis","Rebalance Suggestions","DCA Recommendations","Risk Profile Matching","P&L Tracking with Live Prices"],
-      price:"$9.99/mo",cta:"📁 Unlock My Portfolio",
+      icon:"📁",
+      title:"Your portfolio deserves a real analysis.",
+      sub:<>Free plan supports <span style={{color:T.text,fontWeight:600}}>3 stock positions</span>. Upgrade to track unlimited positions with live prices, AI rebalancing, DCA recommendations, and risk profile matching.</>,
+      features:["Unlimited Portfolio Positions","AI Portfolio Score & Assessment","Rebalance Plan (what to trim/add)","DCA Advisor — where to invest cash","Risk Profile Alignment Check","Live P&L with Finnhub prices"],
+      price:"$9.99/mo",
+      trial:"7-day free trial · Cancel anytime",
+      cta:"📁 Unlock My Full Portfolio",
+      proof:"See exactly where your money should go",
     },
     riskPortfolio:{
-      icon:"🧬",title:"AI Portfolio — Premium",
-      sub:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is free</span>.<br/>Subscribe to get your personalized AI portfolio with specific stock and ETF recommendations tailored to your investor DNA.</>,
-      features:["Personalized Stock Portfolio","ETF Recommendations","Asset Allocation Plan","Expected Return Modeling","Quarterly Rebalance Plan","Broker Integration"],
-      price:"$24.99/mo",cta:"🚀 Get My AI Portfolio",
+      icon:"🧬",
+      title:"Your investor DNA is ready. Now build the portfolio.",
+      sub:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is always free</span>. Subscribe to get a personalized AI portfolio of stocks and ETFs — built specifically for your profile, goals, and investment amount.</>,
+      features:["AI-Curated Stock Portfolio","ETF Recommendations","Asset Allocation Breakdown","Expected Return Modeling","Quarterly Rebalance Guide","Broker Recommendations"],
+      price:"$19.99/mo",
+      trial:"7-day free trial · Cancel anytime",
+      cta:"🚀 Build My AI Portfolio",
+      proof:"The portfolio Buffett would build for your risk profile",
     },
   };
   const c=configs[context]||configs.stock;
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-      <div style={{background:T.card,border:`1px solid ${T.goldDim}`,borderRadius:16,padding:40,maxWidth:500,width:"100%",textAlign:"center"}}>
-        <div style={{fontSize:44,marginBottom:14}}>{c.icon}</div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{c.title}</div>
-        <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:24}}>{c.sub}</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24,textAlign:"left"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:520,width:"100%",textAlign:"center",position:"relative"}}>
+        {/* Close button */}
+        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:18,lineHeight:1}}>✕</button>
+        {/* Social proof badge */}
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 14px",marginBottom:18}}>
+          <span style={{fontSize:11,color:T.green}}>✦ {c.proof}</span>
+        </div>
+        <div style={{fontSize:36,marginBottom:12}}>{c.icon}</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:10,fontWeight:700,lineHeight:1.3}}>{c.title}</div>
+        <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:22}}>{c.sub}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:22,textAlign:"left"}}>
           {c.features.map(f=>(
             <div key={f} style={{fontSize:11,color:T.text,padding:"7px 12px",background:T.accent,borderRadius:8,border:`1px solid ${T.border}`}}>
               <span style={{color:T.green,marginRight:6}}>✓</span>{f}
             </div>
           ))}
         </div>
-        <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,marginBottom:12,width:"100%"}}
-          onClick={()=>alert("💳 Payment integration coming soon!\nContact us for early access.")}>
-          {c.cta} — {c.price}
+        {/* Price + CTA */}
+        <div style={{background:`${T.gold}08`,border:`1px solid ${T.goldDim}44`,borderRadius:12,padding:"16px 20px",marginBottom:16}}>
+          <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6,marginBottom:6}}>
+            <span style={{fontFamily:"'Playfair Display',serif",fontSize:36,color:T.gold,fontWeight:700}}>{c.price}</span>
+            <span style={{fontSize:12,color:T.muted}}>billed monthly</span>
+          </div>
+          <div style={{fontSize:11,color:T.green,marginBottom:12}}>🎁 {c.trial}</div>
+          <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,width:"100%"}}
+            onClick={()=>alert("💳 Coming soon! Email us at hello@compounderanalyst.com for early access.")}>
+            {c.cta}
         </button>
-        <div style={{fontSize:11,color:T.muted,marginBottom:10}}>✓ Cancel anytime · 7-day free trial</div>
-        <button onClick={onClose} style={{fontSize:11,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+        </div>
+        <button onClick={onClose} style={{fontSize:11,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline",marginTop:4}}>
           Maybe later
         </button>
       </div>
@@ -267,24 +292,27 @@ function Hero({onStart}){
   return<div className="hero-grad fi" style={{padding:"60px 28px 50px",maxWidth:1380,margin:"0 auto"}}>
     <div style={{textAlign:"center",marginBottom:48}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"6px 16px",marginBottom:20}}>
-        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>✦ Buffett · Munger Framework</span>
+        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>✦ Trusted by investors worldwide · Buffett & Munger principles</span>
       </div>
       <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:46,color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
-        Find <span style={{color:T.gold}}>Compounders</span> that can<br/>grow your wealth for decades
+        Invest like <span style={{color:T.gold}}>Buffett & Munger</span>.<br/>Powered by AI.
       </h1>
-      <p style={{fontSize:16,color:T.muted,maxWidth:580,margin:"0 auto 32px",lineHeight:1.7}}>
-        AI-powered stock analysis using Buffett & Munger principles. Compound calculator, quality scoring, expected returns and DCF valuation — all in one place.
+      <p style={{fontSize:16,color:T.muted,maxWidth:600,margin:"0 auto 12px",lineHeight:1.7}}>
+        The only platform that combines compound interest modeling, AI stock analysis, risk profiling, and live portfolio tracking — in one clean tool built for serious long-term investors.
+      </p>
+      <p style={{fontSize:13,color:T.muted,maxWidth:480,margin:"0 auto 32px",lineHeight:1.6}}>
+        Used by investors in 30+ countries · Free to start · No credit card required
       </p>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold" onClick={()=>onStart("compound")} style={{fontSize:15,padding:"14px 32px",borderRadius:10}}>💰 Compound Calculator — Free</button>
+        <button className="btn btn-gold" onClick={()=>onStart("compound")} style={{fontSize:15,padding:"14px 32px",borderRadius:10}}>💰 Start Free — Compound Calculator</button>
         <button className="btn btn-outline" onClick={()=>onStart("score")} style={{fontSize:14,padding:"14px 24px",borderRadius:10}}>🎯 Analyze a Stock</button>
       </div>
     </div>
     <div style={{maxWidth:800,margin:"0 auto 40px"}}><AdBanner size="leaderboard"/></div>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:700,margin:"0 auto 40px"}}>
-      {[{n:"Free",l:"Compound Calculator"},{n:"AI Powered",l:"Stock Analyzer"},{n:"Premium",l:"Unlimited Analyses"}].map(({n,l})=>(
+      {[{n:"100% Free",l:"Compound Calculator & Planner"},{n:"AI-Powered",l:"Stock Quality Analyzer"},{n:"Live Data",l:"Finnhub · Wall St. Consensus"}].map(({n,l})=>(
         <div key={l} style={{textAlign:"center",padding:"16px",background:T.card,borderRadius:10,border:`1px solid ${T.border}`}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.gold,marginBottom:4}}>{n}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:4}}>{n}</div>
           <div style={{fontSize:11,color:T.muted}}>{l}</div>
         </div>
       ))}
@@ -380,7 +408,7 @@ function CompoundTab({onGoToTab}){
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:8}}>
-        <span style={{fontSize:11,color:T.green,fontWeight:600}}>✓ FREE — No account required · Monthly compounding (industry standard)</span>
+        <span style={{fontSize:11,color:T.green,fontWeight:600}}>✓ 100% Free · No account · No credit card · Monthly compounding (industry standard)</span>
       </div>
     </div>
 
@@ -2555,8 +2583,12 @@ export default function App(){
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             {adminMode
               ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin — unlimited access</div>
-              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>🆓 {Math.max(0,FREE_LIMIT-getCount())} free analyses left</div>
-              <button className="btn btn-gold" onClick={()=>alert("💳 Subscribe for unlimited analyses — coming soon!")} style={{fontSize:12,padding:"8px 18px"}}>🚀 Go Premium</button></>
+              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
+                  {Math.max(0,FREE_LIMIT-getCount())>0?`${Math.max(0,FREE_LIMIT-getCount())} free analyses left`:"Free plan"}
+                </div>
+                <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:12,padding:"8px 18px"}}>
+                  🚀 Go Premium — $9.99/mo
+                </button></>
             }
           </div>
         </div>
