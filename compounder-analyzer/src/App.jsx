@@ -72,28 +72,47 @@ function AdBanner({size="leaderboard"}){
 }
 
 // ── PAYWALL ───────────────────────────────────────────────────────────────────
-function PaywallModal({onClose}){
+function PaywallModal({onClose,context="stock"}){
+  const configs={
+    stock:{
+      icon:"🔒",title:"Premium Feature",
+      sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free stock analyses</span>.<br/>Subscribe for unlimited access to AI Stock Analysis, Wall Street consensus, and price targets.</>,
+      features:["Unlimited AI Stock Analysis","Live Wall Street Consensus","Analyst Price Targets","FCF & ROIC Deep Dive","Moat Scoring","Expected Return Modeling"],
+      price:"$9.99/mo",cta:"🎯 Unlock Stock Analysis",
+    },
+    portfolio:{
+      icon:"📁",title:"Portfolio AI — Premium",
+      sub:<>Free plan includes <span style={{color:T.text,fontWeight:600}}>3 stock positions</span>.<br/>Upgrade to unlock unlimited portfolio tracking, AI rebalancing, DCA suggestions, and risk profile matching.</>,
+      features:["Unlimited Portfolio Positions","AI Portfolio Analysis","Rebalance Suggestions","DCA Recommendations","Risk Profile Matching","P&L Tracking with Live Prices"],
+      price:"$9.99/mo",cta:"📁 Unlock My Portfolio",
+    },
+    riskPortfolio:{
+      icon:"🧬",title:"AI Portfolio — Premium",
+      sub:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is free</span>.<br/>Subscribe to get your personalized AI portfolio with specific stock and ETF recommendations tailored to your investor DNA.</>,
+      features:["Personalized Stock Portfolio","ETF Recommendations","Asset Allocation Plan","Expected Return Modeling","Quarterly Rebalance Plan","Broker Integration"],
+      price:"$24.99/mo",cta:"🚀 Get My AI Portfolio",
+    },
+  };
+  const c=configs[context]||configs.stock;
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-      <div style={{background:T.card,border:`1px solid ${T.goldDim}`,borderRadius:16,padding:40,maxWidth:480,width:"100%",textAlign:"center"}}>
-        <div style={{fontSize:40,marginBottom:16}}>🔒</div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:12,fontWeight:700}}>Unlock Full Access</div>
-        <div style={{fontSize:14,color:T.muted,lineHeight:1.8,marginBottom:28}}>
-          You've used your <span style={{color:T.text,fontWeight:600}}>2 free AI analyses</span>.<br/>
-          Subscribe to get unlimited stock analysis, expected return modeling, and DCF valuations.
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:24}}>
-          {["Unlimited AI Analysis","Expected Return Modeling","DCF Valuations","Wall Street Consensus","Analyst Price Targets","Priority AI Processing"].map(f=>(
-            <div key={f} style={{fontSize:12,color:T.text,padding:"8px 12px",background:T.accent,borderRadius:8,border:`1px solid ${T.border}`,textAlign:"left"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{background:T.card,border:`1px solid ${T.goldDim}`,borderRadius:16,padding:40,maxWidth:500,width:"100%",textAlign:"center"}}>
+        <div style={{fontSize:44,marginBottom:14}}>{c.icon}</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{c.title}</div>
+        <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:24}}>{c.sub}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:24,textAlign:"left"}}>
+          {c.features.map(f=>(
+            <div key={f} style={{fontSize:11,color:T.text,padding:"7px 12px",background:T.accent,borderRadius:8,border:`1px solid ${T.border}`}}>
               <span style={{color:T.green,marginRight:6}}>✓</span>{f}
             </div>
           ))}
         </div>
-        <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,marginBottom:12}}
+        <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,marginBottom:12,width:"100%"}}
           onClick={()=>alert("💳 Payment integration coming soon!\nContact us for early access.")}>
-          🚀 Subscribe — $9.99/mo
-        </button><br/>
-        <button onClick={onClose} style={{fontSize:12,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+          {c.cta} — {c.price}
+        </button>
+        <div style={{fontSize:11,color:T.muted,marginBottom:10}}>✓ Cancel anytime · 7-day free trial</div>
+        <button onClick={onClose} style={{fontSize:11,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
           Maybe later
         </button>
       </div>
@@ -1251,8 +1270,9 @@ function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio}){
     else{setStep("result");}
   };
 
+  const [showRiskPaywall,setShowRiskPaywall]=useState(false);
   const getPortfolio=async()=>{
-    if(!canAnalyze())return;
+    if(!isAdmin()){setShowRiskPaywall(true);return;}
     setLoading(true);setErr("");
     try{
       const p=await callAI(`You are a professional portfolio manager. Based on a ${profile.label} risk profile investor with $${amount.toLocaleString()} to invest, recommend a specific portfolio.
@@ -1388,13 +1408,18 @@ Respond ONLY with valid JSON, no markdown:
         </div>
       </div>
 
+      {/* FREE badge */}
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.green}12`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 14px",marginBottom:12}}>
+        <span style={{fontSize:11,color:T.green}}>✓ Risk Profile is FREE — AI Portfolio is Premium</span>
+      </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={getPortfolio} disabled={loading} style={{fontSize:15,padding:"14px 32px",borderRadius:12}}>
-          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:"🤖 Generate My AI Portfolio →"}
+          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:<>🤖 Get My AI Portfolio <span style={{fontSize:12,opacity:0.8}}>— Premium</span></>}
         </button>
         <button className="btn btn-outline" onClick={reset} style={{padding:"14px 20px",borderRadius:12}}>Retake Quiz</button>
       </div>
       {err&&<div style={{marginTop:12,padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
+      {showRiskPaywall&&<PaywallModal context="riskPortfolio" onClose={()=>setShowRiskPaywall(false)}/>}
 
       {/* CTA → Portfolio Tracker */}
       <div style={{marginTop:16,padding:"20px 24px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
@@ -1409,6 +1434,25 @@ Respond ONLY with valid JSON, no markdown:
         </button>
       </div>
     </div>
+    {/* Brokers CTA — show after profile result */}
+    <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`,padding:20}}>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:6}}>🏦 Ready to start investing?</div>
+      <div style={{fontSize:12,color:T.muted,marginBottom:14}}>Open a brokerage account and start building your {profile.label} portfolio today.</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+        {BROKERS.map(({name,url,desc,badge})=>(
+          <a key={name} href={url} target="_blank" rel="noopener noreferrer"
+            style={{display:"block",textDecoration:"none",background:T.card,borderRadius:10,padding:14,border:`1px solid ${T.border}`,transition:"border-color 0.2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=T.goldDim}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
+            {badge&&<div style={{fontSize:9,background:`${T.green}20`,color:T.green,border:`1px solid ${T.green}33`,padding:"2px 7px",borderRadius:8,display:"inline-block",marginBottom:6}}>{badge}</div>}
+            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:3}}>{name}</div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.5,marginBottom:8}}>{desc}</div>
+            <div style={{fontSize:11,color:T.gold}}>Open Account →</div>
+          </a>
+        ))}
+      </div>
+    </Card>
+
     <AdBanner size="leaderboard"/>
   </div>;
 
@@ -1515,6 +1559,25 @@ Respond ONLY with valid JSON, no markdown:
       </div>
     </Card>
 
+    {/* Brokers — after portfolio result */}
+    <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:6}}>🏦 Ready to Execute Your Portfolio?</div>
+      <div style={{fontSize:12,color:T.muted,marginBottom:16}}>Open an account with a trusted broker and start investing. Your AI portfolio is ready to deploy.</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+        {BROKERS.map(({name,url,desc,badge})=>(
+          <a key={name} href={url} target="_blank" rel="noopener noreferrer"
+            style={{display:"block",textDecoration:"none",background:T.card,borderRadius:12,padding:16,border:`1px solid ${T.border}`,transition:"border-color 0.2s"}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=T.goldDim}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
+            {badge&&<div style={{fontSize:9,background:`${T.green}20`,color:T.green,border:`1px solid ${T.green}33`,padding:"2px 8px",borderRadius:10,display:"inline-block",marginBottom:8}}>{badge}</div>}
+            <div style={{fontSize:14,color:T.text,fontWeight:600,marginBottom:4}}>{name}</div>
+            <div style={{fontSize:11,color:T.muted,lineHeight:1.5,marginBottom:10}}>{desc}</div>
+            <div style={{fontSize:11,color:T.gold}}>Open Account →</div>
+          </a>
+        ))}
+      </div>
+    </Card>
+
     {/* CTA → Portfolio Tracker */}
     <div style={{padding:"24px 28px",background:`linear-gradient(135deg,${T.green}10,${T.accent})`,border:`2px solid ${T.green}33`,borderRadius:16,display:"grid",gridTemplateColumns:"1fr auto",gap:20,alignItems:"center"}}>
       <div>
@@ -1549,6 +1612,150 @@ Respond ONLY with valid JSON, no markdown:
   return null;
 }
 
+// ── REBALANCE + DCA COMPONENT ────────────────────────────────────────────────
+function RebalanceDCA({positions,totalValue,savedProfile,callAI}){
+  const [cash,setCash]=useState("");
+  const [loadingReb,setLoadingReb]=useState(false);
+  const [loadingDCA,setLoadingDCA]=useState(false);
+  const [rebalance,setRebalance]=useState(null);
+  const [dca,setDca]=useState(null);
+  const [err,setErr]=useState("");
+
+  const profileLabel=savedProfile?.label||"Balanced";
+
+  const runRebalance=async()=>{
+    setLoadingReb(true);setErr("");setRebalance(null);
+    const summary=positions.map(p=>{
+      const w=totalValue>0?((p.currentValue||p.totalCostBasis)/totalValue*100).toFixed(1):0;
+      return`${p.ticker}: ${w}% weight, P&L ${p.pnlPct!=null?p.pnlPct.toFixed(1)+"%":"unknown"}`;
+    }).join(" | ");
+    try{
+      const r=await callAI(`You are a portfolio rebalancing advisor. Investor profile: ${profileLabel}. 
+Current portfolio: ${summary}. Total value: $${Math.round(totalValue).toLocaleString()}.
+Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
+{"actions":[{"ticker":"<ticker>","action":"<Reduce|Increase|Hold|Exit>","currentPct":<number>,"targetPct":<number>,"reason":"<1 sentence>"}],"summary":"<2 sentences overall rebalancing rationale>","urgency":"<Urgent|Moderate|Low>"}`);
+      setRebalance(r);
+    }catch(e){setErr("Rebalance error: "+e.message);}
+    setLoadingReb(false);
+  };
+
+  const runDCA=async()=>{
+    if(!cash||parseFloat(cash)<=0){setErr("Enter a valid cash amount first.");return;}
+    setLoadingDCA(true);setErr("");setDca(null);
+    const summary=positions.map(p=>{
+      const w=totalValue>0?((p.currentValue||p.totalCostBasis)/totalValue*100).toFixed(1):0;
+      return`${p.ticker}: ${w}% weight`;
+    }).join(" | ");
+    try{
+      const r=await callAI(`You are a DCA investment advisor. Investor profile: ${profileLabel}.
+Current portfolio: ${summary}. Available cash to invest: $${parseFloat(cash).toLocaleString()}.
+Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no markdown:
+{"allocations":[{"ticker":"<ticker or new stock>","amount":<dollar amount>,"pct":<% of available cash>,"reason":"<1 sentence>","isNew":<true if new position, false if adding to existing>}],"summary":"<2 sentences explaining the DCA strategy>","totalDeployed":<number>}`);
+      setDca(r);
+    }catch(e){setErr("DCA error: "+e.message);}
+    setLoadingDCA(false);
+  };
+
+  const actionColor=a=>a==="Reduce"||a==="Exit"?T.red:a==="Increase"?T.green:T.gold;
+
+  return<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.blue}33`}}>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.blue,marginBottom:6}}>⚖️ Rebalance & DCA Advisor</div>
+    <div style={{fontSize:12,color:T.muted,marginBottom:18,lineHeight:1.7}}>
+      Get AI recommendations to rebalance your portfolio to match your <strong style={{color:profile?.color||T.gold}}>{profileLabel}</strong> profile, or distribute new cash strategically via Dollar Cost Averaging.
+    </div>
+
+    {err&&<div style={{padding:"8px 12px",background:`${T.red}15`,border:`1px solid ${T.red}33`,borderRadius:8,fontSize:12,color:T.red,marginBottom:12}}>{err}</div>}
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+      {/* Rebalance */}
+      <div style={{background:T.accent,borderRadius:12,padding:16,border:`1px solid ${T.border}`}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:6}}>🔄 Rebalance Portfolio</div>
+        <div style={{fontSize:11,color:T.muted,marginBottom:14,lineHeight:1.6}}>
+          AI will analyze your current weights and suggest which positions to reduce, increase, or exit to align with your <strong style={{color:T.text}}>{profileLabel}</strong> profile.
+        </div>
+        <button className="btn btn-gold" onClick={runRebalance} disabled={loadingReb} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9}}>
+          {loadingReb?<><span className="sp">⟳</span> Analyzing...</>:"🔄 Get Rebalance Plan"}
+        </button>
+        {rebalance&&<div style={{marginTop:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <span style={{fontSize:11,color:T.muted}}>Urgency:</span>
+            <span style={{fontSize:11,padding:"2px 10px",borderRadius:20,background:rebalance.urgency==="Urgent"?`${T.red}20`:rebalance.urgency==="Moderate"?`${T.gold}20`:`${T.green}20`,color:rebalance.urgency==="Urgent"?T.red:rebalance.urgency==="Moderate"?T.gold:T.green,fontWeight:600}}>{rebalance.urgency}</span>
+          </div>
+          <div style={{fontSize:11,color:T.muted,lineHeight:1.6,marginBottom:12}}>{rebalance.summary}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {rebalance.actions?.map(({ticker,action,currentPct,targetPct,reason})=>(
+              <div key={ticker} style={{background:T.card,borderRadius:8,padding:"10px 12px",border:`1px solid ${actionColor(action)}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <Mn sz={13} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <span style={{fontSize:10,color:T.muted}}>{currentPct}% → {targetPct}%</span>
+                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:`${actionColor(action)}18`,color:actionColor(action),fontWeight:600}}>{action}</span>
+                  </div>
+                </div>
+                <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{reason}</div>
+                {/* Visual weight change bar */}
+                <div style={{marginTop:6,display:"flex",gap:4,alignItems:"center"}}>
+                  <div style={{flex:currentPct,height:3,background:T.blue,borderRadius:2,maxWidth:"60%",transition:"flex 0.4s"}}/>
+                  <span style={{fontSize:8,color:T.muted,flexShrink:0}}>→</span>
+                  <div style={{flex:targetPct,height:3,background:actionColor(action),borderRadius:2,maxWidth:"60%",transition:"flex 0.4s"}}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>}
+      </div>
+
+      {/* DCA */}
+      <div style={{background:T.accent,borderRadius:12,padding:16,border:`1px solid ${T.border}`}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.green,marginBottom:6}}>💵 DCA — Deploy Cash</div>
+        <div style={{fontSize:11,color:T.muted,marginBottom:10,lineHeight:1.6}}>
+          Have new cash to invest? Tell the AI how much and it will distribute it optimally across your portfolio — adding to winners, averaging down on quality positions.
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flex:1,background:T.card,borderRadius:8,padding:"8px 12px",border:`1px solid ${T.border}`}}>
+            <span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span>
+            <input type="number" value={cash} onChange={e=>setCash(e.target.value)} placeholder="500" min={0} step={100}
+              style={{border:"none",background:"none",color:T.text,fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,outline:"none",width:"100%"}}/>
+          </div>
+          <span style={{fontSize:11,color:T.muted,alignSelf:"center",whiteSpace:"nowrap"}}>available</span>
+        </div>
+        <button className="btn btn-gold" onClick={runDCA} disabled={loadingDCA||!cash} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9,background:T.green,color:"#0a0c10"}}>
+          {loadingDCA?<><span className="sp">⟳</span> Planning...</>:"💵 Get DCA Plan"}
+        </button>
+        {dca&&<div style={{marginTop:14}}>
+          <div style={{fontSize:11,color:T.muted,lineHeight:1.6,marginBottom:12}}>{dca.summary}</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {dca.allocations?.map(({ticker,amount,pct,reason,isNew})=>(
+              <div key={ticker} style={{background:T.card,borderRadius:8,padding:"10px 12px",border:`1px solid ${T.green}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <Mn sz={13} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                    {isNew&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:8,background:`${T.purple}20`,color:T.purple,border:`1px solid ${T.purple}33`}}>NEW</span>}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <Mn sz={13} c={T.green} s={{fontWeight:700}}>${Math.round(amount).toLocaleString()}</Mn>
+                    <span style={{fontSize:10,color:T.muted}}>{pct}%</span>
+                  </div>
+                </div>
+                <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{reason}</div>
+                <div style={{height:2,background:T.border,borderRadius:2,marginTop:6}}><div style={{height:"100%",width:`${pct}%`,background:T.green,borderRadius:2}}/></div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:10,padding:"8px 12px",background:`${T.green}10`,border:`1px solid ${T.green}22`,borderRadius:8,display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:11,color:T.muted}}>Total to deploy</span>
+            <Mn sz={13} c={T.green} s={{fontWeight:700}}>${Math.round(dca.totalDeployed||0).toLocaleString()}</Mn>
+          </div>
+        </div>}
+      </div>
+    </div>
+
+    <div style={{marginTop:14,padding:"10px 14px",background:T.card,borderRadius:8,border:`1px solid ${T.border}`,fontSize:10,color:T.muted,textAlign:"center"}}>
+      ⚠️ AI suggestions are for educational purposes only. Always do your own research before investing.
+    </div>
+  </Card>;
+}
+
 // ── PORTFOLIO TRACKER ────────────────────────────────────────────────────────
 const BROKERS=[
   {name:"Interactive Brokers",url:"https://www.interactivebrokers.com",desc:"Best for active investors · Low commissions",badge:"Most Popular"},
@@ -1556,7 +1763,8 @@ const BROKERS=[
   {name:"Tastytrade",url:"https://tastytrade.com",desc:"Best for options · Commission-free stocks",badge:""},
 ];
 
-function PortfolioTab(){
+function PortfolioTab({canAnalyze,onShowPaywall}){
+  const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("compoundr_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
   const [positions,setPositions]=useState([]);
@@ -1635,15 +1843,19 @@ function PortfolioTab(){
     try{localStorage.setItem("compoundr_portfolio",JSON.stringify(pos));}catch(e){}
   };
 
+  const FREE_POSITION_LIMIT=3;
+  const [showPortfolioPaywall,setShowPortfolioPaywall]=useState(false);
+
   const addPosition=()=>{
     if(!form.ticker||!form.shares||!form.buyPrice){setErr("Fill in ticker, shares and buy price.");return;}
-    const newPos={
-      id:Date.now(),
-      ticker:form.ticker.toUpperCase(),
-      shares:parseFloat(form.shares),
-      buyPrice:parseFloat(form.buyPrice),
-      date:form.date||new Date().toISOString().split("T")[0],
-    };
+    const ticker=form.ticker.toUpperCase();
+    // Count unique tickers already in portfolio
+    const existingTickers=new Set(positions.map(p=>p.ticker));
+    const isNew=!existingTickers.has(ticker);
+    if(isNew&&existingTickers.size>=FREE_POSITION_LIMIT&&!isAdmin()){
+      setShowPortfolioPaywall(true);return;
+    }
+    const newPos={id:Date.now(),ticker,shares:parseFloat(form.shares),buyPrice:parseFloat(form.buyPrice),date:form.date||new Date().toISOString().split("T")[0]};
     const updated=[...positions,newPos];
     setPositions(updated);save(updated);
     setForm({ticker:"",shares:"",buyPrice:"",date:""});setErr("");
@@ -1672,9 +1884,10 @@ function PortfolioTab(){
     setPrices(results);setLoadingPrices(false);
   };
 
-  // AI portfolio analysis — with 10-stock paywall
+  // AI portfolio analysis — premium only
   const analyzePortfolio=async()=>{
     if(!positions.length){setErr("Add at least one position first.");return;}
+    if(!isAdmin()){onShowPaywall("portfolio");return;}
     // Group for summary (use grouped tickers)
     const grp=Object.values(positions.reduce((acc,p)=>{
       if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCost:0};}
@@ -1683,8 +1896,9 @@ function PortfolioTab(){
       return acc;
     },{})).map(g=>({...g,avgCost:g.totalCost/g.totalShares}));
     // ── PAYWALL: more than FREE_PORTFOLIO_LIMIT unique tickers (bypass for admin) ──
-    if(grp.length>FREE_PORTFOLIO_LIMIT&&!isAdmin()){
-      setErr(`🔒 Free plan supports up to ${FREE_PORTFOLIO_LIMIT} stocks in AI analysis. Upgrade to Premium for unlimited portfolio analysis.`);
+    // Portfolio AI Analysis always premium (>3 positions)
+    if(!isAdmin()&&grouped.length>FREE_PORTFOLIO_LIMIT){
+      setPaywallCtx("portfolio");
       return;
     }
     setLoadingAI(true);setErr("");setAiAnalysis(null);
@@ -1722,7 +1936,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   };
 
   // ── FIX 2: Group positions by ticker — avg cost basis ──
-  const FREE_PORTFOLIO_LIMIT=10;
+  const FREE_PORTFOLIO_LIMIT=3;
   const grouped=Object.values(
     positions.reduce((acc,p)=>{
       if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCostBasis:0,entries:[]};}
@@ -1779,7 +1993,24 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     </svg>;
   }
 
+  // AI Analysis paywall wrapper
+  const handleAIAnalysis=()=>{
+    const uniqueTickers=new Set(positions.map(p=>p.ticker)).size;
+    if(uniqueTickers>FREE_POSITION_LIMIT&&!isAdmin()){setShowPortfolioPaywall(true);return;}
+    analyzePortfolio();
+  };
+
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    {/* Portfolio paywall modal */}
+    {showPortfolioPaywall&&<PaywallModal context="portfolio" onClose={()=>setShowPortfolioPaywall(false)}/>}
+
+    {/* Free plan banner */}
+    {!isAdmin()&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",background:`${T.gold}08`,border:`1px solid ${T.goldDim}33`,borderRadius:8}}>
+      <span style={{fontSize:11,color:T.muted}}>
+        📁 Free plan: <span style={{color:T.gold,fontWeight:600}}>{Math.min(new Set(positions.map(p=>p.ticker)).size,FREE_POSITION_LIMIT)}/{FREE_POSITION_LIMIT} stocks</span> tracked · AI Analysis included for up to {FREE_POSITION_LIMIT} stocks
+      </span>
+      <button className="seg" onClick={()=>setShowPortfolioPaywall(true)} style={{color:T.gold,borderColor:T.goldDim,fontSize:10}}>🚀 Upgrade</button>
+    </div>}
 
     {/* Header */}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
@@ -1791,7 +2022,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
           {loadingPrices?<><span className="sp">⟳</span> Updating...</>:"🔄 Refresh Prices"}
         </button>
-        <button className="btn btn-gold" onClick={analyzePortfolio} disabled={loadingAI||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
+        <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
           {loadingAI?<><span className="sp">⟳</span> Analyzing...</>:"🤖 AI Analysis"}
         </button>
       </div>
@@ -1923,6 +2154,14 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a Buffett/Munger assessment.</div>
           </Card>
           :<>
+            {/* ── PREMIUM OVERLAY if >3 positions and not admin ── */}
+            {grouped.length>3&&!isAdmin()&&<div style={{padding:"16px 20px",background:`${T.gold}10`,border:`2px solid ${T.goldDim}55`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+              <div>
+                <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:4}}>🔒 Premium Feature — {grouped.length} stocks detected</div>
+                <div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>Free plan shows up to 3 stocks. Upgrade to track unlimited positions, get AI Analysis, Rebalance suggestions and DCA recommendations.</div>
+              </div>
+              <button className="btn btn-gold" onClick={()=>onShowPaywall("portfolio")} style={{fontSize:13,padding:"11px 22px",borderRadius:10,flexShrink:0}}>🚀 Upgrade to Premium</button>
+            </div>}
             {/* ── PIE CHART ── */}
             <Card s={{padding:18}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🥧 Portfolio Allocation</div>
@@ -2093,42 +2332,26 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             ))}
           </div>
         </Card>}
+
+        {/* ── REBALANCE + DCA ── */}
+        {aiAnalysis&&<RebalanceDCA positions={enriched} totalValue={totalValue} savedProfile={savedProfile} callAI={callAI}/>}
       </div>
     </div>
 
-    {/* Broker section */}
-    <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:showBrokers?16:0}}>
-        <div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>🏦 Ready to Execute Your Portfolio?</div>
-          <div style={{fontSize:12,color:T.muted,marginTop:3}}>Open an account with a trusted broker and start investing today</div>
-        </div>
-        <button className="seg" onClick={()=>setShowBrokers(v=>!v)} style={{color:T.gold,borderColor:T.goldDim}}>
-          {showBrokers?"Hide":"View Brokers →"}
-        </button>
-      </div>
-      {showBrokers&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-        {BROKERS.map(({name,url,desc,badge})=>(
-          <a key={name} href={url} target="_blank" rel="noopener noreferrer"
-            style={{display:"block",textDecoration:"none",background:T.card,borderRadius:12,padding:16,border:`1px solid ${T.border}`,transition:"border-color 0.2s"}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor=T.goldDim}
-            onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}>
-            {badge&&<div style={{fontSize:9,background:`${T.green}20`,color:T.green,border:`1px solid ${T.green}33`,padding:"2px 8px",borderRadius:10,display:"inline-block",marginBottom:8}}>{badge}</div>}
-            <div style={{fontSize:14,color:T.text,fontWeight:600,marginBottom:4}}>{name}</div>
-            <div style={{fontSize:11,color:T.muted,lineHeight:1.5,marginBottom:10}}>{desc}</div>
-            <div style={{fontSize:11,color:T.gold}}>Open Account →</div>
-          </a>
-        ))}
-      </div>}
-    </Card>
-
     <AdBanner size="leaderboard"/>
+
+    {/* Disclaimer */}
+    <Card s={{background:`${T.red}08`,border:`1px solid ${T.red}22`,padding:12}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.8}}>
+        ⚠️ <span style={{color:T.gold}}>Disclaimer:</span> Portfolio analysis is for educational purposes only. Not financial advice. Always consult a licensed financial advisor.
+      </div>
+    </Card>
   </div>;
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
-const FREE_LIMIT=2;
+const FREE_LIMIT=3;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
 function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_count")||"0");}catch{return 0;}}
@@ -2141,6 +2364,7 @@ export default function App(){
   const [company,setCompany]=useState("");
   const [sector,setSector]=useState("Technology");
   const [showPaywall,setShowPaywall]=useState(false);
+  const [paywallContext,setPaywallContext]=useState("stock");
   const [adminMode,setAdminMode]=useState(isAdmin());
 
   useState(()=>{
@@ -2151,13 +2375,13 @@ export default function App(){
     window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
   });
 
-  const canAnalyze=()=>{const c=getCount();if(c>=FREE_LIMIT){setShowPaywall(true);return false;}return true;};
+  const canAnalyze=(ctx="stock")=>{const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setShowPaywall(true);return false;}return true;};
   const onAnalysis=()=>{incCount();};
   const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
 
   return<div style={{minHeight:"100vh",background:T.bg}}>
     <style>{css}</style>
-    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}}/>}
+    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext}/>}
     <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100}}>
       <div style={{maxWidth:1380,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
@@ -2184,7 +2408,7 @@ export default function App(){
       {tab==="whatif"&&<WhatIfTab/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")}/>}
-      {tab==="portfolio"&&<PortfolioTab/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}}/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="dcf"&&<DCFTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
