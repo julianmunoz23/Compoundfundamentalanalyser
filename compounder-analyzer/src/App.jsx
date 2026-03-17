@@ -1,9 +1,32 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
   BarChart, Bar, Legend,
 } from "recharts";
+
+// ── ERROR BOUNDARY — prevents white screen on any crash ──────────────────────
+class ErrorBoundary extends React.Component{
+  constructor(p){super(p);this.state={err:null};}
+  static getDerivedStateFromError(e){return{err:e};}
+  componentDidCatch(e,info){console.error("App crash:",e,info);}
+  render(){
+    if(this.state.err)return(
+      <div style={{minHeight:"100vh",background:"#0a0c10",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+        <div style={{background:"#141820",border:"1px solid #e74c3c44",borderRadius:16,padding:32,maxWidth:500,textAlign:"center"}}>
+          <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#c9a84c",marginBottom:10}}>Something went wrong</div>
+          <div style={{fontSize:13,color:"#6b7694",marginBottom:20,lineHeight:1.7}}>{this.state.err.message}</div>
+          <button onClick={()=>this.setState({err:null})} style={{background:"#c9a84c",color:"#0a0c10",border:"none",borderRadius:8,padding:"10px 24px",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 
 const T = {
   bg:"#0a0c10",surface:"#10141c",card:"#141820",border:"#1e2534",
@@ -1661,7 +1684,7 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
   return<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.blue}33`}}>
     <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.blue,marginBottom:6}}>⚖️ Rebalance & DCA Advisor</div>
     <div style={{fontSize:12,color:T.muted,marginBottom:18,lineHeight:1.7}}>
-      Get AI recommendations to rebalance your portfolio to match your <strong style={{color:profile?.color||T.gold}}>{profileLabel}</strong> profile, or distribute new cash strategically via Dollar Cost Averaging.
+      Get AI recommendations to rebalance your portfolio to match your <strong style={{color:savedProfile?.color||T.gold}}>{profileLabel}</strong> profile, or distribute new cash strategically via Dollar Cost Averaging.
     </div>
 
     {err&&<div style={{padding:"8px 12px",background:`${T.red}15`,border:`1px solid ${T.red}33`,borderRadius:8,fontSize:12,color:T.red,marginBottom:12}}>{err}</div>}
@@ -1922,12 +1945,6 @@ function PortfolioTab({canAnalyze,onShowPaywall}){
       acc[p.ticker].totalCost+=p.shares*p.buyPrice;
       return acc;
     },{})).map(g=>({...g,avgCost:g.totalCost/g.totalShares}));
-    // ── PAYWALL: more than FREE_PORTFOLIO_LIMIT unique tickers (bypass for admin) ──
-    // Portfolio AI Analysis always premium (>3 positions)
-    if(!isAdmin()&&grouped.length>FREE_PORTFOLIO_LIMIT){
-      setPaywallCtx("portfolio");
-      return;
-    }
     setLoadingAI(true);setErr("");setAiAnalysis(null);
     const summary=grp.map(p=>{
       const lp=prices[p.ticker];
@@ -1936,8 +1953,12 @@ function PortfolioTab({canAnalyze,onShowPaywall}){
       return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%`;
     }).join(" | ");
     try{
-      const profileCtx=savedProfile?`The investor has completed a Risk Profile quiz and was classified as: ${savedProfile.label} investor. Profile description: ${savedProfile.desc}. Evaluate whether this portfolio MATCHES their risk profile and flag mismatches.`:"No risk profile available — analyze purely on fundamentals.";
-      const p=await callAI(`You are a Buffett/Munger portfolio analyst. Analyze this investor's portfolio:
+      const profileCtx=savedProfile?`Risk Profile: ${savedProfile.label}. ${savedProfile.desc}`:"No risk profile.";
+      // Use higher token limit for large portfolios
+      const portfolioRes=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,messages:[{role:"user",content:`You are a Buffett/Munger portfolio analyst. Analyze this investor's portfolio:
 ${summary}
 Total positions: ${positions.length}
 Investor Risk Profile: ${profileCtx}
@@ -1956,9 +1977,14 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   "suggestions":["<actionable suggestion 1>","<actionable suggestion 2>","<actionable suggestion 3>"],
   "risk":"<Low|Moderate|High>",
   "vsMarket":"<Likely to Outperform|In Line|Likely to Underperform>"
-}`);
+`}]})
+      });
+      const portfolioData=await portfolioRes.json();
+      if(portfolioData.error)throw new Error(portfolioData.error.message);
+      const raw=portfolioData.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
+      const p=JSON.parse(raw);
       setAiAnalysis(p);
-    }catch(e){setErr(`AI error: ${e.message}`);}
+    }catch(e){setErr(`Analysis error: ${e.message||"Could not analyze. Try again."}`);setAiAnalysis(null);}
     setLoadingAI(false);
   };
 
@@ -2275,15 +2301,15 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         {/* AI Analysis result */}
         {aiAnalysis&&<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
           {/* Profile Match Banner */}
-          {savedProfile&&aiAnalysis.profileMatch&&aiAnalysis.profileMatch!=="No Profile Data"&&<div style={{
+          {savedProfile&&aiAnalysis?.profileMatch&&aiAnalysis.profileMatch!=="No Profile Data"&&<div style={{
             padding:"12px 16px",borderRadius:10,marginBottom:14,
-            background:aiAnalysis.profileMatch.includes("Perfect")||aiAnalysis.profileMatch.includes("Good")?`${T.green}12`:`${T.red}12`,
-            border:`1px solid ${aiAnalysis.profileMatch.includes("Perfect")||aiAnalysis.profileMatch.includes("Good")?T.green:T.red}33`,
+            background:(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?`${T.green}12`:`${T.red}12`,
+            border:`1px solid ${(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?T.green:T.red}33`,
             display:"flex",alignItems:"flex-start",gap:10
           }}>
             <span style={{fontSize:18,flexShrink:0}}>{savedProfile.icon}</span>
             <div>
-              <div style={{fontSize:12,fontWeight:700,color:aiAnalysis.profileMatch.includes("Perfect")||aiAnalysis.profileMatch.includes("Good")?T.green:T.red,marginBottom:3}}>
+              <div style={{fontSize:12,fontWeight:700,color:(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?T.green:T.red,marginBottom:3}}>
                 {aiAnalysis.profileMatch} — {savedProfile.label} Investor Profile
               </div>
               <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{aiAnalysis.profileMatchReason}</div>
@@ -2302,9 +2328,9 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                 {[
                   {l:"Risk",v:aiAnalysis.risk,c:aiAnalysis.risk==="Low"?T.green:aiAnalysis.risk==="High"?T.red:T.gold},
                   {l:"Concentration",v:aiAnalysis.concentration,c:T.blue},
-                  {l:"vs S&P 500",v:aiAnalysis.vsMarket,c:aiAnalysis.vsMarket?.includes("Out")?T.green:aiAnalysis.vsMarket?.includes("Under")?T.red:T.gold},
+                  {l:"vs S&P 500",v:aiAnalysis.vsMarket||"—",c:(aiAnalysis.vsMarket||"").includes("Out")?T.green:(aiAnalysis.vsMarket||"").includes("Under")?T.red:T.gold},
                   {l:"Top Sector",v:aiAnalysis.topSector,c:T.purple},
-                  ...(savedProfile?[{l:"Profile Match",v:aiAnalysis.profileMatch,c:aiAnalysis.profileMatch?.includes("Perfect")||aiAnalysis.profileMatch?.includes("Good")?T.green:T.red}]:[]),
+                  ...(savedProfile&&aiAnalysis.profileMatch?[{l:"Profile Match",v:aiAnalysis.profileMatch,c:(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?T.green:T.red}]:[]),
                 ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"6px 12px"}}>
                   <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",marginBottom:2}}>{l}</div>
                   <Mn sz={12} c={c} s={{fontWeight:600}}>{v}</Mn>
@@ -2386,7 +2412,8 @@ export default function App(){
   const onAnalysis=()=>{incCount();};
   const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
 
-  return<div style={{minHeight:"100vh",background:T.bg}}>
+  return<ErrorBoundary>
+  <div style={{minHeight:"100vh",background:T.bg}}>
     <style>{css}</style>
     {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext}/>}
     <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100}}>
@@ -2423,5 +2450,6 @@ export default function App(){
     <div style={{borderTop:`1px solid ${T.border}`,padding:"14px 28px",maxWidth:1380,margin:"0 auto"}}>
       <div style={{fontSize:9,color:T.muted,textAlign:"center"}}><span style={{color:T.goldDim}}>Compounder Analyst</span> · Inspired by Buffett · Munger · Educational only — not financial advice.</div>
     </div>
-  </div>;
+  </div>
+  </ErrorBoundary>;
 }
