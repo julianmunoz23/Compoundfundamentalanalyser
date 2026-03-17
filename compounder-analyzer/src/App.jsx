@@ -340,7 +340,7 @@ function calcYearsTo1M(startAge,monthly=200,annualRate=10){
   return {years:months/12, reachAge:Math.round(startAge+months/12)};
 }
 
-function CompoundTab(){
+function CompoundTab({onGoToTab}){
   const [draft,setDraft]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
   const [cfg,setCfg]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
   const [showTable,setShowTable]=useState(true);
@@ -575,6 +575,34 @@ function CompoundTab(){
 
     {/* ── MILLION DOLLAR GOAL SECTION ── */}
     <MillionGoalSection/>
+
+    {/* ── NEXT STEP CTA ── */}
+    <div style={{background:`linear-gradient(135deg,${T.accent},${T.card})`,border:`1px solid ${T.goldDim}44`,borderRadius:16,padding:"32px 28px",textAlign:"center"}}>
+      <div style={{fontSize:11,color:T.gold,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:10}}>✦ You know the numbers — now take action</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.text,marginBottom:8,fontWeight:700}}>
+        What's your <span style={{color:T.gold}}>next step?</span>
+      </div>
+      <div style={{fontSize:13,color:T.muted,marginBottom:28,maxWidth:520,margin:"0 auto 28px",lineHeight:1.7}}>
+        You've seen how compound interest builds wealth. Now discover exactly what to invest in — based on your risk profile, your goals, and your current portfolio.
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:860,margin:"0 auto"}}>
+        {[
+          {icon:"🧬",title:"Discover Your Investor DNA",desc:"Take our 8-question quiz and get a Conservative, Moderate, or Aggressive profile with a personalized AI portfolio.",cta:"Take the Quiz →",tab:"profile",color:T.purple},
+          {icon:"🎯",title:"Analyze a Specific Stock",desc:"Enter any ticker — NVDA, AAPL, COST — and get a Buffett/Munger quality score, moat analysis, and Wall Street consensus.",cta:"Analyze a Stock →",tab:"score",color:T.gold},
+          {icon:"📁",title:"Audit Your Portfolio",desc:"Already invested? Upload your positions and our AI will tell you what to hold, buy more, or sell — with live prices.",cta:"Analyze Portfolio →",tab:"portfolio",color:T.green},
+        ].map(({icon,title,desc,cta,tab,color})=>(
+          <div key={tab} onClick={()=>onGoToTab(tab)}
+            style={{cursor:"pointer",background:T.card,border:`1px solid ${color}33`,borderRadius:14,padding:22,textAlign:"left",transition:"all 0.2s",position:"relative",overflow:"hidden"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=color;e.currentTarget.style.transform="translateY(-2px)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=`${color}33`;e.currentTarget.style.transform="translateY(0)";}}>
+            <div style={{fontSize:32,marginBottom:10}}>{icon}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.text,fontWeight:600,marginBottom:8}}>{title}</div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.7,marginBottom:14}}>{desc}</div>
+            <div style={{fontSize:12,color:color,fontWeight:600}}>{cta}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   </div>;
 }
 
@@ -790,6 +818,104 @@ function WhatIfTab(){
   </div>;
 }
 
+// ── INLINE DCF — embedded in Stock Analyze ────────────────────────────────────
+function InlineDCF({company,onAnalysis,canAnalyze}){
+  const [open,setOpen]=useState(false);
+  const [loading,setLoading]=useState(false);
+  const [dcf,setDcf]=useState(null);
+  const [err,setErr]=useState("");
+  const [d,setD]=useState({rev:1000,rg:20,mt:20,fc:0.85,tg:2.5,w:10,sh:100,ca:200,de:300,yr:10});
+
+  const buildDCF=async()=>{
+    if(!canAnalyze())return;
+    setLoading(true);setErr("");
+    try{
+      const p=await callAI(`For the company "${company}", provide real DCF inputs based on actual data. Respond ONLY with valid JSON, no markdown:
+{"rev":<annual revenue millions USD>,"rg":<revenue growth % next 5Y>,"mt":<FCF margin %>,"fc":<FCF conversion 0.5-1>,"tg":<terminal growth % 1-4>,"w":<WACC % 6-15>,"sh":<shares outstanding millions>,"ca":<cash millions>,"de":<total debt millions>,"currentPrice":<stock price USD>,"summary":"<2 sentences on valuation conclusion>"}`);
+      setD(prev=>({...prev,...{rev:p.rev||prev.rev,rg:p.rg||prev.rg,mt:p.mt||prev.mt,fc:p.fc||prev.fc,tg:p.tg||prev.tg,w:p.w||prev.w,sh:p.sh||prev.sh,ca:p.ca||prev.ca,de:p.de||prev.de}}));
+      setDcf(p);onAnalysis();
+    }catch(e){setErr("DCF error: "+e.message);}
+    setLoading(false);
+  };
+
+  const flows=Array.from({length:d.yr},(_,i)=>{
+    const r=d.rev*Math.pow(1+d.rg/100,i+1),f=r*(d.mt/100)*d.fc,pv=f/Math.pow(1+d.w/100,i+1);
+    return{y:`Y${i+1}`,f:Math.round(f),pv:Math.round(pv)};
+  });
+  const tF=flows[d.yr-1]?.f||0;
+  const tV=d.w>d.tg?(tF*(1+d.tg/100))/((d.w-d.tg)/100):0;
+  const tPV=tV/Math.pow(1+d.w/100,d.yr);
+  const sumPV=flows.reduce((a,f)=>a+f.pv,0);
+  const ev=sumPV+tPV,eq=ev+d.ca-d.de,ips=d.sh>0?eq/d.sh:0;
+  const upside=dcf?.currentPrice&&ips>0?((ips-dcf.currentPrice)/dcf.currentPrice*100):null;
+
+  return<Card s={{border:`1px solid ${T.border}`,padding:0,overflow:"hidden"}}>
+    <div onClick={()=>setOpen(v=>!v)}
+      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",cursor:"pointer"}}
+      onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:18}}>📊</span>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>DCF Valuation — {company}</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>Is {company} overvalued or undervalued? Click to find out.</div>
+        </div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        {ips>0&&dcf&&<div style={{textAlign:"right"}}>
+          <Mn sz={16} c={upside!=null&&upside>=0?T.green:T.red} s={{fontWeight:700}}>${ips.toFixed(2)}/share</Mn>
+          {upside!=null&&<div style={{fontSize:10,color:upside>=0?T.green:T.red}}>{upside>=0?"+":""}{upside.toFixed(1)}% vs market</div>}
+        </div>}
+        <span style={{color:T.muted,fontSize:12}}>{open?"▲":"▼"}</span>
+      </div>
+    </div>
+
+    {open&&<div style={{padding:"20px",borderTop:`1px solid ${T.border}`}}>
+      {!dcf&&!loading&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:`${T.gold}08`,borderRadius:10,marginBottom:16}}>
+        <div style={{fontSize:12,color:T.muted,lineHeight:1.6}}>
+          AI pulls real data for <strong style={{color:T.text}}>{company}</strong> and estimates the intrinsic value per share.
+        </div>
+        <button className="btn btn-gold" onClick={buildDCF} style={{fontSize:13,padding:"10px 20px",flexShrink:0,marginLeft:16}}>
+          📊 Build DCF
+        </button>
+      </div>}
+      {loading&&<div style={{textAlign:"center",padding:16,fontSize:12,color:T.gold}}><span className="sp">⟳</span> Building DCF for {company}...</div>}
+      {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,marginBottom:12}}>{err}</div>}
+
+      {dcf&&<>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
+          {[
+            {l:"Intrinsic Value",v:`$${ips.toFixed(2)}`,c:T.green,sub:"per share (DCF)"},
+            {l:"Current Price",v:dcf.currentPrice?`$${dcf.currentPrice}`:"—",c:T.gold,sub:"market price"},
+            {l:"Upside / Downside",v:upside!=null?`${upside>=0?"+":""}${upside.toFixed(1)}%`:"—",c:upside!=null?(upside>=0?T.green:T.red):T.muted,sub:upside!=null?(upside>=15?"Undervalued":upside<=-15?"Overvalued":"Fair Value"):""},
+          ].map(({l,v,c,sub})=><div key={l} style={{background:T.accent,borderRadius:10,padding:"12px 14px",textAlign:"center"}}>
+            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{l}</div>
+            <Mn sz={20} c={c} s={{fontWeight:700}}>{v}</Mn>
+            <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
+          </div>)}
+        </div>
+        {dcf.summary&&<div style={{padding:12,background:T.accent,borderRadius:8,fontSize:12,color:T.text,lineHeight:1.7,marginBottom:14,border:`1px solid ${T.border}`}}>{dcf.summary}</div>}
+        <div style={{height:150,marginBottom:10}}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={flows} margin={{top:5,right:5,left:10,bottom:0}}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
+              <XAxis dataKey="y" tick={{fill:T.muted,fontSize:9}}/>
+              <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>`$${v}M`} width={60}/>
+              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={(v,n)=>[`$${v}M`,n==="f"?"FCF":"Discounted"]}/>
+              <Bar dataKey="f" fill={T.green} opacity={0.7} radius={[3,3,0,0]} name="f"/>
+              <Bar dataKey="pv" fill={T.gold} opacity={0.7} radius={[3,3,0,0]} name="pv"/>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div style={{fontSize:10,color:T.muted,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span>EV = ${Math.round(sumPV)}M + ${Math.round(tPV)}M = ${Math.round(ev)}M &nbsp;·&nbsp; Intrinsic = <span style={{color:T.green}}>${ips.toFixed(2)}/share</span></span>
+          <button className="seg" onClick={()=>setDcf(null)} style={{fontSize:10}}>🔄 Rebuild</button>
+        </div>
+      </>}
+    </div>}
+  </Card>;
+}
+
 // ── SCORECARD ─────────────────────────────────────────────────────────────────
 function MRow({c,value,onChange,locked}){
   const s=sm(c,value),pass=c.invert?value<=c.threshold:value>=c.threshold;
@@ -958,6 +1084,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <div style={{height:3,background:T.border,borderRadius:2}}><div style={{height:"100%",width:`${s}%`,background:s>=60?T.green:s>=40?T.gold:T.red,borderRadius:2,transition:"width 0.5s"}}/></div>
       </div>)}</div>
     </div>}
+
+    {/* ── INLINE DCF — auto-fills from AI analysis ── */}
+    {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
 
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -2383,7 +2512,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"ret",l:"📐 Expected Return"},{id:"dcf",l:"📊 DCF Valuation"}];
+const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"ret",l:"📐 Expected Return"}];
 const FREE_LIMIT=3;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
@@ -2438,13 +2567,12 @@ export default function App(){
     </div>
     {!tab&&<Hero onStart={handleStart}/>}
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
-      {tab==="compound"&&<CompoundTab/>}
+      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)}/>}
       {tab==="whatif"&&<WhatIfTab/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}}/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
-      {tab==="dcf"&&<DCFTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"14px 28px",maxWidth:1380,margin:"0 auto"}}>
