@@ -1763,6 +1763,33 @@ const BROKERS=[
   {name:"Tastytrade",url:"https://tastytrade.com",desc:"Best for options · Commission-free stocks",badge:""},
 ];
 
+// ── PIE CHART ────────────────────────────────────────────────────────────────
+function PieChart({data,stockCount,size=220}){
+  if(!data||!data.length)return null;
+  const cx=size/2,cy=size/2,r=size*0.38,ir=size*0.22;
+  // Guard: filter out NaN pct
+  const valid=data.filter(d=>d.pct>0&&isFinite(d.pct));
+  if(!valid.length)return null;
+  let angle=-Math.PI/2;
+  const slices=valid.map(d=>{
+    const sweep=Math.max((d.pct/100)*2*Math.PI,0.001);
+    const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
+    angle+=sweep;
+    const x2=cx+r*Math.cos(angle),y2=cy+r*Math.sin(angle);
+    const ix1=cx+ir*Math.cos(angle-sweep),iy1=cy+ir*Math.sin(angle-sweep);
+    const ix2=cx+ir*Math.cos(angle),iy2=cy+ir*Math.sin(angle);
+    const large=sweep>Math.PI?1:0;
+    return{...d,path:`M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} L ${ix2.toFixed(2)} ${iy2.toFixed(2)} A ${ir} ${ir} 0 ${large} 0 ${ix1.toFixed(2)} ${iy1.toFixed(2)} Z`};
+  });
+  return<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    {slices.map((s,i)=><path key={i} d={s.path} fill={s.color} opacity={0.9} stroke={T.bg} strokeWidth={1.5}>
+      <title>{s.ticker}: {s.pct.toFixed(1)}%</title>
+    </path>)}
+    <text x={cx} y={cy-6} textAnchor="middle" fill={T.text} style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:700}}>{stockCount||valid.length}</text>
+    <text x={cx} y={cy+10} textAnchor="middle" fill={T.muted} style={{fontFamily:"'DM Sans',sans-serif",fontSize:9}}>stocks</text>
+  </svg>;
+}
+
 function PortfolioTab({canAnalyze,onShowPaywall}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
@@ -1965,33 +1992,13 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
   // ── PIE CHART data ──
   const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
-  const pieData=enriched.map((p,i)=>{
+  const pieData=totalValue>0?enriched.map((p,i)=>{
     const val=p.currentValue||p.totalCostBasis;
-    return{ticker:p.ticker,value:val,pct:(val/totalValue*100),color:PIE_COLORS[i%PIE_COLORS.length]};
-  }).sort((a,b)=>b.value-a.value);
+    const pct=totalValue>0?(val/totalValue*100):0;
+    return{ticker:p.ticker,value:val,pct,color:PIE_COLORS[i%PIE_COLORS.length]};
+  }).filter(d=>d.pct>0).sort((a,b)=>b.value-a.value):[];
 
-  // Simple SVG pie chart
-  function PieChart({data,size=220}){
-    const cx=size/2,cy=size/2,r=size*0.38,ir=size*0.22;
-    let angle=-Math.PI/2;
-    const slices=data.map(d=>{
-      const sweep=(d.pct/100)*2*Math.PI;
-      const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
-      angle+=sweep;
-      const x2=cx+r*Math.cos(angle),y2=cy+r*Math.sin(angle);
-      const ix1=cx+ir*Math.cos(angle-sweep),iy1=cy+ir*Math.sin(angle-sweep);
-      const ix2=cx+ir*Math.cos(angle),iy2=cy+ir*Math.sin(angle);
-      const large=sweep>Math.PI?1:0;
-      return{...d,path:`M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${ir} ${ir} 0 ${large} 0 ${ix1} ${iy1} Z`};
-    });
-    return<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {slices.map((s,i)=><path key={i} d={s.path} fill={s.color} opacity={0.9} stroke={T.bg} strokeWidth={1.5}>
-        <title>{s.ticker}: {s.pct.toFixed(1)}%</title>
-      </path>)}
-      <text x={cx} y={cy-6} textAnchor="middle" fill={T.text} style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:700}}>{enriched.length}</text>
-      <text x={cx} y={cy+10} textAnchor="middle" fill={T.muted} style={{fontFamily:"'DM Sans',sans-serif",fontSize:9}}>stocks</text>
-    </svg>;
-  }
+
 
   // AI Analysis paywall wrapper
   const handleAIAnalysis=()=>{
@@ -2166,7 +2173,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             <Card s={{padding:18}}>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🥧 Portfolio Allocation</div>
               <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:24,alignItems:"center"}}>
-                <PieChart data={pieData} size={200}/>
+                <PieChart data={pieData} stockCount={enriched.length} size={200}/>
                 <div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
                     {pieData.map(({ticker,pct,color,value})=>(
