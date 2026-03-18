@@ -328,51 +328,170 @@ async function resolveTicker(input){
   }catch(e){return clean;}
 }
 
+
+// ── LANGUAGE SYSTEM ──────────────────────────────────────────────────────────
+const LANG = {
+  en: {
+    nav_brand: "Compounder Analyst",
+    nav_sub: "Buffett · Munger · High-Growth Framework",
+    nav_free: (n) => n > 0 ? `${n} free analyses left` : "Free plan",
+    nav_premium: "🚀 Go Premium",
+    tab_compound: "💰 Calculator",
+    tab_whatif: "🚀 What If?",
+    tab_score: "🎯 Analyze Stock",
+    tab_profile: "🧬 Risk Profile",
+    tab_portfolio: "📁 My Portfolio",
+    tab_strategy: "📈 My Strategy",
+    tab_ret: "📐 Expected Return",
+    hero_badge: "✦ Trusted by investors worldwide · Buffett & Munger principles",
+    hero_h1a: "Invest like",
+    hero_h1b: "Buffett & Munger.",
+    hero_h1c: "Powered by AI.",
+    hero_sub: "The only platform combining compound interest modeling, AI stock analysis, risk profiling, and live portfolio tracking — built for serious long-term investors.",
+    hero_social: "Free to start · No credit card · Used by investors in 30+ countries",
+    hero_cta1: "💰 Start Free — Compound Calculator",
+    hero_cta2: "🎯 Analyze a Stock",
+    hero_steps_title: "Your path to smarter investing",
+    hero_step1_title: "Calculate your goal",
+    hero_step1_desc: "Use the compound calculator to define your wealth target and monthly savings plan.",
+    hero_step2_title: "Discover your profile",
+    hero_step2_desc: "Take the 8-question quiz to get your Conservative, Moderate, or Aggressive investor profile.",
+    hero_step3_title: "Get your AI portfolio",
+    hero_step3_desc: "Receive a personalized portfolio with entry prices, targets, and stop losses for each position.",
+    hero_step4_title: "Track your strategy",
+    hero_step4_desc: "Monitor plan vs reality — see what to hold, rebalance, or buy more with live prices.",
+    hero_top_label: "Top Compounders — 1Y Return",
+    footer_disc: "Educational only — not financial advice.",
+  },
+  es: {
+    nav_brand: "Compounder Analyst",
+    nav_sub: "Buffett · Munger · Marco de Alto Crecimiento",
+    nav_free: (n) => n > 0 ? `${n} análisis gratis restantes` : "Plan gratuito",
+    nav_premium: "🚀 Ir Premium",
+    tab_compound: "💰 Calculadora",
+    tab_whatif: "🚀 ¿Y si...?",
+    tab_score: "🎯 Analizar Acción",
+    tab_profile: "🧬 Perfil de Riesgo",
+    tab_portfolio: "📁 Mi Portafolio",
+    tab_strategy: "📈 Mi Estrategia",
+    tab_ret: "📐 Retorno Esperado",
+    hero_badge: "✦ Invierte con los principios de Buffett & Munger · Con IA",
+    hero_h1a: "Invierte como",
+    hero_h1b: "Buffett & Munger.",
+    hero_h1c: "Con el poder de la IA.",
+    hero_sub: "La única plataforma que combina calculadora de interés compuesto, análisis AI de acciones, perfil de riesgo y seguimiento de portafolio — diseñada para el inversor serio de largo plazo.",
+    hero_social: "Gratis para empezar · Sin tarjeta de crédito · Inversores en 30+ países",
+    hero_cta1: "💰 Empezar Gratis — Calculadora",
+    hero_cta2: "🎯 Analizar una Acción",
+    hero_steps_title: "Tu ruta hacia la inversión inteligente",
+    hero_step1_title: "Calcula tu meta",
+    hero_step1_desc: "Usa la calculadora de interés compuesto para definir tu objetivo de riqueza y plan de ahorro mensual.",
+    hero_step2_title: "Descubre tu perfil",
+    hero_step2_desc: "Responde 8 preguntas y obtén tu perfil de inversor: Conservador, Moderado o Agresivo.",
+    hero_step3_title: "Obtén tu portafolio IA",
+    hero_step3_desc: "Recibe un portafolio personalizado con precios de entrada, objetivos y stop loss para cada posición.",
+    hero_step4_title: "Sigue tu estrategia",
+    hero_step4_desc: "Monitorea plan vs realidad — ve qué mantener, rebalancear o comprar más con precios en vivo.",
+    hero_top_label: "Top Compounders — Retorno 1 año",
+    footer_disc: "Solo educativo — no es asesoría financiera.",
+  }
+};
+
 // ── HERO ──────────────────────────────────────────────────────────────────────
-function Hero({onStart}){
-  const TOP=[{t:"NVDA",r:"142%",c:T.green},{t:"MSFT",r:"28%",c:T.green},{t:"AAPL",r:"21%",c:T.green},{t:"COST",r:"38%",c:T.green},{t:"AMZN",r:"81%",c:T.green},{t:"META",r:"194%",c:T.green}];
-  return<div className="hero-grad fi" style={{padding:"60px 28px 50px",maxWidth:1380,margin:"0 auto"}}>
-    <div style={{textAlign:"center",marginBottom:48}}>
-      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"6px 16px",marginBottom:20}}>
-        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>✦ Trusted by investors worldwide · Buffett & Munger principles</span>
+function Hero({onStart,lang="en"}){
+  const L=LANG[lang]||LANG.en;
+  const TOP=[{t:"NVDA",r:"142%"},{t:"MSFT",r:"28%"},{t:"AAPL",r:"21%"},{t:"COST",r:"38%"},{t:"AMZN",r:"81%"},{t:"META",r:"194%"}];
+  const STEPS=[
+    {n:"1",icon:"💰",title:L.hero_step1_title,desc:L.hero_step1_desc,tab:"compound",color:T.gold},
+    {n:"2",icon:"🧬",title:L.hero_step2_title,desc:L.hero_step2_desc,tab:"profile",color:T.purple},
+    {n:"3",icon:"🤖",title:L.hero_step3_title,desc:L.hero_step3_desc,tab:"profile",color:T.green},
+    {n:"4",icon:"📈",title:L.hero_step4_title,desc:L.hero_step4_desc,tab:"strategy",color:T.blue},
+  ];
+  return<div className="hero-grad fi" style={{padding:"60px 28px 60px",maxWidth:1380,margin:"0 auto"}}>
+
+    {/* ── Main headline ── */}
+    <div style={{textAlign:"center",marginBottom:52}}>
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"6px 16px",marginBottom:22}}>
+        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>{L.hero_badge}</span>
       </div>
-      <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:46,color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
-        Invest like <span style={{color:T.gold}}>Buffett & Munger</span>.<br/>Powered by AI.
+      <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(36,5,52),color:T.text,lineHeight:1.12,marginBottom:18,fontWeight:700}}>
+        {L.hero_h1a} <span style={{color:T.gold}}>{L.hero_h1b}</span><br/>{L.hero_h1c}
       </h1>
-      <p style={{fontSize:16,color:T.muted,maxWidth:600,margin:"0 auto 12px",lineHeight:1.7}}>
-        The only platform that combines compound interest modeling, AI stock analysis, risk profiling, and live portfolio tracking — in one clean tool built for serious long-term investors.
+      <p style={{fontSize:16,color:T.muted,maxWidth:620,margin:"0 auto 10px",lineHeight:1.75}}>
+        {L.hero_sub}
       </p>
-      <p style={{fontSize:13,color:T.muted,maxWidth:480,margin:"0 auto 32px",lineHeight:1.6}}>
-        Used by investors in 30+ countries · Free to start · No credit card required
-      </p>
+      <p style={{fontSize:12,color:`${T.muted}99`,maxWidth:480,margin:"0 auto 32px"}}>{L.hero_social}</p>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold" onClick={()=>onStart("compound")} style={{fontSize:15,padding:"14px 32px",borderRadius:10}}>💰 Start Free — Compound Calculator</button>
-        <button className="btn btn-outline" onClick={()=>onStart("score")} style={{fontSize:14,padding:"14px 24px",borderRadius:10}}>🎯 Analyze a Stock</button>
+        <button className="btn btn-gold" onClick={()=>onStart("compound")}
+          style={{fontSize:15,padding:"15px 34px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
+          {L.hero_cta1}
+        </button>
+        <button className="btn btn-outline" onClick={()=>onStart("score")}
+          style={{fontSize:14,padding:"15px 26px",borderRadius:12}}>
+          {L.hero_cta2}
+        </button>
       </div>
     </div>
-    <div style={{maxWidth:800,margin:"0 auto 40px"}}><AdBanner size="leaderboard"/></div>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:700,margin:"0 auto 40px"}}>
-      {[{n:"100% Free",l:"Compound Calculator & Planner"},{n:"AI-Powered",l:"Stock Quality Analyzer"},{n:"Live Data",l:"Finnhub · Wall St. Consensus"}].map(({n,l})=>(
-        <div key={l} style={{textAlign:"center",padding:"16px",background:T.card,borderRadius:10,border:`1px solid ${T.border}`}}>
+
+    {/* ── User journey — 4 steps ── */}
+    <div style={{marginBottom:52}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:24}}>{L.hero_steps_title}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0,position:"relative"}}>
+        {/* Connector line */}
+        <div style={{position:"absolute",top:32,left:"12.5%",right:"12.5%",height:1,background:`linear-gradient(90deg,${T.gold}44,${T.purple}44,${T.green}44,${T.blue}44)`,zIndex:0}}/>
+        {STEPS.map(({n,icon,title,desc,tab,color},i)=>(
+          <div key={n} onClick={()=>onStart(tab)} style={{position:"relative",zIndex:1,cursor:"pointer",padding:"0 12px",textAlign:"center"}}
+            onMouseEnter={e=>e.currentTarget.querySelector(".step-card").style.borderColor=color}
+            onMouseLeave={e=>e.currentTarget.querySelector(".step-card").style.borderColor=`${color}33`}>
+            {/* Circle */}
+            <div style={{width:64,height:64,borderRadius:"50%",background:T.card,border:`2px solid ${color}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:26,boxShadow:`0 0 20px ${color}22`}}>
+              {icon}
+            </div>
+            <div className="step-card" style={{background:T.card,border:`1px solid ${color}33`,borderRadius:12,padding:"14px 12px",transition:"border-color 0.2s"}}>
+              <div style={{fontSize:9,color:color,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>Step {n}</div>
+              <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6,lineHeight:1.3}}>{title}</div>
+              <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{desc}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* ── Stats strip ── */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:700,margin:"0 auto 44px"}}>
+      {[
+        {n:"100% Free",l:lang==="es"?"Calculadora & Planificador":"Compound Calculator & Planner"},
+        {n:"AI-Powered",l:lang==="es"?"Análisis de Acciones":"Stock Quality Analyzer"},
+        {n:"Live Data",l:"Finnhub · Wall St. Consensus"},
+      ].map(({n,l})=>(
+        <div key={l} style={{textAlign:"center",padding:"16px",background:T.card,borderRadius:12,border:`1px solid ${T.border}`}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:4}}>{n}</div>
           <div style={{fontSize:11,color:T.muted}}>{l}</div>
         </div>
       ))}
     </div>
+
+    {/* ── Top Compounders ── */}
     <div>
-      <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12}}>Top Compounders — 1Y Return</div>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12}}>{L.hero_top_label}</div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-        {TOP.map(({t,r,c})=>(
-          <div key={t} onClick={()=>onStart("score",t)} style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}
-            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;}} onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;}}>
+        {TOP.map(({t,r})=>(
+          <div key={t} onClick={()=>onStart("score",t)}
+            style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 16px",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.transform="translateY(-2px)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="translateY(0)";}}>
             <Mn sz={13} c={T.text} s={{fontWeight:700}}>{t}</Mn>
-            <span style={{fontSize:12,color:c}}>+{r}</span>
+            <span style={{fontSize:12,color:T.green,fontWeight:600}}>+{r}</span>
           </div>
         ))}
       </div>
     </div>
+
+    <div style={{maxWidth:800,margin:"40px auto 0"}}><AdBanner size="leaderboard"/></div>
   </div>;
 }
+
+function clamp(min,mid,max){return`clamp(${min}px,${mid}vw,${max}px)`;}
 
 // ── COMPOUND CALCULATOR ────────────────────────────────────────────────────────
 // FIX 1: Monthly compounding formula (matches industry standard)
@@ -2962,6 +3081,9 @@ function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.
 
 export default function App(){
   const [tab,setTab]=useState(null);
+  const [lang,setLang]=useState(()=>{try{return localStorage.getItem("compoundr_lang")||"en";}catch{return "en";}});
+  const L=LANG[lang]||LANG.en;
+  const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{}const L2=LANG[nl];alert(nl==="es"?"🇨🇴 Idioma cambiado a Español":"🇺🇸 Language changed to English");};
   const [m,setM]=useState(defM());
   const [moat,setMoat]=useState(defMoat());
   const [company,setCompany]=useState("");
@@ -2986,31 +3108,48 @@ export default function App(){
   <div style={{minHeight:"100vh",background:T.bg}}>
     <style>{css}</style>
     {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext}/>}
-    <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100}}>
+    <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(8px)"}}>
       <div style={{maxWidth:1380,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
-          <div onClick={()=>setTab(null)} style={{cursor:"pointer"}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:19,color:T.gold,letterSpacing:"0.02em"}}>Compounder Analyst</div>
-            <div style={{fontSize:9,color:T.muted,letterSpacing:"0.15em",textTransform:"uppercase",marginTop:1}}>Buffett · Munger · High-Growth Framework</div>
+          <div onClick={()=>setTab(null)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>📈</div>
+            <div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,letterSpacing:"0.02em",lineHeight:1}}>{L.nav_brand}</div>
+              <div style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
+            </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            {/* Lang switcher */}
+            <button onClick={toggleLang} style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:4}}>
+              <span>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
+              <span style={{color:T.text,fontWeight:600}}>{lang==="en"?"ES":"EN"}</span>
+            </button>
             {adminMode
-              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin — unlimited access</div>
+              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin</div>
               :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
-                  {Math.max(0,FREE_LIMIT-getCount())>0?`${Math.max(0,FREE_LIMIT-getCount())} free analyses left`:"Free plan"}
+                  {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
                 </div>
-                <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:12,padding:"8px 18px"}}>
-                  🚀 Go Premium — $9.99/mo
+                <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:12,padding:"8px 16px"}}>
+                  {L.nav_premium}
                 </button></>
             }
           </div>
         </div>
-        {tab&&<div style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2}}>
-          {TABS.map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)} style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11}}>{t.l}</button>)}
+        {tab&&<div style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto"}}>
+          {[
+            {id:"compound",l:L.tab_compound},
+            {id:"whatif",l:L.tab_whatif},
+            {id:"score",l:L.tab_score},
+            {id:"profile",l:L.tab_profile},
+            {id:"portfolio",l:L.tab_portfolio},
+            {id:"strategy",l:L.tab_strategy},
+            {id:"ret",l:L.tab_ret},
+          ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
+            style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap"}}>{t.l}</button>)}
         </div>}
       </div>
     </div>
-    {!tab&&<Hero onStart={handleStart}/>}
+    {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)}/>}
       {tab==="whatif"&&<WhatIfTab/>}
@@ -3021,8 +3160,18 @@ export default function App(){
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
-    <div style={{borderTop:`1px solid ${T.border}`,padding:"14px 28px",maxWidth:1380,margin:"0 auto"}}>
-      <div style={{fontSize:9,color:T.muted,textAlign:"center"}}><span style={{color:T.goldDim}}>Compounder Analyst</span> · Inspired by Buffett · Munger · Educational only — not financial advice.</div>
+    <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+      <div style={{fontSize:9,color:T.muted}}>
+        <span style={{color:T.goldDim,fontFamily:"'Playfair Display',serif"}}>Compounder Analyst</span>
+        {" "}· Buffett · Munger · {L.footer_disc}
+      </div>
+      <div style={{display:"flex",gap:16}}>
+        {["Privacy Policy","Terms of Use","Contact"].map(l=>(
+          <span key={l} style={{fontSize:9,color:T.muted,cursor:"pointer"}}
+            onMouseEnter={e=>e.target.style.color=T.gold}
+            onMouseLeave={e=>e.target.style.color=T.muted}>{l}</span>
+        ))}
+      </div>
     </div>
   </div>
   </ErrorBoundary>;
