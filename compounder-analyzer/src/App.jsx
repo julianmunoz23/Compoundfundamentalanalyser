@@ -633,8 +633,15 @@ function calcYearsTo1M(startAge,monthly=200,annualRate=10){
 
 function CompoundTab({onGoToTab,lang="en"}){
   const L2=LANG[lang]||LANG.en;
-  const [draft,setDraft]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
-  const [cfg,setCfg]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
+  // Currency-aware slider limits — scale USD maxes by live exchange rate
+  const sMaxInitial=Math.round(5000000*_exRate);   // $5M USD equiv
+  const sStepInitial=Math.round(1000*_exRate);
+  const sMaxContrib=Math.round(20000*_exRate);      // $20K USD/mo equiv
+  const sStepContrib=Math.round(50*_exRate);
+  const sMaxGoal=Math.round(5000000*_exRate);       // $5M USD equiv for goal
+  const sStepGoal=Math.round(50000*_exRate);
+  const [draft,setDraft]=useState({initial:Math.round(10000*_exRate),rate:10,rateType:"annual",contrib:Math.round(500*_exRate),contribFreq:"monthly",years:10});
+  const [cfg,setCfg]=useState({initial:Math.round(10000*_exRate),rate:10,rateType:"annual",contrib:Math.round(500*_exRate),contribFreq:"monthly",years:10});
   const [showTable,setShowTable]=useState(true);
   const setD=(k,v)=>setDraft(p=>({...p,[k]:v}));
 
@@ -697,8 +704,8 @@ function CompoundTab({onGoToTab,lang="en"}){
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>⚙️ Your Scenario</div>
           <Lbl>Initial Investment</Lbl>
-          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span><input type="number" value={draft.initial} min={0} step={100} onChange={e=>setD("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/></div>
-          <input type="range" min={0} max={1000000} step={1000} value={draft.initial} onChange={e=>setD("initial",parseFloat(e.target.value))} style={{marginBottom:16}}/>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>{_currency.symbol}</span><input type="number" value={draft.initial} min={0} step={sStepInitial} onChange={e=>setD("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/></div>
+          <input type="range" min={0} max={sMaxInitial} step={sStepInitial} value={draft.initial} onChange={e=>setD("initial",parseFloat(e.target.value))} style={{marginBottom:16}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <Lbl s={{marginBottom:0}}>Annual Rate</Lbl>
             <div style={{display:"flex",gap:4}}>{["annual","monthly"].map(t=><button key={t} className={`seg ${draft.rateType===t?"seg-on":""}`} onClick={()=>setD("rateType",t)}>{t==="annual"?"Annual":"Monthly"}</button>)}</div>
@@ -713,8 +720,8 @@ function CompoundTab({onGoToTab,lang="en"}){
             <Lbl s={{marginBottom:0}}>Contributions (DCA)</Lbl>
             <div style={{display:"flex",gap:4}}>{["monthly","annual"].map(t=><button key={t} className={`seg ${draft.contribFreq===t?"seg-on":""}`} onClick={()=>setD("contribFreq",t)}>{t==="monthly"?"Mo":"Yr"}</button>)}</div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span><input type="number" value={draft.contrib} min={0} max={100000} step={50} onChange={e=>setD("contrib",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/><span style={{color:T.muted,fontSize:11}}>/{draft.contribFreq==="monthly"?"month":"year"}</span></div>
-          <input type="range" min={0} max={20000} step={50} value={draft.contrib} onChange={e=>setD("contrib",parseFloat(e.target.value))} style={{marginBottom:16}}/>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>{_currency.symbol}</span><input type="number" value={draft.contrib} min={0} max={sMaxContrib} step={sStepContrib} onChange={e=>setD("contrib",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/><span style={{color:T.muted,fontSize:11}}>/{draft.contribFreq==="monthly"?"month":"year"}</span></div>
+          <input type="range" min={0} max={sMaxContrib} step={sStepContrib} value={draft.contrib} onChange={e=>setD("contrib",parseFloat(e.target.value))} style={{marginBottom:16}}/>
           <Lbl>Investment Horizon</Lbl>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}><span style={{fontSize:12,color:T.muted}}>Years</span><Mn sz={13} c={T.gold}>{draft.years} years</Mn></div>
           <input type="range" min={1} max={50} step={1} value={draft.years} onChange={e=>setD("years",parseInt(e.target.value))} style={{marginBottom:20}}/>
@@ -956,7 +963,7 @@ function MillionGoalSection(){
           <span style={{fontSize:12,color:T.muted}}>🎯 Your wealth goal</span>
           <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{goalFmt(goal)}</Mn>
         </div>
-        <input type="range" min={100000} max={5000000} step={50000} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
+        <input type="range" min={Math.round(100000*_exRate)} max={Math.round(5000000*_exRate)} step={Math.round(50000*_exRate)} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
           <span>$100K</span><span>$1M</span><span>$5M</span>
         </div>
@@ -1075,7 +1082,7 @@ function WhatIfTab(){
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:16}}>🎯 Your Custom Scenario</div>
         <Lbl>Initial Capital</Lbl>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace"}}>$</span><input type="number" value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700}}/></div>
-        <input type="range" min={1000} max={1000000} step={1000} value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value))} style={{marginBottom:14}}/>
+        <input type="range" min={Math.round(1000*_exRate)} max={Math.round(1000000*_exRate)} step={Math.round(1000*_exRate)} value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value))} style={{marginBottom:14}}/>
         <Lbl>Expected CAGR</Lbl>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><input type="number" value={custom.cagr} onChange={e=>sc("cagr",parseFloat(e.target.value)||0)} style={{fontWeight:700}}/><span style={{color:T.muted,fontSize:12}}>% per year</span></div>
         <input type="range" min={1} max={100} step={0.5} value={custom.cagr} onChange={e=>sc("cagr",parseFloat(e.target.value))} style={{marginBottom:14}}/>
@@ -1105,6 +1112,179 @@ function WhatIfTab(){
       </Card>
     </div>
   </div>;
+}
+
+// ── INLINE EXPECTED RETURN — embedded in Stock Analyze ────────────────────────
+function InlineExpectedReturn({company,sector,onAnalysis,canAnalyze}){
+  const [open,setOpen]=useState(false);
+  const [loading,setLoading]=useState(false);
+  const [loaded,setLoaded]=useState(false);
+  const [err,setErr]=useState("");
+  const [summary,setSummary]=useState("");
+  const [inp,setInp]=useState({rg:0,me:0,mx:0,dv:0,pe:0,fg:0});
+  const s=(k,v)=>setInp(p=>({...p,[k]:v}));
+  const er=inp.rg+inp.me+inp.mx+inp.dv;
+
+  const loadReturn=async()=>{
+    if(!canAnalyze())return;
+    setLoading(true);setErr("");
+    try{
+      const p=await callAI(`You are an investment analyst. For "${company}" (${sector} sector), estimate the expected annual return components based on real Wall Street consensus and fundamentals.
+
+IMPORTANT: Be realistic. Most stocks return 8-20% annually. Only exceptional growth stocks like NVDA can justify 25%+.
+Explain each component clearly:
+- Revenue growth contribution: how much of return comes from actual business growth
+- Margin expansion: are margins expanding or contracting?
+- Multiple expansion/contraction: is the stock cheap or expensive vs history?
+- Dividends: actual dividend yield
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "rg":<revenue growth contribution %, number 0-30>,
+  "me":<margin expansion contribution %, number -5 to 8>,
+  "mx":<multiple expansion %, number -10 to 10>,
+  "dv":<dividend yield %, number 0-6>,
+  "pe":<current P/E, number>,
+  "fg":<analyst consensus EPS growth % next 3Y, number>,
+  "rgNote":"<1 sentence: why this revenue growth rate, cite specific data>",
+  "meNote":"<1 sentence: margin trend>",
+  "mxNote":"<1 sentence: valuation context vs historical average>",
+  "dvNote":"<1 sentence: dividend policy>",
+  "benchmarkNote":"<S&P 500 historical avg is 8-10%/yr. How does ${company} compare and why?>",
+  "summary":"<2-3 sentences: overall return thesis with analyst price target and upside if available>"
+}`);
+      setInp({rg:p.rg||0,me:p.me||0,mx:p.mx||0,dv:p.dv||0,pe:p.pe||0,fg:p.fg||0});
+      setSummary(p);setLoaded(true);onAnalysis();
+    }catch(e){setErr("Error: "+e.message);}
+    setLoading(false);
+  };
+
+  const proj=Array.from({length:11},(_,i)=>({
+    y:`Y${i}`,
+    p:Math.round(10000*_exRate*Math.pow(1+er/100,i)),
+    b:Math.round(10000*_exRate*Math.pow(1.085,i)),
+  }));
+
+  const erColor=er>=20?T.green:er>=12?T.gold:er>=8?T.blue:T.red;
+  const vsMarket=er-8.5;
+
+  return<Card s={{border:`1px solid ${T.border}`,padding:0,overflow:"hidden"}}>
+    <div onClick={()=>{setOpen(v=>!v);if(!open&&!loaded&&!loading)loadReturn();}}
+      style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",cursor:"pointer"}}
+      onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <span style={{fontSize:18}}>📐</span>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>
+            Expected Return Analysis — {company}
+          </div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>
+            {loaded
+              ?<span>Revenue Growth + Margin + Multiple + Dividends = <span style={{color:erColor,fontWeight:700}}>{er.toFixed(1)}%/yr</span> vs S&P 500 ~8.5%</span>
+              :"What realistic annual return can this stock deliver? Click to find out."}
+          </div>
+        </div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        {loaded&&<div style={{textAlign:"right"}}>
+          <div style={{fontSize:18,color:erColor,fontFamily:"'Playfair Display',serif",fontWeight:700}}>{er.toFixed(1)}%</div>
+          <div style={{fontSize:9,color:vsMarket>=0?T.green:T.red}}>{vsMarket>=0?"+":""}{vsMarket.toFixed(1)}% vs market</div>
+        </div>}
+        {!loaded&&!loading&&<span style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>Load →</span>}
+        {loading&&<span className="sp" style={{color:T.gold}}>⟳</span>}
+        <span style={{color:T.muted,fontSize:12}}>{open?"▲":"▼"}</span>
+      </div>
+    </div>
+
+    {open&&<div style={{padding:"20px",borderTop:`1px solid ${T.border}`}}>
+      {loading&&<div style={{textAlign:"center",padding:16,color:T.gold,fontSize:12}}><span className="sp">⟳</span> Analyzing {company} return components...</div>}
+      {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red}}>{err}</div>}
+
+      {loaded&&summary&&<>
+        {/* Return breakdown cards */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+          {[
+            {l:"Revenue Growth",k:"rg",note:summary.rgNote,c:T.green,icon:"📈"},
+            {l:"Margin Expansion",k:"me",note:summary.meNote,c:T.blue,icon:"💎"},
+            {l:"Multiple Expansion",k:"mx",note:summary.mxNote,c:inp.mx>=0?T.gold:T.red,icon:"📊"},
+            {l:"Dividends",k:"dv",note:summary.dvNote,c:T.muted,icon:"💵"},
+          ].map(({l,k,note,c,icon})=><div key={k} style={{background:T.accent,borderRadius:10,padding:"12px 12px",border:`1px solid ${c}22`}}>
+            <div style={{fontSize:10,color:T.muted,marginBottom:4}}>{icon} {l}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:c,fontWeight:700,marginBottom:4}}>
+              {inp[k]>=0?"+":""}{inp[k].toFixed(1)}%
+            </div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{note}</div>
+          </div>)}
+        </div>
+
+        {/* Total + benchmark */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+          <div style={{padding:"16px 20px",background:`${erColor}10`,border:`2px solid ${erColor}44`,borderRadius:12,textAlign:"center"}}>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>Total Expected Return</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:42,color:erColor,fontWeight:700,lineHeight:1}}>{er.toFixed(1)}%</div>
+            <div style={{fontSize:11,color:T.muted,marginTop:4}}>per year</div>
+            <div style={{marginTop:8,fontSize:11,color:vsMarket>=0?T.green:T.red,fontWeight:600}}>
+              {vsMarket>=0?`+${vsMarket.toFixed(1)}% above`:`${vsMarket.toFixed(1)}% below`} S&P 500
+            </div>
+          </div>
+          <div style={{padding:"14px 16px",background:T.card,borderRadius:12,border:`1px solid ${T.border}`}}>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>📊 Context</div>
+            <div style={{fontSize:12,color:T.text,lineHeight:1.8,marginBottom:8}}>{summary.benchmarkNote}</div>
+            <div style={{display:"flex",gap:8}}>
+              <div style={{flex:1,background:T.accent,borderRadius:8,padding:"7px 10px",textAlign:"center"}}>
+                <div style={{fontSize:9,color:T.muted,marginBottom:2}}>P/E Ratio</div>
+                <div style={{fontSize:13,color:T.gold,fontWeight:600}}>{inp.pe}x</div>
+              </div>
+              <div style={{flex:1,background:T.accent,borderRadius:8,padding:"7px 10px",textAlign:"center"}}>
+                <div style={{fontSize:9,color:T.muted,marginBottom:2}}>EPS Growth</div>
+                <div style={{fontSize:13,color:T.green,fontWeight:600}}>+{inp.fg}%</div>
+              </div>
+              <div style={{flex:1,background:T.accent,borderRadius:8,padding:"7px 10px",textAlign:"center"}}>
+                <div style={{fontSize:9,color:T.muted,marginBottom:2}}>PEG Ratio</div>
+                <div style={{fontSize:13,color:inp.pe/inp.fg<=1.5?T.green:T.red,fontWeight:600}}>{(inp.pe/inp.fg).toFixed(1)}x</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Summary */}
+        {summary.summary&&<div style={{padding:14,background:T.accent,borderRadius:10,border:`1px solid ${T.border}`,marginBottom:16}}>
+          <div style={{fontSize:10,color:T.gold,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Return Thesis</div>
+          <div style={{fontSize:12,color:T.text,lineHeight:1.75}}>{summary.summary}</div>
+        </div>}
+
+        {/* 10-year projection mini chart */}
+        <div style={{height:160,marginBottom:10}}>
+          <div style={{fontSize:11,color:T.muted,marginBottom:8}}>
+            📈 10-year projection of {fmt(10000*_exRate)} at <span style={{color:erColor}}>{er.toFixed(1)}%/yr</span> vs S&P 500 at 8.5%
+          </div>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={proj} margin={{top:5,right:5,left:10,bottom:0}}>
+              <defs>
+                <linearGradient id="gER" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={erColor} stopOpacity={0.3}/><stop offset="95%" stopColor={erColor} stopOpacity={0}/></linearGradient>
+                <linearGradient id="gMkt" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={T.muted} stopOpacity={0.2}/><stop offset="95%" stopColor={T.muted} stopOpacity={0}/></linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
+              <XAxis dataKey="y" tick={{fill:T.muted,fontSize:9}}/>
+              <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={72}/>
+              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={(v,n)=>[fmt(v),n==="p"?`${company} (${er.toFixed(0)}%/yr)`:"S&P 500 (8.5%/yr)"]}/>
+              <Area type="monotone" dataKey="b" stroke={T.muted} fill="url(#gMkt)" strokeWidth={1.5} strokeDasharray="4 4" name="b"/>
+              <Area type="monotone" dataKey="p" stroke={erColor} fill="url(#gER)" strokeWidth={2.5} name="p"/>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={{fontSize:9,color:T.muted,textAlign:"center",borderTop:`1px solid ${T.border}22`,paddingTop:8}}>
+          ⚠️ Expected return is an estimate based on analyst consensus and AI fundamentals — not a guarantee. Past performance ≠ future results.
+        </div>
+
+        <div style={{marginTop:8,textAlign:"right"}}>
+          <button className="seg" onClick={()=>{setLoaded(false);setSummary("");loadReturn();}} style={{fontSize:10}}>🔄 Recalculate</button>
+        </div>
+      </>}
+    </div>}
+  </Card>;
 }
 
 // ── INLINE DCF — embedded in Stock Analyze ────────────────────────────────────
@@ -1610,6 +1790,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <div style={{height:3,background:T.border,borderRadius:2}}><div style={{height:"100%",width:`${s}%`,background:s>=60?T.green:s>=40?T.gold:T.red,borderRadius:2,transition:"width 0.5s"}}/></div>
       </div>)}</div>
     </div>}
+
+    {/* ── INLINE EXPECTED RETURN — auto-fills from AI analysis ── */}
+    {info&&<InlineExpectedReturn company={company} sector={sector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
 
     {/* ── INLINE DCF — auto-fills from AI analysis ── */}
     {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
@@ -3408,7 +3591,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"strategy",l:"📈 My Strategy"},{id:"ret",l:"📐 Expected Return"}];
+const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"strategy",l:"📈 My Strategy"}];
 const FREE_LIMIT=3;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
@@ -3545,7 +3728,6 @@ export default function App(){
             {id:"profile",l:L.tab_profile},
             {id:"portfolio",l:L.tab_portfolio},
             {id:"strategy",l:L.tab_strategy},
-            {id:"ret",l:L.tab_ret},
           ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
             style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap"}}>{t.l}</button>)}
         </div>}
@@ -3559,7 +3741,6 @@ export default function App(){
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang}/>}
-      {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
