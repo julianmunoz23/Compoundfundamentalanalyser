@@ -1216,6 +1216,235 @@ function MRow({c,value,onChange,locked}){
   </div>;
 }
 
+// ── MARKET CYCLE DASHBOARD ───────────────────────────────────────────────────
+function MarketCycleBanner({ticker="",sector="",portfolioTickers=[],lang="en"}){
+  const [cycle,setCycle]=useState(null);
+  const [loading,setLoading]=useState(false);
+  const [open,setOpen]=useState(false);
+  const [lastFetch,setLastFetch]=useState(null);
+
+  // Cache cycle analysis for 4 hours
+  const CACHE_KEY="compoundr_market_cycle";
+  const CACHE_TTL=4*60*60*1000;
+
+  const loadCached=()=>{
+    try{
+      const c=localStorage.getItem(CACHE_KEY);
+      if(c){const p=JSON.parse(c);if(Date.now()-p.ts<CACHE_TTL){setCycle(p.data);setLastFetch(new Date(p.ts));return true;}}
+    }catch(e){}
+    return false;
+  };
+
+  const fetchCycle=async()=>{
+    if(loading)return;
+    setLoading(true);
+    try{
+      const context=ticker?`The user is analyzing: ${ticker} (${sector} sector).`
+        :portfolioTickers.length?`The user holds: ${portfolioTickers.slice(0,8).join(", ")}.`
+        :"General market context.";
+
+      const p=await callAI(`You are a macro market cycle analyst. Analyze the CURRENT market cycle (as of your latest knowledge) and its implications for investors.
+
+${context}
+
+Respond ONLY with valid JSON, no markdown:
+{
+  "cycle":"<Early Bull|Expansion|Late Expansion|Distribution|Bear Market|Early Recovery>",
+  "cyclePhase":<1-6 where 1=Early Bull, 6=Bear>,
+  "confidence":"<High|Medium|Low>",
+  "headline":"<1 sentence: current market situation>",
+  "keySignals":["<signal 1>","<signal 2>","<signal 3>"],
+  "leadingSectors":["<sector 1>","<sector 2>","<sector 3>"],
+  "laggingSectors":["<sector 1>","<sector 2>"],
+  "geopolitical":"<1 sentence: key macro/geopolitical factor affecting markets now>",
+  "emergingVsDeveloped":"<Favor Developed|Neutral|Favor Emerging>",
+  "emergingRationale":"<1 sentence why>",
+  "commodities":"<Bullish|Neutral|Bearish>",
+  "commoditiesNote":"<1 sentence>",
+  "interestRates":"<Rising|Stable|Falling>",
+  "ratesImpact":"<1 sentence on what rising/falling rates mean now>",
+  "portfolioImplication":"<2 sentences: what this cycle means for long-term Buffett/Munger investors>",
+  "tickerCycleNote":"<if ticker provided: 1 sentence on how this cycle affects that specific stock/sector, else empty string>",
+  "nextCycleSignals":["<what to watch for to detect a phase change>","<signal 2>"],
+  "timeHorizon":"<estimated months until next potential phase change>"
+}`);
+      setCycle(p);
+      setLastFetch(new Date());
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify({data:p,ts:Date.now()}));}catch(e){}
+    }catch(e){console.warn("Cycle fetch error:",e);}
+    setLoading(false);
+  };
+
+  // Auto-load cached on mount, don't auto-fetch to save API calls
+  useState(()=>{loadCached();});
+
+  if(!cycle&&!loading&&!open)return(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",
+      background:`linear-gradient(90deg,${T.blue}10,${T.purple}10)`,
+      border:`1px solid ${T.blue}33`,borderRadius:10,cursor:"pointer"}}
+      onClick={()=>{setOpen(true);fetchCycle();}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:16}}>🔄</span>
+        <span style={{fontSize:12,color:T.blue,fontWeight:600}}>
+          {lang==="es"?"Ver ciclo de mercado actual — contexto macro para tu análisis":"See current market cycle — macro context for your analysis"}
+        </span>
+      </div>
+      <span style={{fontSize:11,color:T.muted,padding:"3px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
+        {lang==="es"?"Analizar ciclo →":"Analyze cycle →"}
+      </span>
+    </div>
+  );
+
+  if(loading)return(
+    <div style={{padding:"14px 16px",background:`${T.blue}08`,border:`1px solid ${T.blue}22`,borderRadius:10,display:"flex",alignItems:"center",gap:10}}>
+      <span className="sp" style={{fontSize:16}}>⟳</span>
+      <span style={{fontSize:12,color:T.blue}}>
+        {lang==="es"?"Analizando ciclo de mercado actual...":"Analyzing current market cycle..."}
+      </span>
+    </div>
+  );
+
+  if(!cycle)return null;
+
+  // Phase colors
+  const phaseColor=cycle.cyclePhase<=2?T.green:cycle.cyclePhase<=4?T.gold:T.red;
+  const phaseWidth=`${(cycle.cyclePhase/6)*100}%`;
+
+  return(
+    <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${T.blue}33`,borderRadius:14,overflow:"hidden"}}>
+      {/* Header — always visible */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",cursor:"pointer",borderBottom:open?`1px solid ${T.border}22`:"none"}}
+        onClick={()=>setOpen(v=>!v)}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:22}}>🔄</span>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+              <span style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:phaseColor,fontWeight:700}}>{cycle.cycle}</span>
+              <span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${phaseColor}20`,color:phaseColor,border:`1px solid ${phaseColor}33`}}>{cycle.confidence} confidence</span>
+              {ticker&&cycle.tickerCycleNote&&<span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${T.gold}15`,color:T.gold}}>Note for {ticker}</span>}
+            </div>
+            <div style={{fontSize:11,color:T.muted}}>{cycle.headline}</div>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {lastFetch&&<span style={{fontSize:9,color:T.muted}}>{lastFetch.toLocaleTimeString(lang==="es"?"es-CO":"en-US",{hour:"2-digit",minute:"2-digit"})}</span>}
+          <button className="seg" onClick={e=>{e.stopPropagation();fetchCycle();}} style={{fontSize:10,padding:"3px 8px"}}>🔄</button>
+          <span style={{color:T.muted,fontSize:11}}>{open?"▲":"▼"}</span>
+        </div>
+      </div>
+
+      {/* Cycle progress bar */}
+      <div style={{height:3,background:T.border}}>
+        <div style={{height:"100%",width:phaseWidth,background:`linear-gradient(90deg,${T.green},${T.gold},${T.red})`,transition:"width 0.5s ease"}}/>
+      </div>
+
+      {open&&<div style={{padding:"18px 18px 16px"}}>
+
+        {/* Ticker-specific note */}
+        {ticker&&cycle.tickerCycleNote&&<div style={{padding:"10px 14px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}33`,borderRadius:10,marginBottom:14,display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{fontSize:14,flexShrink:0}}>⚡</span>
+          <div>
+            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:2}}>{ticker} in this cycle</div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.6}}>{cycle.tickerCycleNote}</div>
+          </div>
+        </div>}
+
+        {/* 4 macro KPIs */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+          {[
+            {l:lang==="es"?"Ciclo":"Cycle",v:cycle.cycle,c:phaseColor},
+            {l:lang==="es"?"Tasas de Interés":"Interest Rates",v:cycle.interestRates,c:cycle.interestRates==="Falling"?T.green:cycle.interestRates==="Rising"?T.red:T.gold},
+            {l:lang==="es"?"Materias Primas":"Commodities",v:cycle.commodities,c:cycle.commodities==="Bullish"?T.green:cycle.commodities==="Bearish"?T.red:T.gold},
+            {l:lang==="es"?"Emergentes vs USA":"Emerging vs US",v:cycle.emergingVsDeveloped.replace("Favor ",""),c:cycle.emergingVsDeveloped.includes("Emerging")?T.green:cycle.emergingVsDeveloped.includes("Developed")?T.blue:T.gold},
+          ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px",textAlign:"center",border:`1px solid ${c}22`}}>
+            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
+            <div style={{fontSize:12,color:c,fontWeight:700}}>{v}</div>
+          </div>)}
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+          {/* Leading / Lagging sectors */}
+          <div style={{background:T.card,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{fontSize:10,color:T.green,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>
+              📈 {lang==="es"?"Sectores Líderes":"Leading Sectors"}
+            </div>
+            {cycle.leadingSectors?.map(s=><div key={s} style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
+              <div style={{width:5,height:5,borderRadius:"50%",background:T.green,flexShrink:0}}/>
+              <span style={{fontSize:11,color:T.text}}>{s}</span>
+            </div>)}
+          </div>
+          <div style={{background:T.card,borderRadius:10,padding:"12px 14px"}}>
+            <div style={{fontSize:10,color:T.red,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>
+              📉 {lang==="es"?"Sectores Rezagados":"Lagging Sectors"}
+            </div>
+            {cycle.laggingSectors?.map(s=><div key={s} style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}>
+              <div style={{width:5,height:5,borderRadius:"50%",background:T.red,flexShrink:0}}/>
+              <span style={{fontSize:11,color:T.text}}>{s}</span>
+            </div>)}
+            <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${T.border}33`}}>
+              <div style={{fontSize:9,color:T.muted,marginBottom:3}}>{lang==="es"?"Emergentes:":"Emerging markets:"}</div>
+              <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{cycle.emergingRationale}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Key signals */}
+        <div style={{background:T.card,borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+          <div style={{fontSize:10,color:T.blue,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>
+            📡 {lang==="es"?"Señales Clave del Ciclo":"Key Cycle Signals"}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+            {cycle.keySignals?.map((s,i)=><div key={i} style={{display:"flex",gap:6,fontSize:11,color:T.muted,lineHeight:1.5}}>
+              <span style={{color:T.blue,flexShrink:0}}>→</span>{s}
+            </div>)}
+          </div>
+        </div>
+
+        {/* Geopolitical + rates */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+          <div style={{padding:"10px 14px",background:`${T.gold}08`,borderRadius:10,border:`1px solid ${T.goldDim}33`}}>
+            <div style={{fontSize:9,color:T.gold,fontWeight:600,textTransform:"uppercase",marginBottom:4}}>🌍 {lang==="es"?"Macro / Geopolítico":"Macro / Geopolitical"}</div>
+            <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{cycle.geopolitical}</div>
+          </div>
+          <div style={{padding:"10px 14px",background:`${T.blue}08`,borderRadius:10,border:`1px solid ${T.blue}22`}}>
+            <div style={{fontSize:9,color:T.blue,fontWeight:600,textTransform:"uppercase",marginBottom:4}}>💵 {lang==="es"?"Tasas de Interés":"Interest Rates"}</div>
+            <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{cycle.ratesImpact}</div>
+          </div>
+        </div>
+
+        {/* Portfolio implication — the most important */}
+        <div style={{padding:"14px 16px",background:`linear-gradient(135deg,${T.green}10,${T.accent})`,borderRadius:10,border:`1px solid ${T.green}33`,marginBottom:14}}>
+          <div style={{fontSize:10,color:T.green,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>
+            💼 {lang==="es"?"¿Qué significa esto para tu portafolio?":"What this means for your portfolio"}
+          </div>
+          <div style={{fontSize:12,color:T.text,lineHeight:1.75}}>{cycle.portfolioImplication}</div>
+        </div>
+
+        {/* Next cycle signals */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>
+              🔮 {lang==="es"?"Señales del próximo cambio de ciclo":"Next phase change signals"}
+            </div>
+            {cycle.nextCycleSignals?.map((s,i)=><div key={i} style={{fontSize:11,color:T.muted,display:"flex",gap:6,marginBottom:4}}>
+              <span style={{color:T.gold}}>•</span>{s}
+            </div>)}
+          </div>
+          <div style={{textAlign:"center",padding:"8px 14px",background:T.card,borderRadius:8,border:`1px solid ${T.border}`,flexShrink:0}}>
+            <div style={{fontSize:9,color:T.muted,marginBottom:3}}>{lang==="es"?"Próximo cambio estimado":"Est. next change"}</div>
+            <div style={{fontSize:14,color:T.gold,fontWeight:700}}>{cycle.timeHorizon}</div>
+            <div style={{fontSize:9,color:T.muted}}>months</div>
+          </div>
+        </div>
+
+        <div style={{marginTop:10,fontSize:9,color:T.muted,textAlign:"center",borderTop:`1px solid ${T.border}22`,paddingTop:8}}>
+          ⚠️ {lang==="es"?"Análisis de ciclos es educativo. Los mercados son impredecibles. No es asesoría financiera.":"Cycle analysis is educational. Markets are unpredictable. Not financial advice."}
+        </div>
+      </div>}
+    </div>
+  );
+}
+
 function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile}){
   const [loading,setLoading]=useState(false);
   const [info,setInfo]=useState(null);
@@ -1268,6 +1497,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <span style={{fontSize:11,color:T.purple,fontWeight:600}}>Build me a portfolio →</span>
       </button>
     </div>
+    <MarketCycleBanner ticker={company} sector={sector} lang="en"/>
 
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
@@ -2576,6 +2806,9 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     </div>
 
     {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
+
+    {/* Market Cycle Banner */}
+    <MarketCycleBanner portfolioTickers={[...new Set(positions.map(p=>p.ticker))]} lang={lang}/>
 
     {/* KPI Cards */}
     {positions.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
