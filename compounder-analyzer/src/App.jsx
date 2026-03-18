@@ -62,6 +62,11 @@ const css=`
   .hero-grad{background:linear-gradient(135deg,#0a0c10 0%,#0f1420 50%,#0a0c10 100%);}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
   .ad-pulse{animation:pulse 3s ease-in-out infinite;}
+  .tbtn{transition:color 0.15s,border-color 0.15s;}
+  .card-hover{transition:border-color 0.2s,transform 0.15s;}
+  .card-hover:hover{border-color:${T.goldDim}!important;transform:translateY(-1px);}
+  @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
+  .strategy-badge{background:linear-gradient(90deg,${T.gold}22,${T.green}22,${T.gold}22);background-size:200% auto;animation:shimmer 3s linear infinite;}
 `;
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -284,6 +289,43 @@ async function callFinnhub(ticker){
     console.warn("Finnhub error:",e.message);
     return null;
   }
+}
+
+
+// ── TICKER RESOLVER ───────────────────────────────────────────────────────────
+const KNOWN_TICKERS={
+  "GOOGLE":"GOOGL","ALPHABET":"GOOGL","GOOGL":"GOOGL",
+  "APPLE":"AAPL","MICROSOFT":"MSFT","AMAZON":"AMZN",
+  "TESLA":"TSLA","META":"META","FACEBOOK":"META",
+  "NVIDIA":"NVDA","NETFLIX":"NFLX","SPOTIFY":"SPOT",
+  "UBER":"UBER","AIRBNB":"ABNB","SHOPIFY":"SHOP",
+  "PAYPAL":"PYPL","SALESFORCE":"CRM","ADOBE":"ADBE",
+  "COSTCO":"COST","WALMART":"WMT","TARGET":"TGT",
+  "JOHNSON":"JNJ","PFIZER":"PFE","UNITEDHEALTH":"UNH",
+  "JPMORGAN":"JPM","GOLDMAN":"GS","BERKSHIRE":"BRK.B",
+  "VISA":"V","MASTERCARD":"MA","AMERICAN EXPRESS":"AXP",
+  "DISNEY":"DIS","WARNER":"WBD","COMCAST":"CMCSA",
+  "INTEL":"INTC","AMD":"AMD","QUALCOMM":"QCOM",
+  "BOEING":"BA","LOCKHEED":"LMT","EXXON":"XOM",
+  "DUOLINGO":"DUOL","HIMS":"HIMS","PALANTIR":"PLTR",
+  "SNOWFLAKE":"SNOW","DATADOG":"DDOG","CROWDSTRIKE":"CRWD",
+  "COINBASE":"COIN","ROBINHOOD":"HOOD","BLOCK":"SQ","SQUARE":"SQ",
+  "ZOOM":"ZM","SLACK":"CRM","TWILIO":"TWLO",
+};
+
+async function resolveTicker(input){
+  const clean=input.trim().toUpperCase();
+  // Already a ticker-like string (1-5 uppercase letters/dots)
+  if(/^[A-Z]{1,5}(\.[A-Z])?$/.test(clean))return clean;
+  // Check known map
+  for(const [k,v] of Object.entries(KNOWN_TICKERS)){
+    if(clean.includes(k)||k.includes(clean))return v;
+  }
+  // Ask AI to resolve
+  try{
+    const r=await callAI(`What is the stock ticker symbol for "${input}"? Respond ONLY with valid JSON: {"ticker":"<TICKER>","name":"<Full Company Name>"}`);
+    return r.ticker||clean;
+  }catch(e){return clean;}
 }
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
@@ -963,13 +1005,17 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const radarD=MOAT_KEYS.map(k=>({subject:k.split(" ")[0],value:moat[k],fullMark:5}));
 
   const analyze=async()=>{
-    if(!company.trim()){setErr("Enter a ticker first.");return;}
+    if(!company.trim()){setErr("Enter a company name or ticker.");return;}
     if(!canAnalyze())return;
     setLoading(true);setErr("");setInfo(null);setFh(null);setLocked(false);
     try{
+      // Resolve company name to ticker if needed
+      const resolvedTicker=await resolveTicker(company);
+      if(resolvedTicker!==company.trim().toUpperCase())setCompany(resolvedTicker);
+      const tickerToUse=resolvedTicker;
       const [fhResult,aiResult]=await Promise.allSettled([
-        callFinnhub(company),
-        callAI(`You are a Buffett/Munger investment analyst. Analyze "${company}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
+        callFinnhub(tickerToUse),
+        callAI(`You are a Buffett/Munger investment analyst. Analyze "${tickerToUse}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
       ]);
       if(fhResult.status==="fulfilled"&&fhResult.value)setFh(fhResult.value);
       if(aiResult.status==="fulfilled"){
@@ -1004,8 +1050,8 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:200}}>
-          <Lbl>Ticker / Company</Lbl>
-          <input type="text" value={company} onChange={e=>{setCompany(e.target.value.toUpperCase());setLocked(false);setInfo(null);}} placeholder="NVDA, AAPL, DUOL, HIMS..." onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
+          <Lbl>Ticker or Company Name</Lbl>
+          <input type="text" value={company} onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}} placeholder="NVDA, Apple, Google, Tesla, Costco..." onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
         </div>
         <div style={{width:150}}><Lbl>Sector</Lbl><select value={sector} onChange={e=>setSector(e.target.value)}>{SECTORS.map(s=><option key={s}>{s}</option>)}</select></div>
         <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 24px",fontSize:14}}>
@@ -1014,7 +1060,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         {locked&&<button className="seg" onClick={()=>setLocked(false)} style={{height:44,color:T.gold,borderColor:T.goldDim}}>🔓 Unlock</button>}
       </div>
       {!info&&!loading&&!err&&<div style={{textAlign:"center",paddingTop:10,fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`,marginTop:12}}>
-        Enter any ticker → AI analyzes fundamentals, moat, and Wall Street consensus (Buy/Hold/Sell + price target)
+        Type a ticker (NVDA) or company name (Google, Apple, Tesla) → AI finds the stock and analyzes it
       </div>}
       {loading&&<div style={{textAlign:"center",padding:12,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Analyzing <strong>{company}</strong>...</div>}
       {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
@@ -1427,7 +1473,7 @@ const PROFILES={
   },
 };
 
-function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio}){
+function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy}){
   const [step,setStep]=useState("intro"); // intro | quiz | result | portfolio
   const [answers,setAnswers]=useState({});
   const [current,setCurrent]=useState(0);
@@ -1736,9 +1782,37 @@ Respond ONLY with valid JSON, no markdown:
 
     <AdBanner size="leaderboard"/>
 
+    {/* ✅ I EXECUTED THIS STRATEGY */}
+    <div style={{background:`linear-gradient(135deg,${T.green}10,${T.accent})`,border:`2px solid ${T.green}44`,borderRadius:16,padding:"24px 28px",textAlign:"center"}}>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.green,marginBottom:8}}>
+        ✅ Did you buy these stocks?
+      </div>
+      <div style={{fontSize:13,color:T.muted,maxWidth:500,margin:"0 auto 20px",lineHeight:1.7}}>
+        Mark this strategy as executed and we'll track your progress — comparing what the AI recommended vs what you actually hold, month after month.
+      </div>
+      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+        <button className="btn btn-gold" onClick={()=>{
+          try{
+            localStorage.setItem("compoundr_strategy",JSON.stringify({
+              profile:{label:profile.label,icon:profile.icon,color:profile.color},
+              amount,portfolio,
+              createdAt:new Date().toISOString(),
+              executedAt:new Date().toISOString(),
+            }));
+          }catch(e){}
+          onGoToStrategy&&onGoToStrategy();
+        }} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
+          ✅ Yes — Track My Strategy
+        </button>
+        <button className="btn btn-outline" onClick={onGoToPortfolio} style={{padding:"13px 20px",borderRadius:10}}>
+          📁 I already have positions → Compare
+        </button>
+      </div>
+    </div>
+
     <div style={{display:"flex",gap:12,justifyContent:"center"}}>
       <button className="btn btn-outline" onClick={reset} style={{padding:"12px 24px",borderRadius:10}}>🔄 Retake Quiz</button>
-      <button className="btn btn-gold" onClick={getPortfolio} style={{padding:"12px 24px",borderRadius:10}}>🤖 Regenerate Portfolio</button>
+      <button className="btn btn-outline" onClick={getPortfolio} style={{padding:"12px 20px",borderRadius:10}}>🤖 Regenerate</button>
     </div>
 
     <Card s={{background:`${T.red}08`,border:`1px solid ${T.red}22`,padding:14}}>
@@ -2564,8 +2638,256 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   </div>;
 }
 
+// ── MY STRATEGY TAB ──────────────────────────────────────────────────────────
+function StrategyTab({onGoToProfile,onGoToPortfolio}){
+  const [strategy,setStrategy]=useState(null);
+  const [positions,setPositions]=useState([]);
+  const [prices,setPrices]=useState({});
+  const [loadingPrices,setLoadingPrices]=useState(false);
+
+  // Load saved data
+  useState(()=>{
+    try{
+      const s=localStorage.getItem("compoundr_strategy");
+      if(s)setStrategy(JSON.parse(s));
+      const p=localStorage.getItem("compoundr_portfolio");
+      if(p)setPositions(JSON.parse(p));
+    }catch(e){}
+  });
+
+  // Fetch live prices for strategy tickers
+  const fetchPrices=async(tickers)=>{
+    if(!tickers?.length)return;
+    setLoadingPrices(true);
+    const key=import.meta.env.VITE_FINNHUB_KEY;
+    const results={};
+    await Promise.allSettled(tickers.map(async ticker=>{
+      try{
+        const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
+        const d=await res.json();
+        if(d.c)results[ticker]={price:d.c,changePct:d.dp};
+      }catch(e){}
+    }));
+    setPrices(results);setLoadingPrices(false);
+  };
+
+  const clearStrategy=()=>{
+    if(window.confirm("Clear your saved strategy?")){
+      try{localStorage.removeItem("compoundr_strategy");}catch(e){}
+      setStrategy(null);
+    }
+  };
+
+  // ── NO STRATEGY SAVED ──
+  if(!strategy)return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    <div style={{textAlign:"center",padding:"60px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
+      <div style={{fontSize:56,marginBottom:16}}>📈</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>No strategy saved yet</div>
+      <div style={{fontSize:13,color:T.muted,maxWidth:520,margin:"0 auto 32px",lineHeight:1.8}}>
+        Create your Risk Profile, generate an AI portfolio, then click <strong style={{color:T.green}}>"✅ Yes — Track My Strategy"</strong> to start tracking your plan vs reality here.
+      </div>
+      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+        <button className="btn btn-gold" onClick={onGoToProfile} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
+          🧬 Create My Risk Profile →
+        </button>
+        {positions.length>0&&<button className="btn btn-outline" onClick={onGoToPortfolio} style={{padding:"13px 20px",borderRadius:10}}>
+          📁 I already have a portfolio
+        </button>}
+      </div>
+    </div>
+  </div>;
+
+  // ── STRATEGY EXISTS ──
+  const {profile,amount,portfolio,createdAt,executedAt}=strategy;
+  const allTickers=[...(portfolio.stocks||[]).map(s=>s.ticker),...(portfolio.etfs||[]).map(e=>e.ticker)];
+  const daysSince=Math.floor((Date.now()-new Date(executedAt).getTime())/(1000*60*60*24));
+
+  // Build portfolio map from My Portfolio data
+  const portfolioMap={};
+  positions.forEach(p=>{
+    if(!portfolioMap[p.ticker]){portfolioMap[p.ticker]={shares:0,avgCost:0,totalCost:0};}
+    portfolioMap[p.ticker].shares+=p.shares;
+    portfolioMap[p.ticker].totalCost+=p.shares*p.buyPrice;
+  });
+  Object.keys(portfolioMap).forEach(t=>{
+    portfolioMap[t].avgCost=portfolioMap[t].totalCost/portfolioMap[t].shares;
+  });
+
+  const totalPortfolioValue=Object.entries(portfolioMap).reduce((a,[t,p])=>{
+    const lp=prices[t];
+    return a+(lp?p.shares*lp.price:p.totalCost);
+  },0)||amount;
+
+  // Execution status per recommended position
+  const statusColor=s=>s==="✅ Executed"?T.green:s==="⚠️ Partial"?T.gold:T.red;
+
+  const allPositions=[
+    ...(portfolio.stocks||[]).map(p=>({...p,isETF:false})),
+    ...(portfolio.etfs||[]).map(p=>({...p,isETF:true,type:"ETF"})),
+  ];
+
+  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    {/* Strategy header */}
+    <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${profile.color}44`,borderRadius:16,padding:"24px 28px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <div style={{fontSize:44}}>{profile.icon}</div>
+          <div>
+            <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Active Strategy</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:profile.color,fontWeight:700}}>{profile.label} Investor Portfolio</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:4}}>
+              Started {new Date(executedAt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})} · {daysSince} days ago · ${amount.toLocaleString()} initial amount
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+          {loadingPrices
+            ?<span style={{fontSize:11,color:T.muted}}><span className="sp">⟳</span> Loading prices...</span>
+            :<button className="seg" onClick={()=>fetchPrices(allTickers)} style={{fontSize:11}}>🔄 Refresh Prices</button>}
+          <button className="seg" onClick={clearStrategy} style={{fontSize:11,color:T.red}}>🗑 Clear</button>
+        </div>
+      </div>
+
+      {/* Summary KPIs */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginTop:20}}>
+        {[
+          {l:"Recommended Positions",v:allPositions.length,c:T.gold,icon:"📋"},
+          {l:"Positions Executed",v:Object.keys(portfolioMap).filter(t=>allTickers.includes(t)).length,c:T.green,icon:"✅"},
+          {l:"Days Tracking",v:daysSince,c:T.blue,icon:"📅"},
+          {l:"Expected Return",v:portfolio.expectedReturn||"—",c:T.green,icon:"📈"},
+        ].map(({l,v,c,icon})=><div key={l} style={{background:T.card,borderRadius:10,padding:"12px 14px",textAlign:"center",border:`1px solid ${T.border}`}}>
+          <div style={{fontSize:18,marginBottom:4}}>{icon}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:c,fontWeight:700}}>{v}</div>
+          <div style={{fontSize:10,color:T.muted,marginTop:2}}>{l}</div>
+        </div>)}
+      </div>
+    </div>
+
+    {/* Plan vs Reality table */}
+    <Card s={{padding:0,overflow:"hidden"}}>
+      <div style={{padding:"16px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>📊 Plan vs Reality</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>AI recommendation vs what you actually hold</div>
+        </div>
+        {positions.length===0&&<button className="btn btn-outline" onClick={onGoToPortfolio} style={{fontSize:12,padding:"7px 14px"}}>
+          📁 Add your positions →
+        </button>}
+      </div>
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
+          <thead>
+            <tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
+              {["","Position","Type","Recommended %","Recommended $","Your Weight","Status","Current Price","P&L"].map((h,i)=>(
+                <th key={i} style={{padding:"10px 14px",textAlign:i<=1?"center":"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {allPositions.map(({ticker,name,weight,type,isETF},idx)=>{
+              const recDollar=Math.round(amount*(weight/100));
+              const held=portfolioMap[ticker];
+              const lp=prices[ticker];
+              const currentPrice=lp?.price;
+              const currentValue=held&&currentPrice?held.shares*currentPrice:held?held.totalCost:null;
+              const actualPct=currentValue&&totalPortfolioValue>0?((currentValue/totalPortfolioValue)*100).toFixed(1):null;
+              const pnl=held&&currentPrice?((currentPrice-held.avgCost)/held.avgCost*100).toFixed(1):null;
+              const drift=actualPct&&weight?(parseFloat(actualPct)-weight).toFixed(1):null;
+              const status=!held?"❌ Not executed":Math.abs(parseFloat(actualPct||0)-weight)<=5?"✅ Executed":"⚠️ Partial";
+              const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
+              const dotColor=PIE_COLORS[idx%PIE_COLORS.length];
+              return<tr key={ticker} style={{borderBottom:`1px solid ${T.border}22`}}
+                onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <td style={{padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:dotColor,margin:"0 auto"}}/>
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"center"}}>
+                  <Mn sz={13} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                  <div style={{fontSize:9,color:T.muted,marginTop:1}}>{name||""}</div>
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                  <span style={{fontSize:10,padding:"2px 7px",borderRadius:8,background:`${isETF?T.blue:T.green}15`,color:isETF?T.blue:T.green}}>{isETF?"ETF":type||"Stock"}</span>
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12} c={T.gold}>{weight}%</Mn></td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${recDollar.toLocaleString()}</Mn></td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                  {actualPct
+                    ?<div>
+                      <Mn sz={12} c={Math.abs(parseFloat(drift||0))<=5?T.green:T.gold}>{actualPct}%</Mn>
+                      {drift&&<div style={{fontSize:9,color:parseFloat(drift)>0?"#e67e22":T.muted}}>{parseFloat(drift)>0?"+":""}{drift}% drift</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                  <span style={{fontSize:10,padding:"3px 8px",borderRadius:20,background:`${statusColor(status)}15`,color:statusColor(status),fontWeight:600,whiteSpace:"nowrap"}}>{status}</span>
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                  {currentPrice?<Mn sz={12} c={T.gold}>${currentPrice.toFixed(2)}</Mn>:<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                  {pnl!=null
+                    ?<span style={{fontSize:12,color:parseFloat(pnl)>=0?T.green:T.red,fontWeight:600}}>{parseFloat(pnl)>=0?"+":""}{pnl}%</span>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
+      </div>
+      {positions.length===0&&<div style={{padding:"20px",textAlign:"center",fontSize:12,color:T.muted,background:`${T.gold}05`}}>
+        ⚡ Add your positions in <strong style={{color:T.gold}}>My Portfolio</strong> to see how your execution compares to the AI plan
+      </div>}
+    </Card>
+
+    {/* Strategy summary */}
+    {portfolio.summary&&<Card s={{background:T.accent}}>
+      <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>📋 Original Strategy</div>
+      <div style={{fontSize:13,color:T.text,lineHeight:1.75,marginBottom:12}}>{portfolio.summary}</div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {l:"Expected Return",v:portfolio.expectedReturn,c:T.green},
+          {l:"Max Drawdown",v:portfolio.maxDrawdown,c:T.red},
+          {l:"Rebalance",v:portfolio.rebalance,c:T.gold},
+        ].map(({l,v,c})=>v&&<div key={l} style={{background:T.card,borderRadius:8,padding:"8px 14px"}}>
+          <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",marginBottom:2}}>{l}</div>
+          <Mn sz={13} c={c} s={{fontWeight:600}}>{v}</Mn>
+        </div>)}
+      </div>
+    </Card>}
+
+    {/* CTA to update/re-analyze */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+      <div onClick={onGoToPortfolio} style={{cursor:"pointer",background:`${T.blue}10`,border:`1px solid ${T.blue}33`,borderRadius:12,padding:"18px 20px",display:"flex",alignItems:"center",gap:12}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=T.blue}
+        onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.blue}33`}>
+        <span style={{fontSize:24}}>📁</span>
+        <div>
+          <div style={{fontSize:13,color:T.blue,fontWeight:600,marginBottom:3}}>Update My Portfolio</div>
+          <div style={{fontSize:11,color:T.muted}}>Add new positions or update existing ones</div>
+        </div>
+      </div>
+      <div onClick={onGoToProfile} style={{cursor:"pointer",background:`${T.purple}10`,border:`1px solid ${T.purple}33`,borderRadius:12,padding:"18px 20px",display:"flex",alignItems:"center",gap:12}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=T.purple}
+        onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.purple}33`}>
+        <span style={{fontSize:24}}>🧬</span>
+        <div>
+          <div style={{fontSize:13,color:T.purple,fontWeight:600,marginBottom:3}}>Rebuild My Strategy</div>
+          <div style={{fontSize:11,color:T.muted}}>Retake the quiz and generate a new AI portfolio</div>
+        </div>
+      </div>
+    </div>
+
+    <Card s={{background:`${T.red}08`,border:`1px solid ${T.red}22`,padding:12}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center"}}>
+        ⚠️ <span style={{color:T.gold}}>Disclaimer:</span> This is for educational tracking purposes only. Not financial advice.
+      </div>
+    </Card>
+  </div>;
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"ret",l:"📐 Expected Return"}];
+const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"strategy",l:"📈 My Strategy"},{id:"ret",l:"📐 Expected Return"}];
 const FREE_LIMIT=3;
 
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
@@ -2627,8 +2949,9 @@ export default function App(){
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)}/>}
       {tab==="whatif"&&<WhatIfTab/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")}/>}
-      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")}/>}
+      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")}/>}
+      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")}/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
