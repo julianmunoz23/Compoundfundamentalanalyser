@@ -1522,10 +1522,10 @@ Respond ONLY with valid JSON, no markdown:
     {"category":"..."}
   ],
   "stocks":[
-    {"ticker":"<ticker>","name":"<full name>","weight":<% of portfolio>,"why":"<1 sentence>","type":"<Core|Growth|Defensive|Income>","dollarAmt":<dollar amount to invest>}
+    {"ticker":"<ticker>","name":"<full name>","weight":<% of portfolio>,"why":"<1 sentence>","type":"<Core|Growth|Defensive|Income>","dollarAmt":<dollar amount>,"entryLow":<buy zone low price e.g. 118.50>,"entryHigh":<buy zone high price e.g. 125.00>,"target":<12-month price target e.g. 165.00>,"stopLoss":<stop loss price e.g. 105.00>,"riskReward":"<e.g. 1:3.2>"}
   ],
   "etfs":[
-    {"ticker":"<ticker>","name":"<full name>","weight":<% of portfolio>,"why":"<1 sentence>","dollarAmt":<dollar amount>}
+    {"ticker":"<ticker>","name":"<full name>","weight":<% of portfolio>,"why":"<1 sentence>","dollarAmt":<dollar amount>,"entryLow":<buy zone low>,"entryHigh":<buy zone high>,"target":<price target>,"stopLoss":<stop loss>,"riskReward":"<e.g. 1:2.5>"}
   ],
   "expectedReturn":"<e.g. 8-12% annual>",
   "maxDrawdown":"<e.g. -15% to -25%>",
@@ -1741,9 +1741,10 @@ Respond ONLY with valid JSON, no markdown:
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>📈 Recommended Stocks</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
-            {(portfolio.stocks||[]).map(({ticker,name,weight,why,type})=>{
+            {(portfolio.stocks||[]).map(({ticker,name,weight,why,type,dollarAmt:dA,entryLow,entryHigh,target,stopLoss,riskReward})=>{
               const typeColor=type==="Core"?T.blue:type==="Growth"?T.green:type==="Defensive"?T.gold:T.purple;
-              const dollarAmt=Math.round(amount*(weight/100));
+              const dollarAmt=dA||Math.round(amount*(weight/100));
+              const hasLevels=entryLow||target||stopLoss;
               return<div key={ticker} style={{background:T.accent,borderRadius:10,padding:12,border:`1px solid ${T.border}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
                   <div>
@@ -1755,8 +1756,25 @@ Respond ONLY with valid JSON, no markdown:
                     <div style={{fontSize:10,color:T.muted}}>${dollarAmt.toLocaleString()}</div>
                   </div>
                 </div>
-                <span style={{fontSize:9,padding:"2px 7px",borderRadius:10,background:`${typeColor}20`,color:typeColor,border:`1px solid ${typeColor}33`}}>{type}</span>
-                <div style={{fontSize:10,color:T.muted,marginTop:6,lineHeight:1.5}}>{why}</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+                  <span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${typeColor}20`,color:typeColor,border:`1px solid ${typeColor}33`}}>{type}</span>
+                  {riskReward&&<span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${T.green}15`,color:T.green}}>R/R {riskReward}</span>}
+                </div>
+                {hasLevels&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,marginBottom:8}}>
+                  {entryLow&&entryHigh&&<div style={{background:`${T.blue}12`,borderRadius:6,padding:"5px 7px",border:`1px solid ${T.blue}22`}}>
+                    <div style={{fontSize:8,color:T.muted,marginBottom:2}}>ENTRY ZONE</div>
+                    <div style={{fontSize:10,color:T.blue,fontWeight:600}}>${entryLow}–${entryHigh}</div>
+                  </div>}
+                  {target&&<div style={{background:`${T.green}12`,borderRadius:6,padding:"5px 7px",border:`1px solid ${T.green}22`}}>
+                    <div style={{fontSize:8,color:T.muted,marginBottom:2}}>TARGET</div>
+                    <div style={{fontSize:10,color:T.green,fontWeight:600}}>${target}</div>
+                  </div>}
+                  {stopLoss&&<div style={{background:`${T.red}10`,borderRadius:6,padding:"5px 7px",border:`1px solid ${T.red}22`}}>
+                    <div style={{fontSize:8,color:T.muted,marginBottom:2}}>STOP LOSS</div>
+                    <div style={{fontSize:10,color:T.red,fontWeight:600}}>${stopLoss}</div>
+                  </div>}
+                </div>}
+                <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{why}</div>
               </div>;
             })}
           </div>
@@ -1766,11 +1784,29 @@ Respond ONLY with valid JSON, no markdown:
         {portfolio.etfs?.length>0&&<Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🗂️ Recommended ETFs</div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
-            {portfolio.etfs.map(({ticker,name,weight,why})=>(
+            {portfolio.etfs.map(({ticker,name,weight,why,dollarAmt:dA,entryLow,entryHigh,target,stopLoss,riskReward})=>(
               <div key={ticker} style={{background:T.accent,borderRadius:10,padding:12,border:`1px solid ${T.border}`}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
                   <div><Mn sz={15} c={T.text} s={{fontWeight:700}}>{ticker}</Mn><div style={{fontSize:10,color:T.muted,marginTop:1}}>{name}</div></div>
-                  <div style={{textAlign:"right"}}><div style={{fontSize:12,color:T.blue,fontWeight:700}}>{weight}%</div><div style={{fontSize:10,color:T.muted}}>${Math.round(amount*(weight/100)).toLocaleString()}</div></div>
+                  <div style={{textAlign:"right"}}><div style={{fontSize:12,color:T.blue,fontWeight:700}}>{weight}%</div><div style={{fontSize:10,color:T.muted}}>${(dA||Math.round(amount*(weight/100))).toLocaleString()}</div></div>
+                </div>
+                {(entryLow||target||stopLoss)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5,marginBottom:8}}>
+                  {entryLow&&entryHigh&&<div style={{background:`${T.blue}12`,borderRadius:6,padding:"5px 7px",border:`1px solid ${T.blue}22`}}>
+                    <div style={{fontSize:8,color:T.muted,marginBottom:2}}>ENTRY ZONE</div>
+                    <div style={{fontSize:10,color:T.blue,fontWeight:600}}>${entryLow}–${entryHigh}</div>
+                  </div>}
+                  {target&&<div style={{background:`${T.green}12`,borderRadius:6,padding:"5px 7px",border:`1px solid ${T.green}22`}}>
+                    <div style={{fontSize:8,color:T.muted,marginBottom:2}}>TARGET</div>
+                    <div style={{fontSize:10,color:T.green,fontWeight:600}}>${target}</div>
+                  </div>}
+                  {stopLoss&&<div style={{background:`${T.red}10`,borderRadius:6,padding:"5px 7px",border:`1px solid ${T.red}22`}}>
+                    <div style={{fontSize:8,color:T.muted,marginBottom:2}}>STOP LOSS</div>
+                    <div style={{fontSize:10,color:T.red,fontWeight:600}}>${stopLoss}</div>
+                  </div>}
+                </div>}
+                <div style={{display:"flex",gap:6,marginBottom:6}}>
+                  <span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${T.blue}15`,color:T.blue}}>ETF</span>
+                  {riskReward&&<span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${T.green}15`,color:T.green}}>R/R {riskReward}</span>}
                 </div>
                 <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{why}</div>
               </div>
@@ -2778,13 +2814,13 @@ function StrategyTab({onGoToProfile,onGoToPortfolio}){
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
           <thead>
             <tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
-              {["","Position","Type","Recommended %","Recommended $","Your Weight","Status","Current Price","P&L"].map((h,i)=>(
-                <th key={i} style={{padding:"10px 14px",textAlign:i<=1?"center":"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
+              {["","Position","Type","Rec %","Rec $","Entry Zone","Target","Stop","Your Weight","Status","P&L"].map((h,i)=>(
+                <th key={i} style={{padding:"10px 12px",textAlign:i<=1?"center":"right",fontSize:9,color:h==="Target"?T.green:h==="Stop"?T.red:h==="Entry Zone"?T.blue:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {allPositions.map(({ticker,name,weight,type,isETF},idx)=>{
+            {allPositions.map(({ticker,name,weight,type,isETF,entryLow,entryHigh,target,stopLoss,riskReward},idx)=>{
               const recDollar=Math.round(amount*(weight/100));
               const held=portfolioMap[ticker];
               const lp=prices[ticker];
@@ -2794,6 +2830,10 @@ function StrategyTab({onGoToProfile,onGoToPortfolio}){
               const pnl=held&&currentPrice?((currentPrice-held.avgCost)/held.avgCost*100).toFixed(1):null;
               const drift=actualPct&&weight?(parseFloat(actualPct)-weight).toFixed(1):null;
               const status=!held?"❌ Not executed":Math.abs(parseFloat(actualPct||0)-weight)<=5?"✅ Executed":"⚠️ Partial";
+              // Is current price in entry zone?
+              const inZone=currentPrice&&entryLow&&entryHigh&&currentPrice>=entryLow&&currentPrice<=entryHigh;
+              const belowZone=currentPrice&&entryLow&&currentPrice<entryLow;
+              const aboveTarget=currentPrice&&target&&currentPrice>=target;
               const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
               const dotColor=PIE_COLORS[idx%PIE_COLORS.length];
               return<tr key={ticker} style={{borderBottom:`1px solid ${T.border}22`}}
@@ -2802,30 +2842,56 @@ function StrategyTab({onGoToProfile,onGoToPortfolio}){
                 <td style={{padding:"10px 8px",textAlign:"center"}}>
                   <div style={{width:8,height:8,borderRadius:"50%",background:dotColor,margin:"0 auto"}}/>
                 </td>
-                <td style={{padding:"10px 14px",textAlign:"center"}}>
+                <td style={{padding:"10px 12px",textAlign:"center"}}>
                   <Mn sz={13} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
                   <div style={{fontSize:9,color:T.muted,marginTop:1}}>{name||""}</div>
                 </td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
                   <span style={{fontSize:10,padding:"2px 7px",borderRadius:8,background:`${isETF?T.blue:T.green}15`,color:isETF?T.blue:T.green}}>{isETF?"ETF":type||"Stock"}</span>
                 </td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12} c={T.gold}>{weight}%</Mn></td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${recDollar.toLocaleString()}</Mn></td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}>
-                  {actualPct
+                <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.gold}>{weight}%</Mn></td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={11} c={T.muted}>${recDollar.toLocaleString()}</Mn></td>
+                {/* Entry Zone */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {entryLow&&entryHigh
                     ?<div>
-                      <Mn sz={12} c={Math.abs(parseFloat(drift||0))<=5?T.green:T.gold}>{actualPct}%</Mn>
-                      {drift&&<div style={{fontSize:9,color:parseFloat(drift)>0?"#e67e22":T.muted}}>{parseFloat(drift)>0?"+":""}{drift}% drift</div>}
+                      <div style={{fontSize:11,color:inZone?T.green:T.blue,fontWeight:inZone?700:400}}>${entryLow}–${entryHigh}</div>
+                      {inZone&&<div style={{fontSize:9,color:T.green}}>✅ In zone</div>}
+                      {belowZone&&<div style={{fontSize:9,color:T.muted}}>Wait — above zone</div>}
                     </div>
                     :<Mn sz={11} c={T.muted}>—</Mn>}
                 </td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                {/* Target */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {target
+                    ?<div>
+                      <Mn sz={11} c={aboveTarget?T.gold:T.green} s={{fontWeight:aboveTarget?700:400}}>${target}</Mn>
+                      {aboveTarget&&<div style={{fontSize:9,color:T.gold}}>🎯 Target hit!</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                {/* Stop Loss */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {stopLoss
+                    ?<div>
+                      <Mn sz={11} c={T.red}>${stopLoss}</Mn>
+                      {riskReward&&<div style={{fontSize:9,color:T.muted}}>R/R {riskReward}</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                {/* Your weight */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {actualPct
+                    ?<div>
+                      <Mn sz={12} c={Math.abs(parseFloat(drift||0))<=5?T.green:T.gold}>{actualPct}%</Mn>
+                      {drift&&<div style={{fontSize:9,color:parseFloat(drift)>0?"#e67e22":T.muted}}>{parseFloat(drift)>0?"+":""}{drift}%</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
                   <span style={{fontSize:10,padding:"3px 8px",borderRadius:20,background:`${statusColor(status)}15`,color:statusColor(status),fontWeight:600,whiteSpace:"nowrap"}}>{status}</span>
                 </td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}>
-                  {currentPrice?<Mn sz={12} c={T.gold}>${currentPrice.toFixed(2)}</Mn>:<Mn sz={11} c={T.muted}>—</Mn>}
-                </td>
-                <td style={{padding:"10px 14px",textAlign:"right"}}>
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
                   {pnl!=null
                     ?<span style={{fontSize:12,color:parseFloat(pnl)>=0?T.green:T.red,fontWeight:600}}>{parseFloat(pnl)>=0?"+":""}{pnl}%</span>
                     :<Mn sz={11} c={T.muted}>—</Mn>}
