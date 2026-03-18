@@ -952,7 +952,7 @@ function MRow({c,value,onChange,locked}){
   </div>;
 }
 
-function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze}){
+function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile}){
   const [loading,setLoading]=useState(false);
   const [info,setInfo]=useState(null);
   const [fh,setFh]=useState(null);
@@ -993,9 +993,12 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const ratingBg=r=>{if(!r)return T.border;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return`${T.green}20`;if(r.includes("Sell")||r.includes("Under"))return`${T.red}20`;return`${T.gold}20`;};
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}55`,borderRadius:8}}>
-      <span style={{fontSize:12,color:T.gold}}>🎯 <strong>AI Stock Analyzer</strong> — Buffett/Munger fundamental analysis + Wall Street consensus</span>
-      <span style={{fontSize:11,color:T.muted}}>2 free · then subscribe</span>
+    <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",padding:"12px 16px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}55`,borderRadius:8}}>
+      <span style={{fontSize:12,color:T.gold}}>🎯 <strong>AI Stock Analyzer</strong> — Buffett/Munger fundamental analysis + Wall Street consensus · 3 free analyses</span>
+      <button onClick={()=>onGoToProfile&&onGoToProfile()} style={{background:`${T.purple}20`,border:`1px solid ${T.purple}55`,borderRadius:8,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
+        <span style={{fontSize:12}}>🧬</span>
+        <span style={{fontSize:11,color:T.purple,fontWeight:600}}>Build me a portfolio →</span>
+      </button>
     </div>
 
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
@@ -1451,29 +1454,37 @@ function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio}){
   const getPortfolio=async()=>{
     if(!isAdmin()){setShowRiskPaywall(true);return;}
     setLoading(true);setErr("");
+    // Scale positions to investment amount
+    const stockCount=amount<500?2:amount<2000?3:amount<10000?5:amount<25000?7:10;
+    const etfCount=amount<500?1:amount<2000?1:amount<10000?2:3;
     try{
-      const p=await callAI(`You are a professional portfolio manager. Based on a ${profile.label} risk profile investor with $${amount.toLocaleString()} to invest, recommend a specific portfolio.
-The investor profile: ${profile.desc}
+      const p=await callAI(`You are a professional portfolio manager. Based on a ${profile.label} risk profile investor with $${amount.toLocaleString()} to invest, recommend a practical portfolio.
+
+IMPORTANT — Investment amount is $${amount.toLocaleString()}. Scale the number of positions accordingly:
+- Recommend exactly ${stockCount} individual stocks and ${etfCount} ETF(s).
+- Each position should be at least $${Math.round(amount/(stockCount+etfCount))} to be meaningful.
+- With small amounts, focus on the BEST convictions only — not diversification for its own sake.
+- Weights must reflect actual dollar amounts that make sense for $${amount.toLocaleString()}.
+
+Investor profile: ${profile.label} — ${profile.desc}
 Traits: ${profile.traits.join(", ")}
 
 Respond ONLY with valid JSON, no markdown:
 {
   "allocation":[
     {"category":"<e.g. US Large Cap Growth>","pct":<number 0-100>,"color":"<hex color>","rationale":"<1 sentence>"},
-    ...5-7 categories that sum to 100
+    {"category":"..."}
   ],
   "stocks":[
-    {"ticker":"<e.g. AAPL>","name":"<full name>","weight":<% of portfolio, number>,"why":"<1 sentence reason>","type":"<Core|Growth|Defensive|Income>"},
-    ...8-12 specific stocks/ETFs
+    {"ticker":"<ticker>","name":"<full name>","weight":<% of portfolio>,"why":"<1 sentence>","type":"<Core|Growth|Defensive|Income>","dollarAmt":<dollar amount to invest>}
   ],
   "etfs":[
-    {"ticker":"<e.g. VOO>","name":"<full name>","weight":<number>,"why":"<1 sentence>"},
-    ...2-4 ETFs
+    {"ticker":"<ticker>","name":"<full name>","weight":<% of portfolio>,"why":"<1 sentence>","dollarAmt":<dollar amount>}
   ],
   "expectedReturn":"<e.g. 8-12% annual>",
   "maxDrawdown":"<e.g. -15% to -25%>",
   "rebalance":"<e.g. Quarterly>",
-  "summary":"<3-4 sentences explaining the overall strategy and why it fits this risk profile>"
+  "summary":"<3 sentences: strategy, why it fits the profile, and why these specific picks make sense for $${amount.toLocaleString()}>"
 }`);
       // Save profile to localStorage so Portfolio Tracker can use it
       try{localStorage.setItem("compoundr_risk_profile",JSON.stringify({label:profile.label,desc:profile.desc,icon:profile.icon,color:profile.color}));}catch(e){}
@@ -1967,7 +1978,7 @@ function PieChart({data,stockCount,size=220}){
   </svg>;
 }
 
-function PortfolioTab({canAnalyze,onShowPaywall}){
+function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("compoundr_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
@@ -2205,6 +2216,23 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold}}>📁 My Portfolio</div>
         <div style={{fontSize:12,color:T.muted,marginTop:3}}>Track your positions · Live prices via Finnhub · AI analysis</div>
       </div>
+      {/* CTA: build a portfolio from risk profile */}
+      {!savedProfile&&<button onClick={()=>onGoToProfile&&onGoToProfile()}
+        style={{background:`${T.purple}15`,border:`1px solid ${T.purple}44`,borderRadius:10,padding:"10px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:16}}>🧬</span>
+        <div style={{textAlign:"left"}}>
+          <div style={{fontSize:12,color:T.purple,fontWeight:600}}>Don't know what to buy?</div>
+          <div style={{fontSize:10,color:T.muted}}>Take the Risk Profile quiz → get an AI portfolio</div>
+        </div>
+        <span style={{fontSize:11,color:T.purple}}>→</span>
+      </button>}
+      {savedProfile&&<div style={{background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontSize:14}}>{savedProfile.icon}</span>
+        <div>
+          <div style={{fontSize:11,color:T.green,fontWeight:600}}>{savedProfile.label} Investor Profile active</div>
+          <div style={{fontSize:10,color:T.muted}}>AI analysis will match your portfolio to your profile</div>
+        </div>
+      </div>}
       <div style={{display:"flex",gap:10}}>
         <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
           {loadingPrices?<><span className="sp">⟳</span> Updating...</>:"🔄 Refresh Prices"}
@@ -2598,9 +2626,9 @@ export default function App(){
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)}/>}
       {tab==="whatif"&&<WhatIfTab/>}
-      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
+      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}}/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")}/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
