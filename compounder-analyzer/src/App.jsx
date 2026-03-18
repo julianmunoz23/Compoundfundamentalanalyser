@@ -71,19 +71,72 @@ const css=`
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 // Show full dollar values with commas, no abbreviation
-const fmt=(n)=>{
-  if(n===undefined||n===null||isNaN(n))return"$0";
-  const sign=n<0?"-":"";
-  return sign+"$"+Math.abs(Math.round(n)).toLocaleString("en-US");
+// ── CURRENCY SYSTEM ──────────────────────────────────────────────────────────
+// Base config — rates are fetched live from frankfurter.app (European Central Bank)
+const CURRENCIES={
+  USD:{symbol:"$",  code:"USD",name:"US Dollar",      flag:"🇺🇸",locale:"en-US",rate:1},
+  COP:{symbol:"$",  code:"COP",name:"Peso Colombiano",flag:"🇨🇴",locale:"es-CO",rate:1},
+  MXN:{symbol:"$",  code:"MXN",name:"Peso Mexicano",  flag:"🇲🇽",locale:"es-MX",rate:1},
+  ARS:{symbol:"$",  code:"ARS",name:"Peso Argentino", flag:"🇦🇷",locale:"es-AR",rate:1},
+  PEN:{symbol:"S/", code:"PEN",name:"Sol Peruano",    flag:"🇵🇪",locale:"es-PE",rate:1},
+  CLP:{symbol:"$",  code:"CLP",name:"Peso Chileno",   flag:"🇨🇱",locale:"es-CL",rate:1},
+  BRL:{symbol:"R$", code:"BRL",name:"Real Brasileño", flag:"🇧🇷",locale:"pt-BR",rate:1},
+  EUR:{symbol:"€",  code:"EUR",name:"Euro",           flag:"🇪🇺",locale:"de-DE",rate:1},
 };
-// Chart axis uses short labels to avoid clutter
-const fmtShort=(n)=>{
-  if(!n)return"$0";
-  const abs=Math.abs(n);
-  if(abs>=1e9)return`$${(n/1e9).toFixed(1)}B`;
-  if(abs>=1e6)return`$${(n/1e6).toFixed(1)}M`;
-  if(abs>=1e3)return`$${(n/1e3).toFixed(0)}K`;
-  return`$${n}`;
+
+// Global currency state — updated by App
+let _currency=CURRENCIES.USD;
+let _exRate=1;
+
+function setCurrencyGlobal(curr,rate=1){_currency={..._currency,...curr};_exRate=rate;}
+
+// Fetch live exchange rates from frankfurter.app (European Central Bank — free, no key)
+async function fetchExchangeRates(){
+  try{
+    const res=await fetch("https://api.frankfurter.app/latest?from=USD&to=COP,MXN,ARS,PEN,CLP,BRL,EUR");
+    const data=await res.json();
+    if(data?.rates){
+      Object.keys(CURRENCIES).forEach(code=>{
+        if(data.rates[code]){CURRENCIES[code].rate=data.rates[code];}
+      });
+      CURRENCIES.USD.rate=1;
+    }
+    return data.rates||{};
+  }catch(e){
+    // Fallback to recent approximate rates if API fails
+    const fallback={COP:3700,MXN:20.3,ARS:1050,PEN:3.75,CLP:920,BRL:5.78,EUR:0.92};
+    Object.keys(fallback).forEach(code=>{CURRENCIES[code].rate=fallback[code];});
+    console.warn("Exchange rate API unavailable, using fallback rates");
+    return fallback;
+  }
+}
+
+function fmt(n,showCode=false){
+  if(n===undefined||n===null||isNaN(n))return`${_currency.symbol}0`;
+  const converted=Math.round(n*_exRate);
+  const sign=n<0?"-":"";
+  const abs=Math.abs(converted).toLocaleString(_currency.locale);
+  const code=showCode?` ${_currency.code}`:"";
+  return`${sign}${_currency.symbol}${abs}${code}`;
+}
+
+function fmtShort(n){
+  if(!n)return`${_currency.symbol}0`;
+  const converted=n*_exRate;
+  const abs=Math.abs(converted);
+  const sign=n<0?"-":"";
+  if(abs>=1e9)return`${sign}${_currency.symbol}${(Math.abs(converted)/1e9).toFixed(1)}B`;
+  if(abs>=1e6)return`${sign}${_currency.symbol}${(Math.abs(converted)/1e6).toFixed(1)}M`;
+  if(abs>=1e3)return`${sign}${_currency.symbol}${(Math.abs(converted)/1e3).toFixed(0)}K`;
+  return`${sign}${_currency.symbol}${Math.round(Math.abs(converted))}`;
+}
+
+// Note on stock prices: Always shown in USD (market standard)
+// Other values (portfolio total, compound calc, goals) shown in selected currency
+const fmtUSD=(n)=>{
+  if(!n&&n!==0)return"—";
+  const sign=n<0?"-":"";
+  return`${sign}$${Math.abs(Math.round(n)).toLocaleString("en-US")}`;
 };
 
 // ── AD BANNER ─────────────────────────────────────────────────────────────────
@@ -394,6 +447,55 @@ const LANG = {
     hero_step4_desc: "Monitorea plan vs realidad — ve qué mantener, rebalancear o comprar más con precios en vivo.",
     hero_top_label: "Top Compounders — Retorno 1 año",
     footer_disc: "Solo educativo — no es asesoría financiera.",
+    // Compound Tab
+    comp_title: "Calculadora de Interés Compuesto",
+    comp_free: "✓ 100% Gratis · Sin cuenta · Sin tarjeta · Interés mensual compuesto",
+    comp_initial: "Capital inicial",
+    comp_rate: "Tasa de retorno",
+    comp_contrib: "Aporte mensual",
+    comp_years: "Años de inversión",
+    comp_annual: "Anual",
+    comp_monthly: "Mensual",
+    comp_calculate: "Calcular",
+    comp_final: "Balance Final",
+    comp_invested: "Total Invertido",
+    comp_earned: "Interés Ganado",
+    comp_rule72: "La Regla del 72",
+    comp_double: "Tu dinero se duplica en",
+    comp_table: "Ver tabla año a año",
+    comp_year: "Año", comp_capital: "Capital", comp_interest: "Interés", comp_total: "Total",
+    // Profile Tab
+    prof_title: "¿Cuál es tu perfil de inversor?",
+    prof_sub: "Responde 8 preguntas y nuestra IA construirá un portafolio personalizado para ti — acciones, ETFs, precios de entrada, objetivos y stop loss.",
+    prof_start: "Comenzar el Quiz →",
+    prof_generate: "🤖 Generar Mi Portafolio IA →",
+    prof_retake: "Volver a tomar el Quiz",
+    prof_stocks: "Acciones Recomendadas",
+    prof_etfs: "ETFs Recomendados",
+    // Portfolio Tab  
+    port_title: "Mi Portafolio",
+    port_sub: "Sigue tus posiciones · Precios en vivo · Análisis IA",
+    port_add: "➕ Agregar Posición",
+    port_ticker: "Ticker",
+    port_shares: "Acciones",
+    port_buy_price: "Precio de Compra",
+    port_date: "Fecha de Compra",
+    port_btn_add: "➕ Agregar al Portafolio",
+    port_refresh: "🔄 Actualizar Precios",
+    port_ai: "🤖 Análisis IA",
+    port_invested: "Total Invertido",
+    port_value: "Valor Actual",
+    port_pnl: "P&G Total",
+    port_return: "Retorno Total",
+    port_empty_title: "Tu portafolio está vacío",
+    port_empty_sub: "Agrega tu primera posición usando el formulario. Luego actualiza los precios para ver tu P&G en tiempo real.",
+    // Strategy Tab
+    strat_title: "Mi Estrategia",
+    strat_no_strategy: "Aún no tienes una estrategia guardada",
+    strat_no_sub: "Crea tu Perfil de Riesgo, genera un portafolio IA y haz clic en '✅ Sí — Seguir Mi Estrategia' para empezar a rastrear tu plan aquí.",
+    strat_create: "🧬 Crear Mi Perfil de Riesgo →",
+    strat_plan: "📊 Plan vs Realidad",
+    strat_refresh: "🔄 Actualizar Precios",
   }
 };
 
@@ -529,7 +631,8 @@ function calcYearsTo1M(startAge,monthly=200,annualRate=10){
   return {years:months/12, reachAge:Math.round(startAge+months/12)};
 }
 
-function CompoundTab({onGoToTab}){
+function CompoundTab({onGoToTab,lang="en"}){
+  const L2=LANG[lang]||LANG.en;
   const [draft,setDraft]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
   const [cfg,setCfg]=useState({initial:10000,rate:10,rateType:"annual",contrib:2000,contribFreq:"monthly",years:10});
   const [showTable,setShowTable]=useState(true);
@@ -569,16 +672,16 @@ function CompoundTab({onGoToTab}){
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:8}}>
-        <span style={{fontSize:11,color:T.green,fontWeight:600}}>✓ 100% Free · No account · No credit card · Monthly compounding (industry standard)</span>
+        <span style={{fontSize:11,color:T.green,fontWeight:600}}>{lang==="es"?"✓ 100% Gratis · Sin cuenta · Sin tarjeta · Interés mensual compuesto":"✓ 100% Free · No account · No credit card · Monthly compounding"}</span>
       </div>
     </div>
 
     {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:"Final Balance",v:fmt(last.balance||0),c:T.gold,sub:`in ${cfg.years} years`,icon:"🏆"},
-        {l:"Total Invested",v:fmt(last.contributed||0),c:T.blue,sub:"your money",icon:"💵"},
-        {l:"Interest Earned",v:fmt(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
+        {l:lang==="es"?"Balance Final":"Final Balance",v:fmt(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
+        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
+        {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmt(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
         {l:"Multiplier",v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
       ].map(({l,v,c,sub,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
@@ -1592,7 +1695,7 @@ const PROFILES={
   },
 };
 
-function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy}){
+function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="en"}){
   const [step,setStep]=useState("intro"); // intro | quiz | result | portfolio
   const [answers,setAnswers]=useState({});
   const [current,setCurrent]=useState(0);
@@ -2207,7 +2310,7 @@ function PieChart({data,stockCount,size=220}){
   </svg>;
 }
 
-function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile}){
+function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en"}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("compoundr_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
@@ -2442,8 +2545,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {/* Header */}
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
       <div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold}}>📁 My Portfolio</div>
-        <div style={{fontSize:12,color:T.muted,marginTop:3}}>Track your positions · Live prices via Finnhub · AI analysis</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold}}>📁 {lang==="es"?"Mi Portafolio":"My Portfolio"}</div>
+        <div style={{fontSize:12,color:T.muted,marginTop:3}}>{lang==="es"?"Sigue tus posiciones · Precios en vivo · Análisis IA":"Track your positions · Live prices via Finnhub · AI analysis"}</div>
       </div>
       {/* CTA: build a portfolio from risk profile */}
       {!savedProfile&&<button onClick={()=>onGoToProfile&&onGoToProfile()}
@@ -2477,10 +2580,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {/* KPI Cards */}
     {positions.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:"Total Invested",v:`$${totalCost.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:T.blue,icon:"💵"},
-        {l:"Current Value",v:`$${totalValue.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:T.gold,icon:"📊"},
-        {l:"Total P&L",v:`${totalPnL>=0?"+":""}$${totalPnL.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:totalPnL>=0?T.green:T.red,icon:"📈"},
-        {l:"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯"},
+        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵"},
+        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊"},
+        {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"📈"},
+        {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯"},
       ].map(({l,v,c,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
         <Lbl>{l}</Lbl>
@@ -2794,7 +2897,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 }
 
 // ── MY STRATEGY TAB ──────────────────────────────────────────────────────────
-function StrategyTab({onGoToProfile,onGoToPortfolio}){
+function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
   const [strategy,setStrategy]=useState(null);
   const [positions,setPositions]=useState([]);
   const [prices,setPrices]=useState({});
@@ -2837,9 +2940,9 @@ function StrategyTab({onGoToProfile,onGoToPortfolio}){
   if(!strategy)return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{textAlign:"center",padding:"60px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
       <div style={{fontSize:56,marginBottom:16}}>📈</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>No strategy saved yet</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{lang==="es"?"Aún no tienes una estrategia guardada":"No strategy saved yet"}</div>
       <div style={{fontSize:13,color:T.muted,maxWidth:520,margin:"0 auto 32px",lineHeight:1.8}}>
-        Create your Risk Profile, generate an AI portfolio, then click <strong style={{color:T.green}}>"✅ Yes — Track My Strategy"</strong> to start tracking your plan vs reality here.
+        {lang==="es"?"Crea tu Perfil de Riesgo, genera un portafolio IA y haz clic en ":"Create your Risk Profile, generate an AI portfolio, then click "}<strong style={{color:T.green}}>{lang==="es"?'"✅ Sí — Seguir Mi Estrategia"':'"✅ Yes — Track My Strategy"'}</strong>{lang==="es"?" para empezar a rastrear tu plan aquí.":" to start tracking your plan vs reality here."}
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={onGoToProfile} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
@@ -3083,7 +3186,32 @@ export default function App(){
   const [tab,setTab]=useState(null);
   const [lang,setLang]=useState(()=>{try{return localStorage.getItem("compoundr_lang")||"en";}catch{return "en";}});
   const L=LANG[lang]||LANG.en;
-  const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{}const L2=LANG[nl];alert(nl==="es"?"🇨🇴 Idioma cambiado a Español":"🇺🇸 Language changed to English");};
+  const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{} };
+  const [currCode,setCurrCode]=useState(()=>{try{return localStorage.getItem("compoundr_currency")||"USD";}catch{return "USD";}});
+  const [showCurrMenu,setShowCurrMenu]=useState(false);
+  const [liveRates,setLiveRates]=useState({});
+  const [ratesLoaded,setRatesLoaded]=useState(false);
+  const [ratesError,setRatesError]=useState(false);
+
+  // Fetch live rates on mount
+  useState(()=>{
+    fetchExchangeRates().then(rates=>{
+      setLiveRates(rates);
+      setRatesLoaded(true);
+    }).catch(()=>{setRatesError(true);setRatesLoaded(true);});
+  });
+
+  const currObj=CURRENCIES[currCode]||CURRENCIES.USD;
+  const liveRate=currCode==="USD"?1:(liveRates[currCode]||CURRENCIES[currCode]?.rate||1);
+  setCurrencyGlobal(currObj,liveRate); // sync global fmt with live rate
+
+  const changeCurrency=(code)=>{
+    setCurrCode(code);
+    const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
+    setCurrencyGlobal(CURRENCIES[code],rate);
+    try{localStorage.setItem("compoundr_currency",code);}catch{}
+    setShowCurrMenu(false);
+  };
   const [m,setM]=useState(defM());
   const [moat,setMoat]=useState(defMoat());
   const [company,setCompany]=useState("");
@@ -3105,7 +3233,7 @@ export default function App(){
   const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
 
   return<ErrorBoundary>
-  <div style={{minHeight:"100vh",background:T.bg}}>
+  <div style={{minHeight:"100vh",background:T.bg}} onClick={()=>showCurrMenu&&setShowCurrMenu(false)}>
     <style>{css}</style>
     {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext}/>}
     <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(8px)"}}>
@@ -3124,6 +3252,47 @@ export default function App(){
               <span>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
               <span style={{color:T.text,fontWeight:600}}>{lang==="en"?"ES":"EN"}</span>
             </button>
+            {/* Currency picker */}
+            <div style={{position:"relative"}}>
+              <button onClick={()=>setShowCurrMenu(v=>!v)}
+                style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:4}}>
+                <span>{currObj.flag}</span>
+                <span style={{color:T.text,fontWeight:600}}>{currCode}</span>
+                <span style={{fontSize:8}}>▼</span>
+              </button>
+              {showCurrMenu&&<div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:6,zIndex:200,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+                <div style={{fontSize:9,color:T.muted,padding:"4px 8px",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Select Currency</div>
+                {/* Rate source indicator */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"2px 8px 6px"}}>
+                  <span style={{fontSize:9,color:T.muted}}>Rates: European Central Bank</span>
+                  {ratesLoaded
+                    ?<span style={{fontSize:9,color:ratesError?T.gold:T.green}}>{ratesError?"⚠️ Fallback rates":"✅ Live rates"}</span>
+                    :<span style={{fontSize:9,color:T.muted}}><span className="sp">⟳</span> Loading...</span>}
+                </div>
+                {Object.values(CURRENCIES).map(({flag,code,name,symbol})=>{
+                  const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
+                  return<div key={code} onClick={()=>changeCurrency(code)}
+                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:6,cursor:"pointer",background:currCode===code?`${T.gold}15`:"transparent"}}
+                    onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+                    onMouseLeave={e=>e.currentTarget.style.background=currCode===code?`${T.gold}15`:"transparent"}>
+                    <span style={{fontSize:14}}>{flag}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:11,color:currCode===code?T.gold:T.text,fontWeight:currCode===code?600:400}}>{symbol} {code} — {name}</div>
+                      <div style={{fontSize:9,color:T.muted}}>
+                        {code==="USD"?"Base currency":`1 USD = ${rate.toLocaleString("en-US",{maximumFractionDigits:2})} ${code}`}
+                      </div>
+                    </div>
+                    {currCode===code&&<span style={{fontSize:10,color:T.gold}}>✓</span>}
+                  </div>;
+                })}
+                <div style={{borderTop:`1px solid ${T.border}33`,marginTop:4,padding:"6px 8px 2px"}}>
+                  <div style={{fontSize:9,color:T.muted,lineHeight:1.5}}>
+                    ⚠️ Stock prices always in USD (market standard).<br/>
+                    Portfolio totals & calculators use selected currency.
+                  </div>
+                </div>
+              </div>}
+            </div>
             {adminMode
               ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin</div>
               :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
@@ -3151,12 +3320,12 @@ export default function App(){
     </div>
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
-      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)}/>}
+      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
       {tab==="whatif"&&<WhatIfTab/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")}/>}
-      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")}/>}
-      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")}/>}
+      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang}/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
+      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang}/>}
       {tab==="ret"&&<ReturnTab onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
