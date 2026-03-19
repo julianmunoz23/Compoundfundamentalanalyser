@@ -447,7 +447,97 @@ const LANG = {
     hero_step4_desc: "Monitorea plan vs realidad — ve qué mantener, rebalancear o comprar más con precios en vivo.",
     hero_top_label: "Top Compounders — Retorno 1 año",
     footer_disc: "Solo educativo — no es asesoría financiera.",
+    // WhatIf
+    whatif_title: "¿Y si hubieras invertido",
+    whatif_sub: "Explora el poder del interés compuesto en los mejores negocios de la última década",
+    whatif_custom: "🎯 Tu Escenario Personalizado",
+    whatif_capital: "Capital Inicial",
+    whatif_cagr: "CAGR Esperado",
+    whatif_years: "Años",
+    whatif_horizon: "Horizonte",
+    whatif_result: "Tu resultado en",
+    whatif_multiplier: "veces tu inversión inicial",
+    whatif_chart: "📈 Tu Trayectoria de Crecimiento",
+    // Score Tab
+    score_label: "🎯 Analizador de Acciones IA — Análisis Buffett/Munger + consenso Wall Street · 3 análisis gratis",
+    score_build_portfolio: "Armar mi portafolio →",
+    score_input_label: "Ticker o Nombre de Empresa",
+    score_input_placeholder: "NVDA, Apple, Google, Tesla, Costco...",
+    score_hint: "Escribe un ticker (NVDA) o nombre de empresa (Google, Apple, Tesla) → la IA lo analiza",
+    score_analyzing: "Analizando",
+    score_btn: "🎯 Analizar con IA",
+    score_unlock: "🔓 Desbloquear",
+    score_locked: "🔒 Datos bloqueados al análisis IA — click Desbloquear para editar",
+    score_sector: "Sector",
+    // Profile quiz questions
+    q_horizon: "¿Cuánto tiempo puedes mantener tu dinero invertido sin necesitarlo?",
+    q_horizon_1: "Menos de 2 años", q_horizon_2: "2–5 años", q_horizon_3: "5–10 años", q_horizon_4: "Más de 10 años",
+    q_drop: "Tu portafolio cae 30% en un crash. ¿Qué haces?",
+    q_drop_1: "Vendo todo inmediatamente", q_drop_2: "Vendo algo para reducir exposición",
+    q_drop_3: "Aguanto y espero la recuperación", q_drop_4: "Compro más — es un descuento",
+    q_goal: "¿Cuál es tu objetivo principal de inversión?",
+    q_goal_1: "Preservar mi capital — seguridad primero", q_goal_2: "Ingresos estables con bajo riesgo",
+    q_goal_3: "Crecimiento equilibrado a largo plazo", q_goal_4: "Máximo crecimiento a largo plazo",
+    q_experience: "¿Cómo describirías tu experiencia invirtiendo?",
+    q_experience_1: "Ninguna — apenas empiezo", q_experience_2: "Algo — he comprado ETFs o fondos",
+    q_experience_3: "Moderada — sigo los mercados regularmente", q_experience_4: "Avanzada — analizo acciones individuales",
+    q_income: "Si perdieras toda tu inversión, ¿cómo afectaría tu vida?",
+    q_income_1: "Devastador — es la mayor parte de mis ahorros", q_income_2: "Muy difícil — un gran retroceso",
+    q_income_3: "Duro pero manejable", q_income_4: "Bien — es dinero que puedo perder",
+    q_volatility: "¿Qué frase describe mejor tu actitud hacia el riesgo?",
+    q_volatility_1: "Prefiero retornos garantizados aunque sean bajos", q_volatility_2: "Acepto riesgo moderado para ganancias moderadas",
+    q_volatility_3: "Acepto mayor volatilidad por mayores retornos", q_volatility_4: "Abrazo el alto riesgo por el máximo potencial",
+    q_concentration: "¿Cuántas acciones te sentirías cómodo teniendo?",
+    q_concentration_1: "1–3 blue chips muy seguros", q_concentration_2: "5–10 ETFs y acciones diversificadas",
+    q_concentration_3: "10–20 mezcla de crecimiento y valor", q_concentration_4: "20+ incluyendo alto crecimiento y emergentes",
+    q_age: "¿Qué edad tienes?",
+    q_age_1: "55 o más", q_age_2: "45–54", q_age_3: "35–44", q_age_4: "Menos de 35",
+    // Profile results
+    prof_conservative: "Conservador", prof_moderate: "Moderado", prof_aggressive: "Agresivo",
+    prof_conservative_desc: "Preservar el capital es tu prioridad. Prefieres estabilidad sobre crecimiento. Ideal para bonos, acciones de dividendos y ETFs de baja volatilidad.",
+    prof_moderate_desc: "Buscas equilibrio entre crecimiento y seguridad. Cómodo con algunas fluctuaciones del mercado a cambio de retornos a largo plazo.",
+    prof_aggressive_desc: "Eres un inversor de crecimiento dispuesto a soportar la volatilidad por retornos superiores a largo plazo. Las caídas a corto plazo son el precio del compounding.",
+    prof_question: "Pregunta",
+    prof_of: "de",
+    prof_next: "Siguiente →",
+    prof_your_profile: "Tu Perfil de Inversor",
+    prof_retake: "Repetir Quiz",
+    prof_generate: "🤖 Generar Mi Portafolio IA →",
+    prof_generating: "Construyendo tu portafolio...",
+    prof_recommended_stocks: "📈 Acciones Recomendadas",
+    prof_recommended_etfs: "🗂️ ETFs Recomendados",
+    prof_regenerate: "🤖 Regenerar",
+    prof_allocation: "Asignación del Portafolio",
+    prof_rebalance: "Rebalancear",
+    prof_expected_return: "Retorno Esperado",
+    prof_max_drawdown: "Caída Máxima",
+    // Portfolio tab
+    port_add_position: "➕ Agregar Posición",
+    port_manual: "✏️ Manual", port_paste: "📋 Pegar de Excel", port_csv: "📂 Importar CSV",
+    port_btn_refresh: "🔄 Actualizar Precios",
+    port_btn_ai: "🤖 Análisis IA",
+    port_alloc_title: "🥧 Asignación del Portafolio",
+    port_empty_title: "Tu portafolio está vacío",
+    port_empty_sub: "Agrega tu primera posición. Luego actualiza precios para ver tu P&G en tiempo real.",
+    port_positions: "Posición", port_stocks: "Acciones", port_avg_cost: "Costo Prom.",
+    port_current: "Precio Actual", port_total_cost: "Costo Total", port_curr_value: "Valor Actual",
+    port_pnl_d: "P&G $", port_pnl_p: "P&G %", port_today: "Hoy", port_verdict: "Veredicto IA",
+    port_run_ai: "Ejecutar IA",
+    // Strategy tab
+    strat_days: "días activo",
+    strat_kpi_positions: "Posiciones Recomendadas",
+    strat_kpi_executed: "Posiciones Ejecutadas",
+    strat_kpi_days: "Días Siguiendo",
+    strat_kpi_return: "Retorno Esperado",
+    strat_entry: "Zona Entrada", strat_target: "Objetivo", strat_stop: "Stop Loss",
+    strat_your_weight: "Tu Peso", strat_status: "Estado", strat_pnl: "P&G",
+    strat_in_zone: "✅ En zona", strat_target_hit: "🎯 Objetivo!",
+    strat_not_exec: "❌ No ejecutado", strat_executed: "✅ Ejecutado", strat_partial: "⚠️ Parcial",
+    strat_refresh: "🔄 Actualizar Precios", strat_clear: "🗑 Limpiar",
+    strat_original: "📋 Estrategia Original",
+    strat_update_port: "Actualizar Mi Portafolio", strat_rebuild: "Reconstruir Mi Estrategia",
     // Compound Tab
+    comp_title: "Calculadora de Interés Compuesto",
     comp_title: "Calculadora de Interés Compuesto",
     comp_free: "✓ 100% Gratis · Sin cuenta · Sin tarjeta · Interés mensual compuesto",
     comp_initial: "Capital inicial",
@@ -873,7 +963,7 @@ function CompoundTab({onGoToTab,lang="en"}){
     </Card>
 
     {/* ── MILLION DOLLAR GOAL SECTION ── */}
-    <MillionGoalSection/>
+    <MillionGoalSection lang={lang}/>
 
     {/* ── NEXT STEP CTA ── */}
     <div style={{background:`linear-gradient(135deg,${T.accent},${T.card})`,border:`1px solid ${T.goldDim}44`,borderRadius:16,padding:"32px 28px",textAlign:"center"}}>
@@ -905,7 +995,7 @@ function CompoundTab({onGoToTab,lang="en"}){
   </div>;
 }
 
-function MillionGoalSection(){
+function MillionGoalSection({lang="en"}){
   const RATE=10;
   const [age,setAge]=useState(30);
   const [goal,setGoal]=useState(1000000);
@@ -936,10 +1026,10 @@ function MillionGoalSection(){
     {/* Header */}
     <div style={{textAlign:"center",padding:"28px 24px 20px",borderBottom:`1px solid ${T.border}33`}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"5px 14px",marginBottom:14}}>
-        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>🎯 Your Personal Wealth Plan</span>
+        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>{lang==="es"?"🎯 Tu Plan Personal de Riqueza":"🎯 Your Personal Wealth Plan"}</span>
       </div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.text,marginBottom:8,fontWeight:700}}>
-        When will <span style={{color:T.gold}}>you</span> reach your goal?
+        {lang==="es"?"¿Cuándo alcanzarás ":"When will "}<span style={{color:T.gold}}>{lang==="es"?"tu":"you"}</span>{lang==="es"?" meta?":" reach your goal?"}
       </div>
       <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>
         At <strong style={{color:T.green}}>{RATE}% annual</strong> (S&P 500 historical average), compounded monthly.
@@ -950,7 +1040,7 @@ function MillionGoalSection(){
     <div style={{padding:"24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,borderBottom:`1px solid ${T.border}33`,background:`${T.accent}66`}}>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,color:T.muted}}>🎂 Your current age</span>
+          <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"🎂 Tu edad actual":"🎂 Your current age"}</span>
           <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{age} years old</Mn>
         </div>
         <input type="range" min={18} max={60} step={1} value={age} onChange={e=>setAge(parseInt(e.target.value))}/>
@@ -960,7 +1050,7 @@ function MillionGoalSection(){
       </div>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,color:T.muted}}>🎯 Your wealth goal</span>
+          <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"🎯 Tu meta de riqueza":"🎯 Your wealth goal"}</span>
           <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{goalFmt(goal)}</Mn>
         </div>
         <input type="range" min={Math.round(100000*_exRate)} max={Math.round(5000000*_exRate)} step={Math.round(50000*_exRate)} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
@@ -970,7 +1060,7 @@ function MillionGoalSection(){
       </div>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,color:T.muted}}>💵 Monthly savings</span>
+          <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"💵 Ahorro mensual":"💵 Monthly savings"}</span>
           <Mn sz={14} c={T.green} s={{fontWeight:700}}>{goalFmt(monthly)}/mo · ~${Math.ceil(monthly/30)}/day</Mn>
         </div>
         <input type="range" min={50} max={5000} step={50} value={monthly} onChange={e=>setMonthly(parseInt(e.target.value))}/>
@@ -1044,7 +1134,8 @@ function MillionGoalSection(){
 }
 
 // ── WHAT IF ───────────────────────────────────────────────────────────────────
-function WhatIfTab(){
+function WhatIfTab({lang="en"}){
+  const LW=LANG[lang]||LANG.en;
   const SCENARIOS=[
     {ticker:"NVDA",name:"NVIDIA",year:2014,invested:10000,cagr:68,finalValue:3820000,color:T.green,desc:"GPU dominance + AI boom"},
     {ticker:"AAPL",name:"Apple",year:2008,invested:10000,cagr:28,finalValue:782000,color:T.blue,desc:"iPhone, services, ecosystem"},
@@ -1059,8 +1150,8 @@ function WhatIfTab(){
   const customData=Array.from({length:custom.years},(_,i)=>({y:`Y${i+1}`,v:Math.round(custom.initial*Math.pow(1+custom.cagr/100,i+1))}));
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:20}}>
     <div style={{textAlign:"center",padding:"10px 0 6px"}}>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:6}}>What if you had invested <span style={{color:T.gold}}>$10,000</span>...</div>
-      <div style={{fontSize:13,color:T.muted}}>Explore the power of compounding in the best businesses of the last decade</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:6}}>{LW.whatif_title} <span style={{color:T.gold}}>{fmt(10000*_exRate)}</span>...</div>
+      <div style={{fontSize:13,color:T.muted}}>{LW.whatif_sub}</div>
     </div>
     <AdBanner size="leaderboard"/>
     <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
@@ -1079,24 +1170,24 @@ function WhatIfTab(){
     </div>
     <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:18}}>
       <Card>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:16}}>🎯 Your Custom Scenario</div>
-        <Lbl>Initial Capital</Lbl>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:16}}>{LW.whatif_custom}</div>
+        <Lbl>{LW.whatif_capital}</Lbl>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace"}}>$</span><input type="number" value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700}}/></div>
         <input type="range" min={Math.round(1000*_exRate)} max={Math.round(1000000*_exRate)} step={Math.round(1000*_exRate)} value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value))} style={{marginBottom:14}}/>
-        <Lbl>Expected CAGR</Lbl>
+        <Lbl>{LW.whatif_cagr}</Lbl>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><input type="number" value={custom.cagr} onChange={e=>sc("cagr",parseFloat(e.target.value)||0)} style={{fontWeight:700}}/><span style={{color:T.muted,fontSize:12}}>% per year</span></div>
         <input type="range" min={1} max={100} step={0.5} value={custom.cagr} onChange={e=>sc("cagr",parseFloat(e.target.value))} style={{marginBottom:14}}/>
         <Lbl>Years</Lbl>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,color:T.muted}}>Horizon</span><Mn sz={12} c={T.gold}>{custom.years} years</Mn></div>
         <input type="range" min={1} max={40} step={1} value={custom.years} onChange={e=>sc("years",parseInt(e.target.value))}/>
         <div style={{marginTop:16,padding:14,background:`${T.gold}08`,borderRadius:10,border:`1px solid ${T.goldDim}44`,textAlign:"center"}}>
-          <div style={{fontSize:11,color:T.muted,marginBottom:4}}>Your result in {custom.years} years</div>
+          <div style={{fontSize:11,color:T.muted,marginBottom:4}}>{LW.whatif_result} {custom.years} {lang==="es"?"años":"years"}</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,fontWeight:700}}>{fmt(customFinal)}</div>
-          <div style={{fontSize:11,color:T.green,marginTop:4}}>×{(customFinal/custom.initial).toFixed(1)} your initial investment</div>
+          <div style={{fontSize:11,color:T.green,marginTop:4}}>×{(customFinal/custom.initial).toFixed(1)} {LW.whatif_multiplier}</div>
         </div>
       </Card>
       <Card>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>📈 Your Growth Trajectory</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>{LW.whatif_chart}</div>
         <div style={{height:280}}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={customData}>
@@ -1625,7 +1716,8 @@ Respond ONLY with valid JSON, no markdown:
   );
 }
 
-function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile}){
+function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile,lang="en"}){
+  const LS=LANG[lang]||LANG.en;
   const [loading,setLoading]=useState(false);
   const [info,setInfo]=useState(null);
   const [fh,setFh]=useState(null);
@@ -1671,10 +1763,10 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",padding:"12px 16px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}55`,borderRadius:8}}>
-      <span style={{fontSize:12,color:T.gold}}>🎯 <strong>AI Stock Analyzer</strong> — Buffett/Munger fundamental analysis + Wall Street consensus · 3 free analyses</span>
+      <span style={{fontSize:12,color:T.gold}}>{lang==="es"?LS.score_label:"🎯 AI Stock Analyzer — Buffett/Munger fundamental analysis + Wall Street consensus · 3 free analyses"}</span>
       <button onClick={()=>onGoToProfile&&onGoToProfile()} style={{background:`${T.purple}20`,border:`1px solid ${T.purple}55`,borderRadius:8,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
         <span style={{fontSize:12}}>🧬</span>
-        <span style={{fontSize:11,color:T.purple,fontWeight:600}}>Build me a portfolio →</span>
+        <span style={{fontSize:11,color:T.purple,fontWeight:600}}>{lang==="es"?LS.score_build_portfolio:"Build me a portfolio →"}</span>
       </button>
     </div>
     <MarketCycleBanner ticker={company} sector={sector} lang="en"/>
@@ -1682,17 +1774,17 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:200}}>
-          <Lbl>Ticker or Company Name</Lbl>
-          <input type="text" value={company} onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}} placeholder="NVDA, Apple, Google, Tesla, Costco..." onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
+          <Lbl>{lang==="es"?LS.score_input_label:"Ticker or Company Name"}</Lbl>
+          <input type="text" value={company} onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}} placeholder={lang==="es"?LS.score_input_placeholder:"NVDA, Apple, Google, Tesla, Costco..."} onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
         </div>
         <div style={{width:150}}><Lbl>Sector</Lbl><select value={sector} onChange={e=>setSector(e.target.value)}>{SECTORS.map(s=><option key={s}>{s}</option>)}</select></div>
         <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 24px",fontSize:14}}>
-          {loading?<span className="sp">⟳</span>:"🎯 Analyze with AI"}
+          {loading?<span className="sp">⟳</span>:lang==="es"?LS.score_btn:"🎯 Analyze with AI"}
         </button>
         {locked&&<button className="seg" onClick={()=>setLocked(false)} style={{height:44,color:T.gold,borderColor:T.goldDim}}>🔓 Unlock</button>}
       </div>
       {!info&&!loading&&!err&&<div style={{textAlign:"center",paddingTop:10,fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`,marginTop:12}}>
-        Type a ticker (NVDA) or company name (Google, Apple, Tesla) → AI finds the stock and analyzes it
+        {lang==="es"?LS.score_hint:"Type a ticker (NVDA) or company name (Google, Apple, Tesla) → AI finds the stock and analyzes it"}
       </div>}
       {loading&&<div style={{textAlign:"center",padding:12,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Analyzing <strong>{company}</strong>...</div>}
       {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
@@ -2028,14 +2120,14 @@ Respond ONLY with valid JSON, no markdown:
 const QUESTIONS=[
   {
     id:"horizon",
-    q:"How long can you keep your money invested without needing it?",
+    q:{en:"How long can you keep your money invested without needing it?",es:"¿Cuánto tiempo puedes mantener tu dinero invertido sin necesitarlo?"},
     opts:[
       {l:"Less than 2 years",s:1},{l:"2–5 years",s:2},{l:"5–10 years",s:3},{l:"More than 10 years",s:4},
     ],
   },
   {
     id:"drop",
-    q:"Your portfolio drops 30% in a market crash. What do you do?",
+    q:{en:"Your portfolio drops 30% in a market crash. What do you do?",es:"Tu portafolio cae 30% en un crash. ¿Qué haces?"},
     opts:[
       {l:"Sell everything immediately",s:1},{l:"Sell some to reduce exposure",s:2},
       {l:"Hold and wait for recovery",s:3},{l:"Buy more — it's a discount",s:4},
@@ -2043,7 +2135,7 @@ const QUESTIONS=[
   },
   {
     id:"goal",
-    q:"What is your primary investment goal?",
+    q:{en:"What is your primary investment goal?",es:"¿Cuál es tu objetivo principal de inversión?"},
     opts:[
       {l:"Preserve my capital — safety first",s:1},{l:"Steady income with low risk",s:2},
       {l:"Balanced growth over time",s:3},{l:"Maximum long-term growth",s:4},
@@ -2051,7 +2143,7 @@ const QUESTIONS=[
   },
   {
     id:"experience",
-    q:"How would you describe your investing experience?",
+    q:{en:"How would you describe your investing experience?",es:"¿Cómo describirías tu experiencia invirtiendo?"},
     opts:[
       {l:"None — I'm just starting",s:1},{l:"Some — I've bought ETFs or funds",s:2},
       {l:"Moderate — I follow markets regularly",s:3},{l:"Advanced — I analyze individual stocks",s:4},
@@ -2059,7 +2151,7 @@ const QUESTIONS=[
   },
   {
     id:"income",
-    q:"If you lost your entire investment, how would it affect your life?",
+    q:{en:"If you lost your entire investment, how would it affect your life?",es:"Si perdieras toda tu inversión, ¿cómo afectaría tu vida?"},
     opts:[
       {l:"Devastating — it's most of my savings",s:1},{l:"Very difficult — major setback",s:2},
       {l:"Tough but manageable",s:3},{l:"Fine — this is money I can afford to lose",s:4},
@@ -2067,7 +2159,7 @@ const QUESTIONS=[
   },
   {
     id:"volatility",
-    q:"Which statement best describes your attitude toward risk?",
+    q:{en:"Which statement best describes your attitude toward risk?",es:"¿Qué frase describe mejor tu actitud hacia el riesgo?"},
     opts:[
       {l:"I prefer guaranteed returns even if small",s:1},{l:"I accept modest risk for modest gains",s:2},
       {l:"I accept higher volatility for higher returns",s:3},{l:"I embrace high risk for maximum upside",s:4},
@@ -2075,7 +2167,7 @@ const QUESTIONS=[
   },
   {
     id:"concentration",
-    q:"How many stocks would you feel comfortable holding?",
+    q:{en:"How many stocks would you feel comfortable holding?",es:"¿Cuántas acciones te sentirías cómodo teniendo?"},
     opts:[
       {l:"1–3 very safe blue chips only",s:1},{l:"5–10 diversified ETFs and stocks",s:2},
       {l:"10–20 mix of growth and value",s:3},{l:"20+ including high-growth and emerging",s:4},
@@ -2083,7 +2175,7 @@ const QUESTIONS=[
   },
   {
     id:"age",
-    q:"How old are you?",
+    q:{en:"How old are you?",es:"¿Qué edad tienes?"},
     opts:[
       {l:"55 or older",s:1},{l:"45–54",s:2},{l:"35–44",s:3},{l:"Under 35",s:4},
     ],
@@ -2092,23 +2184,32 @@ const QUESTIONS=[
 
 const PROFILES={
   conservative:{
-    label:"Conservative",icon:"🛡️",color:"#4a9eff",
-    desc:"Capital preservation is your priority. You prefer stability over growth and can't afford significant losses. Best suited for bonds, dividend stocks, and low-volatility ETFs.",
-    traits:["Low volatility tolerance","Short to medium time horizon","Income-focused","Safety first"],
+    label:{en:"Conservative",es:"Conservador"},icon:"🛡️",color:"#4a9eff",
+    desc:{en:"Capital preservation is your priority. You prefer stability over growth and can't afford significant losses. Best suited for bonds, dividend stocks, and low-volatility ETFs.",
+          es:"Preservar el capital es tu prioridad. Prefieres estabilidad sobre crecimiento. Ideal para bonos, acciones de dividendos y ETFs de baja volatilidad."},
+    traits:{en:["Low volatility tolerance","Short to medium time horizon","Income-focused","Safety first"],
+            es:["Baja tolerancia a la volatilidad","Horizonte corto a mediano","Enfocado en ingresos","Seguridad primero"]},
   },
   moderate:{
-    label:"Moderate",icon:"⚖️",color:"#c9a84c",
-    desc:"You seek a balance between growth and security. Comfortable with some market fluctuations in exchange for long-term returns. A diversified mix of stocks and bonds suits you well.",
-    traits:["Medium volatility tolerance","5–10 year horizon","Balanced growth + income","Diversification focused"],
+    label:{en:"Moderate",es:"Moderado"},icon:"⚖️",color:"#c9a84c",
+    desc:{en:"You seek a balance between growth and security. Comfortable with some market fluctuations in exchange for long-term returns. A diversified mix of stocks and bonds suits you well.",
+          es:"Buscas equilibrio entre crecimiento y seguridad. Cómodo con fluctuaciones del mercado a cambio de retornos a largo plazo."},
+    traits:{en:["Medium volatility tolerance","5–10 year horizon","Balanced growth + income","Diversification focused"],
+            es:["Tolerancia media a la volatilidad","Horizonte 5–10 años","Crecimiento + ingresos balanceados","Enfocado en diversificación"]},
   },
   aggressive:{
-    label:"Aggressive",icon:"🚀",color:"#2ecc71",
-    desc:"You're a growth investor willing to ride market volatility for superior long-term returns. You understand that short-term drops are the price for long-term compounding.",
-    traits:["High volatility tolerance","Long time horizon (10Y+)","Maximum growth focus","Compounders and quality stocks"],
+    label:{en:"Aggressive",es:"Agresivo"},icon:"🚀",color:"#2ecc71",
+    desc:{en:"You're a growth investor willing to ride market volatility for superior long-term returns. You understand that short-term drops are the price for long-term compounding.",
+          es:"Eres un inversor de crecimiento dispuesto a soportar la volatilidad por retornos superiores a largo plazo."},
+    traits:{en:["High volatility tolerance","Long time horizon (10Y+)","Maximum growth focus","Compounders and quality stocks"],
+            es:["Alta tolerancia a la volatilidad","Horizonte largo (10Y+)","Máximo enfoque en crecimiento","Compounders y acciones de calidad"]},
   },
 };
 
 function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="en"}){
+  const pLabel=(p)=>p?typeof p.label==="object"?p.label[lang]||p.label.en:p.label:"";
+  const pDesc=(p)=>p?typeof p.desc==="object"?p.desc[lang]||p.desc.en:p.desc:"";
+  const pTraits=(p)=>p?Array.isArray(p.traits)?p.traits:(p.traits[lang]||p.traits.en):[];
   const [step,setStep]=useState("intro"); // intro | quiz | result | portfolio
   const [answers,setAnswers]=useState({});
   const [current,setCurrent]=useState(0);
@@ -2139,7 +2240,7 @@ function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="
     const stockCount=amount<500?2:amount<2000?3:amount<10000?5:amount<25000?7:10;
     const etfCount=amount<500?1:amount<2000?1:amount<10000?2:3;
     try{
-      const p=await callAI(`You are a professional portfolio manager. Based on a ${profile.label} risk profile investor with $${amount.toLocaleString()} to invest, recommend a practical portfolio.
+      const p=await callAI(`You are a professional portfolio manager. Based on a ${pLabel(profile)} risk profile investor with $${amount.toLocaleString()} to invest, recommend a practical portfolio.
 
 IMPORTANT — Investment amount is $${amount.toLocaleString()}. Scale the number of positions accordingly:
 - Recommend exactly ${stockCount} individual stocks and ${etfCount} ETF(s).
@@ -2147,8 +2248,8 @@ IMPORTANT — Investment amount is $${amount.toLocaleString()}. Scale the number
 - With small amounts, focus on the BEST convictions only — not diversification for its own sake.
 - Weights must reflect actual dollar amounts that make sense for $${amount.toLocaleString()}.
 
-Investor profile: ${profile.label} — ${profile.desc}
-Traits: ${profile.traits.join(", ")}
+Investor profile: ${pLabel(profile)} — ${pDesc(profile)}
+Traits: ${pTraits(profile).join(", ")}
 
 Respond ONLY with valid JSON, no markdown:
 {
@@ -2168,7 +2269,7 @@ Respond ONLY with valid JSON, no markdown:
   "summary":"<3 sentences: strategy, why it fits the profile, and why these specific picks make sense for $${amount.toLocaleString()}>"
 }`);
       // Save profile to localStorage so Portfolio Tracker can use it
-      try{localStorage.setItem("compoundr_risk_profile",JSON.stringify({label:profile.label,desc:profile.desc,icon:profile.icon,color:profile.color}));}catch(e){}
+      try{localStorage.setItem("compoundr_risk_profile",JSON.stringify({label:pLabel(profile),desc:pDesc(profile),icon:profile.icon,color:profile.color}));}catch(e){}
       setPortfolio(p);onAnalysis();setStep("portfolio");
     }catch(e){setErr(`Error: ${e.message||"Could not generate portfolio."}`);}
     setLoading(false);
@@ -2207,7 +2308,7 @@ Respond ONLY with valid JSON, no markdown:
     return<div className="fi" style={{display:"flex",flexDirection:"column",gap:16,maxWidth:680,margin:"0 auto",width:"100%"}}>
       {/* Progress */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-        <span style={{fontSize:12,color:T.muted}}>Question {current+1} of {QUESTIONS.length}</span>
+        <span style={{fontSize:12,color:T.muted}}>{lang==="es"?`Pregunta ${current+1} de ${QUESTIONS.length}`:`Question ${current+1} of ${QUESTIONS.length}`}</span>
         <span style={{fontSize:12,color:T.gold}}>{Math.round(progress)}% complete</span>
       </div>
       <div style={{height:4,background:T.border,borderRadius:2}}>
@@ -2217,27 +2318,30 @@ Respond ONLY with valid JSON, no markdown:
       {/* Question card */}
       <Card s={{padding:32,background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
         <div style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
-          {["⏱️ Time Horizon","📉 Risk Reaction","🎯 Your Goal","📚 Experience","💸 Life Impact","🌊 Volatility","📊 Diversification","🎂 Your Age"][current]}
+          {lang==="es"
+            ?["⏱️ Horizonte Temporal","📉 Reacción al Riesgo","🎯 Tu Objetivo","📚 Experiencia","💸 Impacto de Vida","🌊 Volatilidad","📊 Diversificación","🎂 Tu Edad"][current]
+            :["⏱️ Time Horizon","📉 Risk Reaction","🎯 Your Goal","📚 Experience","💸 Life Impact","🌊 Volatility","📊 Diversification","🎂 Your Age"][current]}
         </div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:28,lineHeight:1.4}}>
           {q.q}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {q.opts.map(({l,s})=>(
-            <button key={l} onClick={()=>answer(s)}
+          {q.opts.map((opt,oi)=>{
+            const optLabel=typeof opt.l==="object"?opt.l[lang]||opt.l.en:opt.l;
+            return<button key={oi} onClick={()=>answer(opt.s)}
               style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px",textAlign:"left",cursor:"pointer",fontSize:14,color:T.text,transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.background=`${T.gold}12`;e.currentTarget.style.color=T.gold;}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.accent;e.currentTarget.style.color=T.text;}}>
-              <span style={{color:T.goldDim,marginRight:10,fontFamily:"'DM Mono',monospace"}}>{["A","B","C","D"][q.opts.indexOf({l,s})]||"•"}</span>
-              {l}
-            </button>
-          ))}
+              <span style={{color:T.goldDim,marginRight:10,fontFamily:"'DM Mono',monospace"}}>{["A","B","C","D"][oi]||"•"}</span>
+              {optLabel}
+            </button>;
+          })}
         </div>
       </Card>
 
       {current>0&&<button onClick={()=>{setCurrent(c=>c-1);const prev={...answers};delete prev[QUESTIONS[current-1].id];setAnswers(prev);}}
         style={{background:"none",border:"none",color:T.muted,cursor:"pointer",fontSize:12,alignSelf:"flex-start"}}>
-        ← Back
+        {lang==="es"?"← Atrás":"← Back"}
       </button>}
     </div>;
   }
@@ -2248,11 +2352,11 @@ Respond ONLY with valid JSON, no markdown:
     <div style={{textAlign:"center",padding:"36px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`2px solid ${profile.color}44`}}>
       <div style={{fontSize:60,marginBottom:12}}>{profile.icon}</div>
       <div style={{fontSize:12,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Your Investor Profile</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:profile.color,fontWeight:700,marginBottom:16}}>{profile.label} Investor</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:profile.color,fontWeight:700,marginBottom:16}}>{pLabel(profile)} Investor</div>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${profile.color}15`,border:`1px solid ${profile.color}44`,borderRadius:20,padding:"6px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:profile.color}}>Score: {totalScore}/{maxScore} points ({Math.round(pct*100)}%)</span>
       </div>
-      <div style={{fontSize:15,color:T.muted,maxWidth:600,margin:"0 auto 28px",lineHeight:1.8}}>{profile.desc}</div>
+      <div style={{fontSize:15,color:T.muted,maxWidth:600,margin:"0 auto 28px",lineHeight:1.8}}>{pDesc(profile)}</div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:28}}>
         {profile.traits.map(t=><span key={t} style={{fontSize:12,padding:"5px 14px",borderRadius:20,background:`${profile.color}15`,color:profile.color,border:`1px solid ${profile.color}33`}}>✓ {t}</span>)}
       </div>
@@ -2285,7 +2389,7 @@ Respond ONLY with valid JSON, no markdown:
         <button className="btn btn-gold" onClick={getPortfolio} disabled={loading} style={{fontSize:15,padding:"14px 32px",borderRadius:12}}>
           {loading?<><span className="sp">⟳</span> Building your portfolio...</>:<>🤖 Get My AI Portfolio <span style={{fontSize:12,opacity:0.8}}>— Premium</span></>}
         </button>
-        <button className="btn btn-outline" onClick={reset} style={{padding:"14px 20px",borderRadius:12}}>Retake Quiz</button>
+        <button className="btn btn-outline" onClick={reset} style={{padding:"14px 20px",borderRadius:12}}>{lang==="es"?"Volver al Quiz":"Retake Quiz"}</button>
       </div>
       {err&&<div style={{marginTop:12,padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
       {showRiskPaywall&&<PaywallModal context="riskPortfolio" onClose={()=>setShowRiskPaywall(false)}/>}
@@ -2295,7 +2399,7 @@ Respond ONLY with valid JSON, no markdown:
         <div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.green,marginBottom:4}}>📁 Already have stocks? Let's analyze your portfolio</div>
           <div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>
-            Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{profile.label}</strong> profile — and tell you exactly what to buy, hold, or sell.
+            Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{pLabel(profile)}</strong> profile — and tell you exactly what to buy, hold, or sell.
           </div>
         </div>
         <button className="btn btn-gold" onClick={onGoToPortfolio} style={{fontSize:14,padding:"12px 24px",borderRadius:10,whiteSpace:"nowrap",flexShrink:0}}>
@@ -2306,7 +2410,7 @@ Respond ONLY with valid JSON, no markdown:
     {/* Brokers CTA — show after profile result */}
     <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`,padding:20}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:6}}>🏦 Ready to start investing?</div>
-      <div style={{fontSize:12,color:T.muted,marginBottom:14}}>Open a brokerage account and start building your {profile.label} portfolio today.</div>
+      <div style={{fontSize:12,color:T.muted,marginBottom:14}}>Open a brokerage account and start building your {pLabel(profile)} portfolio today.</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
         {BROKERS.map(({name,url,desc,badge})=>(
           <a key={name} href={url} target="_blank" rel="noopener noreferrer"
@@ -2331,14 +2435,14 @@ Respond ONLY with valid JSON, no markdown:
     <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:20,alignItems:"center",padding:"24px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`2px solid ${profile.color}44`}}>
       <div style={{textAlign:"center"}}>
         <div style={{fontSize:44}}>{profile.icon}</div>
-        <div style={{fontSize:13,color:profile.color,fontWeight:700,marginTop:4}}>{profile.label}</div>
+        <div style={{fontSize:13,color:profile.color,fontWeight:700,marginTop:4}}>{pLabel(profile)}</div>
       </div>
       <div>
-        <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Portfolio — {profile.label} Investor · ${amount.toLocaleString()}</div>
+        <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Portfolio — {pLabel(profile)} Investor · ${amount.toLocaleString()}</div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.text,marginBottom:10,lineHeight:1.5}}>{portfolio.summary}</div>
         <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
           {[
-            {l:"Expected Return",v:portfolio.expectedReturn,c:T.green},
+            {l:lang==="es"?"Retorno Esperado":"Expected Return",v:portfolio.expectedReturn,c:T.green},
             {l:"Max Drawdown",v:portfolio.maxDrawdown,c:T.red},
             {l:"Rebalance",v:portfolio.rebalance,c:T.gold},
           ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"8px 14px"}}>
@@ -2465,7 +2569,7 @@ Respond ONLY with valid JSON, no markdown:
         <button className="btn btn-gold" onClick={()=>{
           try{
             localStorage.setItem("compoundr_strategy",JSON.stringify({
-              profile:{label:profile.label,icon:profile.icon,color:profile.color},
+              profile:{label:pLabel(profile),icon:profile.icon,color:profile.color},
               amount,portfolio,
               createdAt:new Date().toISOString(),
               executedAt:new Date().toISOString(),
@@ -2518,7 +2622,7 @@ Respond ONLY with valid JSON, no markdown:
           📁 Already have stocks? Let's see if your portfolio fits your profile
         </div>
         <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:4}}>
-          You're a <strong style={{color:profile.color}}>{profile.icon} {profile.label} investor</strong>. Now let's check if your current holdings reflect that.
+          You're a <strong style={{color:profile.color}}>{profile.icon} {pLabel(profile)} investor</strong>. Now let's check if your current holdings reflect that.
           Upload your positions and the AI will:
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -3408,7 +3512,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
           <div style={{fontSize:44}}>{profile.icon}</div>
           <div>
             <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Active Strategy</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:profile.color,fontWeight:700}}>{profile.label} Investor Portfolio</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:profile.color,fontWeight:700}}>{pLabel(profile)} Investor Portfolio</div>
             <div style={{fontSize:12,color:T.muted,marginTop:4}}>
               Started {new Date(executedAt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})} · {daysSince} days ago · ${amount.toLocaleString()} initial amount
             </div>
@@ -3425,9 +3529,9 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
       {/* Summary KPIs */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginTop:20}}>
         {[
-          {l:"Recommended Positions",v:allPositions.length,c:T.gold,icon:"📋"},
-          {l:"Positions Executed",v:Object.keys(portfolioMap).filter(t=>allTickers.includes(t)).length,c:T.green,icon:"✅"},
-          {l:"Days Tracking",v:daysSince,c:T.blue,icon:"📅"},
+          {l:lang==="es"?"Posiciones Recomendadas":"Recommended Positions",v:allPositions.length,c:T.gold,icon:"📋"},
+          {l:lang==="es"?"Posiciones Ejecutadas":"Positions Executed",v:Object.keys(portfolioMap).filter(t=>allTickers.includes(t)).length,c:T.green,icon:"✅"},
+          {l:lang==="es"?"Días Siguiendo":"Days Tracking",v:daysSince,c:T.blue,icon:"📅"},
           {l:"Expected Return",v:portfolio.expectedReturn||"—",c:T.green,icon:"📈"},
         ].map(({l,v,c,icon})=><div key={l} style={{background:T.card,borderRadius:10,padding:"12px 14px",textAlign:"center",border:`1px solid ${T.border}`}}>
           <div style={{fontSize:18,marginBottom:4}}>{icon}</div>
@@ -3736,8 +3840,8 @@ export default function App(){
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
-      {tab==="whatif"&&<WhatIfTab/>}
-      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")}/>}
+      {tab==="whatif"&&<WhatIfTab lang={lang}/>}
+      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang}/>}
