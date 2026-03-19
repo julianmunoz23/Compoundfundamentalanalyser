@@ -2117,6 +2117,24 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 // ── RISK PROFILE ─────────────────────────────────────────────────────────────
+// ── PROFILE HELPERS — module level so any component can use them ─────────────
+const pLabel=(p,lang="en")=>{
+  if(!p)return"";
+  if(typeof p.label==="object")return p.label[lang]||p.label.en||"";
+  return String(p.label||"");
+};
+const pDesc=(p,lang="en")=>{
+  if(!p)return"";
+  if(typeof p.desc==="object")return p.desc[lang]||p.desc.en||"";
+  return String(p.desc||"");
+};
+const pTraits=(p,lang="en")=>{
+  if(!p)return[];
+  if(Array.isArray(p.traits))return p.traits;
+  if(p.traits&&typeof p.traits==="object")return p.traits[lang]||p.traits.en||[];
+  return[];
+};
+
 const QUESTIONS=[
   {
     id:"horizon",
@@ -2207,9 +2225,6 @@ const PROFILES={
 };
 
 function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="en"}){
-  const pLabel=(p)=>p?typeof p.label==="object"?p.label[lang]||p.label.en:p.label:"";
-  const pDesc=(p)=>p?typeof p.desc==="object"?p.desc[lang]||p.desc.en:p.desc:"";
-  const pTraits=(p)=>p?Array.isArray(p.traits)?p.traits:(p.traits[lang]||p.traits.en):[];
   const [step,setStep]=useState("intro"); // intro | quiz | result | portfolio
   const [answers,setAnswers]=useState({});
   const [current,setCurrent]=useState(0);
@@ -2240,7 +2255,7 @@ function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="
     const stockCount=amount<500?2:amount<2000?3:amount<10000?5:amount<25000?7:10;
     const etfCount=amount<500?1:amount<2000?1:amount<10000?2:3;
     try{
-      const p=await callAI(`You are a professional portfolio manager. Based on a ${pLabel(profile)} risk profile investor with $${amount.toLocaleString()} to invest, recommend a practical portfolio.
+      const p=await callAI(`You are a professional portfolio manager. Based on a ${pLabel(profile,lang)} risk profile investor with $${amount.toLocaleString()} to invest, recommend a practical portfolio.
 
 IMPORTANT — Investment amount is $${amount.toLocaleString()}. Scale the number of positions accordingly:
 - Recommend exactly ${stockCount} individual stocks and ${etfCount} ETF(s).
@@ -2248,8 +2263,8 @@ IMPORTANT — Investment amount is $${amount.toLocaleString()}. Scale the number
 - With small amounts, focus on the BEST convictions only — not diversification for its own sake.
 - Weights must reflect actual dollar amounts that make sense for $${amount.toLocaleString()}.
 
-Investor profile: ${pLabel(profile)} — ${pDesc(profile)}
-Traits: ${pTraits(profile).join(", ")}
+Investor profile: ${pLabel(profile,"en")} — ${pDesc(profile,"en")}
+Traits: ${pTraits(profile,"en").join(", ")}
 
 Respond ONLY with valid JSON, no markdown:
 {
@@ -2269,7 +2284,7 @@ Respond ONLY with valid JSON, no markdown:
   "summary":"<3 sentences: strategy, why it fits the profile, and why these specific picks make sense for $${amount.toLocaleString()}>"
 }`);
       // Save profile to localStorage so Portfolio Tracker can use it
-      try{localStorage.setItem("compoundr_risk_profile",JSON.stringify({label:pLabel(profile),desc:pDesc(profile),icon:profile.icon,color:profile.color}));}catch(e){}
+      try{localStorage.setItem("compoundr_risk_profile",JSON.stringify({label:pLabel(profile,"en"),desc:pDesc(profile,"en"),icon:profile.icon,color:profile.color}));}catch(e){}
       setPortfolio(p);onAnalysis();setStep("portfolio");
     }catch(e){setErr(`Error: ${e.message||"Could not generate portfolio."}`);}
     setLoading(false);
@@ -2283,19 +2298,21 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{fontSize:56,marginBottom:16}}>🧬</div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:T.gold,marginBottom:12,fontWeight:700}}>What's Your Investor DNA?</div>
       <div style={{fontSize:15,color:T.muted,maxWidth:580,margin:"0 auto 32px",lineHeight:1.8}}>
-        Answer 8 questions and our AI will identify your risk profile — <span style={{color:T.text}}>Conservative, Moderate, or Aggressive</span> — then build a personalized portfolio of stocks and ETFs tailored to you.
+        {lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"Answer 8 questions and our AI will identify your risk profile — "}<span style={{color:T.text}}>{lang==="es"?"Conservador, Moderado o Agresivo":"Conservative, Moderate, or Aggressive"}</span>{lang==="es"?" — y construirá un portafolio personalizado para ti.":" — then build a personalized portfolio of stocks and ETFs tailored to you."}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:600,margin:"0 auto 36px"}}>
-        {Object.values(PROFILES).map(({label,icon,color,traits})=>(
-          <div key={label} style={{background:T.card,border:`1px solid ${color}44`,borderRadius:12,padding:16,textAlign:"center"}}>
-            <div style={{fontSize:28,marginBottom:8}}>{icon}</div>
-            <div style={{fontSize:14,color,fontWeight:700,marginBottom:8}}>{label}</div>
-            <div style={{fontSize:10,color:T.muted,lineHeight:1.6}}>{traits[0]}</div>
-          </div>
-        ))}
+        {Object.values(PROFILES).map((prof)=>{
+          const lbl=typeof prof.label==="object"?prof.label[lang]||prof.label.en:prof.label;
+          const tr=Array.isArray(prof.traits)?prof.traits:(prof.traits[lang]||prof.traits.en);
+          return<div key={lbl} style={{background:T.card,border:`1px solid ${prof.color}44`,borderRadius:12,padding:16,textAlign:"center"}}>
+            <div style={{fontSize:28,marginBottom:8}}>{prof.icon}</div>
+            <div style={{fontSize:14,color:prof.color,fontWeight:700,marginBottom:8}}>{lbl}</div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.6}}>{tr[0]}</div>
+          </div>;
+        })}
       </div>
       <button className="btn btn-gold" onClick={()=>setStep("quiz")} style={{fontSize:16,padding:"14px 40px",borderRadius:12}}>
-        🧬 Start My Risk Profile →
+        {lang==="es"?"🧬 Comenzar Mi Perfil de Riesgo →":"🧬 Start My Risk Profile →"}
       </button>
     </div>
     <AdBanner size="leaderboard"/>
@@ -2323,7 +2340,7 @@ Respond ONLY with valid JSON, no markdown:
             :["⏱️ Time Horizon","📉 Risk Reaction","🎯 Your Goal","📚 Experience","💸 Life Impact","🌊 Volatility","📊 Diversification","🎂 Your Age"][current]}
         </div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:28,lineHeight:1.4}}>
-          {q.q}
+          {typeof q.q==="object"?q.q[lang]||q.q.en:q.q}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           {q.opts.map((opt,oi)=>{
@@ -2352,13 +2369,13 @@ Respond ONLY with valid JSON, no markdown:
     <div style={{textAlign:"center",padding:"36px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`2px solid ${profile.color}44`}}>
       <div style={{fontSize:60,marginBottom:12}}>{profile.icon}</div>
       <div style={{fontSize:12,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:8}}>Your Investor Profile</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:profile.color,fontWeight:700,marginBottom:16}}>{pLabel(profile)} Investor</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:40,color:profile.color,fontWeight:700,marginBottom:16}}>{pLabel(profile,lang)} Investor</div>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${profile.color}15`,border:`1px solid ${profile.color}44`,borderRadius:20,padding:"6px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:profile.color}}>Score: {totalScore}/{maxScore} points ({Math.round(pct*100)}%)</span>
       </div>
-      <div style={{fontSize:15,color:T.muted,maxWidth:600,margin:"0 auto 28px",lineHeight:1.8}}>{pDesc(profile)}</div>
+      <div style={{fontSize:15,color:T.muted,maxWidth:600,margin:"0 auto 28px",lineHeight:1.8}}>{pDesc(profile,lang)}</div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:28}}>
-        {profile.traits.map(t=><span key={t} style={{fontSize:12,padding:"5px 14px",borderRadius:20,background:`${profile.color}15`,color:profile.color,border:`1px solid ${profile.color}33`}}>✓ {t}</span>)}
+        {pTraits(profile,lang).map(t=><span key={t} style={{fontSize:12,padding:"5px 14px",borderRadius:20,background:`${profile.color}15`,color:profile.color,border:`1px solid ${profile.color}33`}}>✓ {t}</span>)}
       </div>
 
       {/* Score breakdown */}
@@ -2399,7 +2416,7 @@ Respond ONLY with valid JSON, no markdown:
         <div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.green,marginBottom:4}}>📁 Already have stocks? Let's analyze your portfolio</div>
           <div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>
-            Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{pLabel(profile)}</strong> profile — and tell you exactly what to buy, hold, or sell.
+            Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{pLabel(profile,lang)}</strong> profile — and tell you exactly what to buy, hold, or sell.
           </div>
         </div>
         <button className="btn btn-gold" onClick={onGoToPortfolio} style={{fontSize:14,padding:"12px 24px",borderRadius:10,whiteSpace:"nowrap",flexShrink:0}}>
@@ -2410,7 +2427,7 @@ Respond ONLY with valid JSON, no markdown:
     {/* Brokers CTA — show after profile result */}
     <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`,padding:20}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:6}}>🏦 Ready to start investing?</div>
-      <div style={{fontSize:12,color:T.muted,marginBottom:14}}>Open a brokerage account and start building your {pLabel(profile)} portfolio today.</div>
+      <div style={{fontSize:12,color:T.muted,marginBottom:14}}>Open a brokerage account and start building your {pLabel(profile,lang)} portfolio today.</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
         {BROKERS.map(({name,url,desc,badge})=>(
           <a key={name} href={url} target="_blank" rel="noopener noreferrer"
@@ -2435,10 +2452,10 @@ Respond ONLY with valid JSON, no markdown:
     <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:20,alignItems:"center",padding:"24px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`2px solid ${profile.color}44`}}>
       <div style={{textAlign:"center"}}>
         <div style={{fontSize:44}}>{profile.icon}</div>
-        <div style={{fontSize:13,color:profile.color,fontWeight:700,marginTop:4}}>{pLabel(profile)}</div>
+        <div style={{fontSize:13,color:profile.color,fontWeight:700,marginTop:4}}>{pLabel(profile,lang)}</div>
       </div>
       <div>
-        <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Portfolio — {pLabel(profile)} Investor · ${amount.toLocaleString()}</div>
+        <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>🤖 AI Portfolio — {pLabel(profile,lang)} Investor · ${amount.toLocaleString()}</div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.text,marginBottom:10,lineHeight:1.5}}>{portfolio.summary}</div>
         <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
           {[
@@ -2569,7 +2586,7 @@ Respond ONLY with valid JSON, no markdown:
         <button className="btn btn-gold" onClick={()=>{
           try{
             localStorage.setItem("compoundr_strategy",JSON.stringify({
-              profile:{label:pLabel(profile),icon:profile.icon,color:profile.color},
+              profile:{label:pLabel(profile,lang),icon:profile.icon,color:profile.color},
               amount,portfolio,
               createdAt:new Date().toISOString(),
               executedAt:new Date().toISOString(),
@@ -2622,7 +2639,7 @@ Respond ONLY with valid JSON, no markdown:
           📁 Already have stocks? Let's see if your portfolio fits your profile
         </div>
         <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:4}}>
-          You're a <strong style={{color:profile.color}}>{profile.icon} {pLabel(profile)} investor</strong>. Now let's check if your current holdings reflect that.
+          You're a <strong style={{color:profile.color}}>{profile.icon} {pLabel(profile,lang)} investor</strong>. Now let's check if your current holdings reflect that.
           Upload your positions and the AI will:
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:4}}>
@@ -2658,7 +2675,7 @@ function RebalanceDCA({positions,totalValue,savedProfile,callAI}){
   const [dca,setDca]=useState(null);
   const [err,setErr]=useState("");
 
-  const profileLabel=savedProfile?.label||"Balanced";
+  const profileLabel=(typeof savedProfile?.label==="object"?savedProfile?.label?.en:savedProfile?.label)||"Balanced";
 
   const runRebalance=async()=>{
     setLoadingReb(true);setErr("");setRebalance(null);
@@ -2967,7 +2984,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en"}){
       return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%`;
     }).join(" | ");
     try{
-      const profileCtx=savedProfile?`Risk Profile: ${savedProfile.label}. ${savedProfile.desc}`:"No risk profile.";
+      const profileCtx=savedProfile?`Risk Profile: ${typeof savedProfile.label==="object"?savedProfile.label.en:savedProfile.label}. ${typeof savedProfile.desc==="object"?savedProfile.desc.en:savedProfile.desc}`:"No risk profile.";
       // Use higher token limit for large portfolios
       const portfolioRes=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
@@ -3078,7 +3095,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       {savedProfile&&<div style={{background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,padding:"8px 14px",display:"flex",alignItems:"center",gap:8}}>
         <span style={{fontSize:14}}>{savedProfile.icon}</span>
         <div>
-          <div style={{fontSize:11,color:T.green,fontWeight:600}}>{savedProfile.label} Investor Profile active</div>
+          <div style={{fontSize:11,color:T.green,fontWeight:600}}>{typeof savedProfile.label==="object"?savedProfile.label.en:savedProfile.label} Investor Profile active</div>
           <div style={{fontSize:10,color:T.muted}}>AI analysis will match your portfolio to your profile</div>
         </div>
       </div>}
@@ -3344,7 +3361,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             <span style={{fontSize:18,flexShrink:0}}>{savedProfile.icon}</span>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?T.green:T.red,marginBottom:3}}>
-                {aiAnalysis.profileMatch} — {savedProfile.label} Investor Profile
+                {aiAnalysis.profileMatch} — {typeof savedProfile.label==="object"?savedProfile.label[lang]||savedProfile.label.en:savedProfile.label} Investor Profile
               </div>
               <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{aiAnalysis.profileMatchReason}</div>
             </div>
@@ -3512,7 +3529,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
           <div style={{fontSize:44}}>{profile.icon}</div>
           <div>
             <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Active Strategy</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:profile.color,fontWeight:700}}>{pLabel(profile)} Investor Portfolio</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:profile.color,fontWeight:700}}>{pLabel(profile,lang)} Investor Portfolio</div>
             <div style={{fontSize:12,color:T.muted,marginTop:4}}>
               Started {new Date(executedAt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})} · {daysSince} days ago · ${amount.toLocaleString()} initial amount
             </div>
