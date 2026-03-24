@@ -67,6 +67,83 @@ const css=`
   .card-hover:hover{border-color:${T.goldDim}!important;transform:translateY(-1px);}
   @keyframes shimmer{0%{background-position:-200% center;}100%{background-position:200% center;}}
   .strategy-badge{background:linear-gradient(90deg,${T.gold}22,${T.green}22,${T.gold}22);background-size:200% auto;animation:shimmer 3s linear infinite;}
+
+  /* ── RESPONSIVE — Mobile first ── */
+  @media(max-width:768px){
+    /* Global */
+    body{font-size:14px;}
+    input[type=number],input[type=text],select{font-size:16px!important;} /* prevent zoom on iOS */
+
+    /* Nav tabs — scrollable */
+    .tabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .tabs-wrap::-webkit-scrollbar{display:none;}
+    .tbtn{padding:8px 12px;font-size:10px;white-space:nowrap;}
+
+    /* Page padding */
+    .page-wrap{padding:16px 14px!important;}
+    .hero-pad{padding:32px 16px 40px!important;}
+
+    /* Grid helpers */
+    .g-2{grid-template-columns:1fr 1fr!important;}
+    .g-1{grid-template-columns:1fr!important;}
+    .g-auto-1{grid-template-columns:1fr!important;}
+
+    /* Cards */
+    .card-pad{padding:14px!important;}
+
+    /* Hero */
+    .hero-h1{font-size:28px!important;}
+    .hero-steps{grid-template-columns:1fr 1fr!important;}
+    .hero-connector{display:none!important;}
+
+    /* Compound calc — stack form + chart */
+    .compound-layout{grid-template-columns:1fr!important;}
+
+    /* Portfolio table — horizontal scroll */
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+    /* Score tab — stack layout */
+    .score-layout{grid-template-columns:1fr!important;}
+
+    /* Profile — amount input */
+    .amount-input{font-size:16px!important;}
+
+    /* Buttons — full width on mobile */
+    .btn-mobile-full{width:100%!important;justify-content:center;}
+
+    /* Paywall modal */
+    .paywall-modal{padding:24px 18px!important;}
+    .paywall-grid{grid-template-columns:1fr!important;}
+
+    /* KPI cards — 2 cols on mobile */
+    .kpi-4{grid-template-columns:1fr 1fr!important;}
+    .kpi-3{grid-template-columns:1fr 1fr!important;}
+
+    /* Strategy table */
+    .strategy-table{min-width:600px;}
+
+    /* Currency / lang picker */
+    .curr-dropdown{right:0;left:auto;min-width:180px!important;}
+
+    /* Cycle banner */
+    .cycle-grid-4{grid-template-columns:1fr 1fr!important;}
+    .cycle-grid-2{grid-template-columns:1fr!important;}
+
+    /* Navbar */
+    .nav-brand-sub{display:none!important;}
+    .nav-actions{gap:6px!important;}
+
+    /* Market cycle steps connector */
+    .step-connector{display:none!important;}
+  }
+
+  @media(max-width:480px){
+    .hero-steps{grid-template-columns:1fr!important;}
+    .kpi-4{grid-template-columns:1fr 1fr!important;}
+    .g-2{grid-template-columns:1fr!important;}
+    .hero-h1{font-size:24px!important;}
+    .tbtn{padding:6px 10px;font-size:9px;}
+  }
 `;
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -189,7 +266,7 @@ function PaywallModal({onClose,context="stock"}){
   const c=configs[context]||configs.stock;
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-      <div style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:520,width:"100%",textAlign:"center",position:"relative"}}>
+      <div className="paywall-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:520,width:"100%",textAlign:"center",position:"relative"}}>
         {/* Close button */}
         <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:18,lineHeight:1}}>✕</button>
         {/* Social proof badge */}
@@ -199,7 +276,7 @@ function PaywallModal({onClose,context="stock"}){
         <div style={{fontSize:36,marginBottom:12}}>{c.icon}</div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:10,fontWeight:700,lineHeight:1.3}}>{c.title}</div>
         <div style={{fontSize:13,color:T.muted,lineHeight:1.8,marginBottom:22}}>{c.sub}</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:22,textAlign:"left"}}>
+        <div className="paywall-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:22,textAlign:"left"}}>
           {c.features.map(f=>(
             <div key={f} style={{fontSize:11,color:T.text,padding:"7px 12px",background:T.accent,borderRadius:8,border:`1px solid ${T.border}`}}>
               <span style={{color:T.green,marginRight:6}}>✓</span>{f}
@@ -599,14 +676,14 @@ function Hero({onStart,lang="en"}){
     {n:"3",icon:"🤖",title:L.hero_step3_title,desc:L.hero_step3_desc,tab:"profile",color:T.green},
     {n:"4",icon:"📈",title:L.hero_step4_title,desc:L.hero_step4_desc,tab:"strategy",color:T.blue},
   ];
-  return<div className="hero-grad fi" style={{padding:"60px 28px 60px",maxWidth:1380,margin:"0 auto"}}>
+  return<div className="hero-grad fi hero-pad" style={{padding:"60px 28px 60px",maxWidth:1380,margin:"0 auto"}}>
 
     {/* ── Main headline ── */}
     <div style={{textAlign:"center",marginBottom:52}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"6px 16px",marginBottom:22}}>
         <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>{L.hero_badge}</span>
       </div>
-      <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(36,5,52),color:T.text,lineHeight:1.12,marginBottom:18,fontWeight:700}}>
+      <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(36,5,52),color:T.text,lineHeight:1.12,marginBottom:18,fontWeight:700}}>
         {L.hero_h1a} <span style={{color:T.gold}}>{L.hero_h1b}</span><br/>{L.hero_h1c}
       </h1>
       <p style={{fontSize:16,color:T.muted,maxWidth:620,margin:"0 auto 10px",lineHeight:1.75}}>
@@ -614,7 +691,7 @@ function Hero({onStart,lang="en"}){
       </p>
       <p style={{fontSize:12,color:`${T.muted}99`,maxWidth:480,margin:"0 auto 32px"}}>{L.hero_social}</p>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold" onClick={()=>onStart("compound")}
+        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("compound")}
           style={{fontSize:15,padding:"15px 34px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
           {L.hero_cta1}
         </button>
@@ -628,9 +705,9 @@ function Hero({onStart,lang="en"}){
     {/* ── User journey — 4 steps ── */}
     <div style={{marginBottom:52}}>
       <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:24}}>{L.hero_steps_title}</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0,position:"relative"}}>
+      <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0,position:"relative"}}>
         {/* Connector line */}
-        <div style={{position:"absolute",top:32,left:"12.5%",right:"12.5%",height:1,background:`linear-gradient(90deg,${T.gold}44,${T.purple}44,${T.green}44,${T.blue}44)`,zIndex:0}}/>
+        <div className="step-connector" style={{position:"absolute",top:32,left:"12.5%",right:"12.5%",height:1,background:`linear-gradient(90deg,${T.gold}44,${T.purple}44,${T.green}44,${T.blue}44)`,zIndex:0}}/>
         {STEPS.map(({n,icon,title,desc,tab,color},i)=>(
           <div key={n} onClick={()=>onStart(tab)} style={{position:"relative",zIndex:1,cursor:"pointer",padding:"0 12px",textAlign:"center"}}
             onMouseEnter={e=>e.currentTarget.querySelector(".step-card").style.borderColor=color}
@@ -788,7 +865,7 @@ function CompoundTab({onGoToTab,lang="en"}){
       </Card>)}
     </div>
 
-    <div style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18}}>
+    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"300px 1fr",gap:18}}>
       {/* Controls */}
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
@@ -1037,7 +1114,7 @@ function MillionGoalSection({lang="en"}){
     </div>
 
     {/* 3 inputs */}
-    <div style={{padding:"24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,borderBottom:`1px solid ${T.border}33`,background:`${T.accent}66`}}>
+    <div className="kpi-3" style={{padding:"24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,borderBottom:`1px solid ${T.border}33`,background:`${T.accent}66`}}>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
           <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"🎂 Tu edad actual":"🎂 Your current age"}</span>
@@ -1154,7 +1231,7 @@ function WhatIfTab({lang="en"}){
       <div style={{fontSize:13,color:T.muted}}>{LW.whatif_sub}</div>
     </div>
     <AdBanner size="leaderboard"/>
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+    <div className="g-2 g-sm-1" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
       {SCENARIOS.map(s=><Card key={s.ticker}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
           <div><div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.text,marginBottom:2}}>{s.name}</div><div style={{fontSize:10,color:T.muted}}>{s.ticker} · since {s.year}</div></div>
@@ -1168,7 +1245,7 @@ function WhatIfTab({lang="en"}){
         </div>
       </Card>)}
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:18}}>
+    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:18}}>
       <Card>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:16}}>{LW.whatif_custom}</div>
         <Lbl>{LW.whatif_capital}</Lbl>
@@ -1294,7 +1371,7 @@ Respond ONLY with valid JSON, no markdown:
 
       {loaded&&summary&&<>
         {/* Return breakdown cards */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
+        <div className="cycle-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
           {[
             {l:"Revenue Growth",k:"rg",note:summary.rgNote,c:T.green,icon:"📈"},
             {l:"Margin Expansion",k:"me",note:summary.meNote,c:T.blue,icon:"💎"},
@@ -1633,7 +1710,7 @@ Respond ONLY with valid JSON, no markdown:
           </div>)}
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+        <div className="cycle-grid-2 g-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
           {/* Leading / Lagging sectors */}
           <div style={{background:T.card,borderRadius:10,padding:"12px 14px"}}>
             <div style={{fontSize:10,color:T.green,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:8}}>
@@ -1889,7 +1966,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     {/* ── INLINE DCF — auto-fills from AI analysis ── */}
     {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
 
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {Object.entries(CRITERIA).map(([cat,cs])=><Card key={cat}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -2394,7 +2471,7 @@ Respond ONLY with valid JSON, no markdown:
         <div style={{display:"flex",alignItems:"center",gap:8,background:T.accent,borderRadius:10,padding:"10px 14px",border:`1px solid ${T.border}`}}>
           <span style={{color:T.muted,fontFamily:"monospace",fontSize:16}}>$</span>
           <input type="number" value={amount} min={1000} step={1000} onChange={e=>setAmount(parseFloat(e.target.value)||1000)}
-            style={{flex:1,fontWeight:700,fontSize:16,textAlign:"center"}}/>
+            className="amount-input" style={{flex:1,fontWeight:700,fontSize:16,textAlign:"center"}}/>
         </div>
       </div>
 
@@ -2428,7 +2505,7 @@ Respond ONLY with valid JSON, no markdown:
     <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`,padding:20}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:6}}>🏦 Ready to start investing?</div>
       <div style={{fontSize:12,color:T.muted,marginBottom:14}}>Open a brokerage account and start building your {pLabel(profile,lang)} portfolio today.</div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+      <div className="kpi-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
         {BROKERS.map(({name,url,desc,badge})=>(
           <a key={name} href={url} target="_blank" rel="noopener noreferrer"
             style={{display:"block",textDecoration:"none",background:T.card,borderRadius:10,padding:14,border:`1px solid ${T.border}`,transition:"border-color 0.2s"}}
@@ -2496,7 +2573,7 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>📈 Recommended Stocks</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+          <div className="g-2" style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
             {(portfolio.stocks||[]).map(({ticker,name,weight,why,type,dollarAmt:dA,entryLow,entryHigh,target,stopLoss,riskReward})=>{
               const typeColor=type==="Core"?T.blue:type==="Growth"?T.green:type==="Defensive"?T.gold:T.purple;
               const dollarAmt=dA||Math.round(amount*(weight/100));
@@ -3115,7 +3192,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     <MarketCycleBanner portfolioTickers={[...new Set(positions.map(p=>p.ticker))]} lang={lang}/>
 
     {/* KPI Cards */}
-    {positions.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+    {positions.length>0&&<div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
         {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵"},
         {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊"},
@@ -3128,7 +3205,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       </Card>)}
     </div>}
 
-    <div style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
+    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
       <Card>
@@ -3544,7 +3621,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
       </div>
 
       {/* Summary KPIs */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginTop:20}}>
+      <div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginTop:20}}>
         {[
           {l:lang==="es"?"Posiciones Recomendadas":"Recommended Positions",v:allPositions.length,c:T.gold,icon:"📋"},
           {l:lang==="es"?"Posiciones Ejecutadas":"Positions Executed",v:Object.keys(portfolioMap).filter(t=>allTickers.includes(t)).length,c:T.green,icon:"✅"},
@@ -3569,8 +3646,8 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
           📁 Add your positions →
         </button>}
       </div>
-      <div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
+      <div className="table-wrap" style={{overflowX:"auto"}}>
+        <table className="strategy-table" style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
           <thead>
             <tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
               {["","Position","Type","Rec %","Rec $","Entry Zone","Target","Stop","Your Weight","Status","P&L"].map((h,i)=>(
@@ -3780,10 +3857,10 @@ export default function App(){
             <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>📈</div>
             <div>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,letterSpacing:"0.02em",lineHeight:1}}>{L.nav_brand}</div>
-              <div style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
+              <div className="nav-brand-sub" style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
             </div>
           </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div className="nav-actions" style={{display:"flex",alignItems:"center",gap:10}}>
             {/* Lang switcher */}
             <button onClick={toggleLang} style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:4}}>
               <span>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
@@ -3797,7 +3874,7 @@ export default function App(){
                 <span style={{color:T.text,fontWeight:600}}>{currCode}</span>
                 <span style={{fontSize:8}}>▼</span>
               </button>
-              {showCurrMenu&&<div style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:6,zIndex:200,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+              {showCurrMenu&&<div className="curr-dropdown" style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:6,zIndex:200,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
                 <div style={{fontSize:9,color:T.muted,padding:"4px 8px",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Select Currency</div>
                 {/* Rate source indicator */}
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"2px 8px 6px"}}>
@@ -3841,7 +3918,7 @@ export default function App(){
             }
           </div>
         </div>
-        {tab&&<div style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto"}}>
+        {tab&&<div className="tabs-wrap" style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto"}}>
           {[
             {id:"compound",l:L.tab_compound},
             {id:"whatif",l:L.tab_whatif},
@@ -3855,7 +3932,7 @@ export default function App(){
       </div>
     </div>
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
-    {tab&&<div style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
+    {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
