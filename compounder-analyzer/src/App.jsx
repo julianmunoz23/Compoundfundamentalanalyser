@@ -360,7 +360,7 @@ const defM=()=>({revenueCAGR:20,fcfGrowth:25,tamGrowth:12,roic:25,grossMargin:55
 const defMoat=()=>Object.fromEntries(MOAT_KEYS.map(k=>[k,3]));
 function sm(c,v){if(c.invert){if(v<=c.threshold)return 100;if(v>=c.max)return 0;return Math.round((1-(v-c.threshold)/(c.max-c.threshold))*100);}if(v>=c.threshold*1.5)return 100;if(v>=c.threshold)return Math.round(60+((v-c.threshold)/(c.threshold*0.5))*40);return Math.round((v/c.threshold)*60);}
 function calcScore(m,moat){let tw=0,ts=0;Object.values(CRITERIA).flat().forEach(c=>{const s=sm(c,m[c.key]||0);ts+=s*c.weight;tw+=c.weight;});const moatAvg=Object.values(moat).reduce((a,v)=>a+v,0)/(MOAT_KEYS.length*5)*100;ts+=moatAvg*10;tw+=10;return Math.round(ts/tw);}
-function grade(s){if(s>=85)return{l:"A+",c:T.green,label:"Elite Compounder"};if(s>=75)return{l:"A",c:T.green,label:"High Quality"};if(s>=65)return{l:"B+",c:T.gold,label:"Good Business"};if(s>=55)return{l:"B",c:T.gold,label:"Promising"};if(s>=45)return{l:"C",c:"#f39c12",label:"Needs Improvement"};return{l:"D",c:T.red,label:"Avoid"};}
+function grade(s){if(s>=85)return{l:"A+",c:T.green,label:CL("Elite Compounder","Elite Compounder")};if(s>=75)return{l:"A",c:T.green,label:"High Quality"};if(s>=65)return{l:"B+",c:T.gold,label:"Good Business"};if(s>=55)return{l:"B",c:T.gold,label:"Promising"};if(s>=45)return{l:"C",c:"#f39c12",label:"Needs Improvement"};return{l:"D",c:T.red,label:"Avoid"};}
 
 // ── SHARED ────────────────────────────────────────────────────────────────────
 const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
@@ -1720,7 +1720,7 @@ function InlineDCF({company,onAnalysis,canAnalyze}){
 function MRow({c,value,onChange,locked}){
   const s=sm(c,value),pass=c.invert?value<=c.threshold:value>=c.threshold;
   return<div style={{display:"grid",gridTemplateColumns:"1fr 85px 50px 28px",alignItems:"center",gap:8,padding:"8px 0",borderBottom:`1px solid ${T.border}22`}}>
-    <div><div style={{fontSize:12,color:T.text,marginBottom:3}}>{c.label}</div><input type="range" min={0} max={c.max} step={0.1} value={value} disabled={locked} onChange={e=>!locked&&onChange(c.key,parseFloat(e.target.value))}/></div>
+    <div><div style={{fontSize:12,color:T.text,marginBottom:3}}>{typeof c.label==="object"?c.label[lang]||c.label.en:c.label}</div><input type="range" min={0} max={c.max} step={0.1} value={value} disabled={locked} onChange={e=>!locked&&onChange(c.key,parseFloat(e.target.value))}/></div>
     <div style={{display:"flex",alignItems:"center",gap:3}}><input type="number" value={value} min={0} max={c.max} step={0.1} disabled={locked} onChange={e=>!locked&&onChange(c.key,parseFloat(e.target.value)||0)} style={{width:60,textAlign:"right",opacity:locked?0.6:1}}/><span style={{fontSize:10,color:T.muted}}>{c.unit}</span></div>
     <div style={{textAlign:"center",fontSize:11,color:s>=60?T.green:s>=40?T.gold:T.red}}>{s}%</div>
     <div style={{fontSize:14,textAlign:"center",color:pass?T.green:T.red}}>{pass?"✓":"✗"}</div>
@@ -1964,7 +1964,10 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const [err,setErr]=useState("");
   const [locked,setLocked]=useState(false);
   const score=calcScore(m,moat);const g=grade(score);
-  const catS=Object.entries(CRITERIA).map(([cat,cs])=>({cat:cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet",s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length)}));
+  const catLabel=(cat)=>lang==="es"
+    ?cat==="growth"?"📈 Crecimiento":cat==="profitability"?"💎 Rentabilidad":cat==="cashflow"?"💵 Flujo de Caja":"🏦 Balance General"
+    :cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet";
+  const catS=Object.entries(CRITERIA).map(([cat,cs])=>({cat:catLabel(cat),s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length)}));
   const radarD=MOAT_KEYS.map(k=>({subject:moatLabel(k,lang).split(" ")[0],value:moat[k],fullMark:5}));
 
   const analyze=async()=>{
@@ -2093,7 +2096,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <Card s={{textAlign:"center",padding:18}}>
           <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Quality Score</div>
           <ScoreRing score={score} size={110}/>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{g.label}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{typeof g.label==="object"?g.label[lang]||g.label.en:g.label}</div>
           <div style={{fontSize:11,color:T.muted,marginTop:6}}>{checklist.filter(c=>c.p).length}/8 criteria</div>
           <div style={{marginTop:12}}>
             {catS.map(({cat,s})=><div key={cat} style={{marginBottom:7}}>
@@ -2161,10 +2164,13 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         </Card>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>{lang==="es"?"📋 Checklist Buffett / Munger":"📋 Buffett / Munger Checklist"}</div>
-          {checklist.map(({l,p})=><div key={l} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.border}22`}}>
-            <div style={{width:17,height:17,borderRadius:"50%",background:p?`${T.green}22`:`${T.red}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:p?T.green:T.red,flexShrink:0}}>{p?"✓":"✗"}</div>
-            <span style={{fontSize:11,color:p?T.text:T.muted}}>{l}</span>
-          </div>)}
+          {checklist.map(({l,p},ci)=>{
+            const lText=typeof l==="object"?l[lang]||l.en:l;
+            return<div key={ci} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.border}22`}}>
+              <div style={{width:17,height:17,borderRadius:"50%",background:p?`${T.green}22`:`${T.red}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:p?T.green:T.red,flexShrink:0}}>{p?"✓":"✗"}</div>
+              <span style={{fontSize:11,color:p?T.text:T.muted}}>{lText}</span>
+            </div>;
+          })}
           <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"Criterios cumplidos":"Criteria met"}</span>
             <Mn sz={18} c={T.gold}>{checklist.filter(c=>c.p).length}/8</Mn>
