@@ -2316,19 +2316,19 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>⚙️ Assumptions{ticker?` — ${ticker}`:""}</div>
-          <F l=lang==="es"?"Ingresos Base (M$)":"Base Revenue (M$)" k="rev" u="M" min={10} max={50000} st={10}/>
+          <F l={lang==="es"?"Ingresos Base (M$)":"Base Revenue (M$)"} k="rev" u="M" min={10} max={50000} st={10}/>
           <F l="Revenue Growth" k="rg" u="%" min={0} max={50}/>
           <F l="FCF Margin" k="mt" u="%" min={5} max={50}/>
-          <F l=lang==="es"?"Conversión FCF":"FCF Conversion" k="fc" u="x" min={0.5} max={1} st={0.05}/>
-          <F l=lang==="es"?"Crecimiento Terminal":"Terminal Growth" k="tg" u="%" min={1} max={4} st={0.5}/>
+          <F l={lang==="es"?"Conversión FCF":"FCF Conversion"} k="fc" u="x" min={0.5} max={1} st={0.05}/>
+          <F l={lang==="es"?"Crecimiento Terminal":"Terminal Growth"} k="tg" u="%" min={1} max={4} st={0.5}/>
           <F l="WACC" k="w" u="%" min={6} max={15} st={0.5}/>
           <F l="Years" k="yr" u="" min={5} max={15}/>
         </Card>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>🏦 Balance Sheet</div>
-          <F l=lang==="es"?"Caja (M$)":"Cash (M$)" k="ca" u="M" min={0} max={200000} st={100}/>
-          <F l=lang==="es"?"Deuda Total (M$)":"Total Debt (M$)" k="de" u="M" min={0} max={200000} st={100}/>
-          <F l=lang==="es"?"Acciones (M)":"Shares (M)" k="sh" u="M" min={1} max={10000} st={10}/>
+          <F l={lang==="es"?"Caja (M$)":"Cash (M$)"} k="ca" u="M" min={0} max={200000} st={100}/>
+          <F l={lang==="es"?"Deuda Total (M$)":"Total Debt (M$)"} k="de" u="M" min={0} max={200000} st={100}/>
+          <F l={lang==="es"?"Acciones (M)":"Shares (M)"} k="sh" u="M" min={1} max={10000} st={10}/>
           <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.6}}>EV = Discounted FCFs + Terminal Value PV<br/>Intrinsic/Share = (EV + Cash − Debt) ÷ Shares</div>
         </Card>
       </div>
