@@ -334,6 +334,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
 }
 
 // ── CRITERIA ──────────────────────────────────────────────────────────────────
+const CL=(en,es)=>({en,es}); // bilingual label helper
 const CRITERIA={
   growth:[
     {key:"revenueCAGR",label:"Revenue CAGR",unit:"%",threshold:15,max:50,weight:20},
@@ -352,6 +353,8 @@ const CRITERIA={
   ],
 };
 const MOAT_KEYS=["Economies of Scale","Switching Costs","Network Effects","Brand Dominance","Proprietary Technology","Market Leadership"];
+const MOAT_ES={"Economies of Scale":"Economías de Escala","Switching Costs":"Costos de Cambio","Network Effects":"Efectos de Red","Brand Dominance":"Dominio de Marca","Proprietary Technology":"Tecnología Propia","Market Leadership":"Liderazgo de Mercado"};
+const moatLabel=(k,lang)=>lang==="es"?(MOAT_ES[k]||k):k;
 const SECTORS=["Technology","Healthcare","Consumer","Finance","Industrials","Energy","Other"];
 const defM=()=>({revenueCAGR:20,fcfGrowth:25,tamGrowth:12,roic:25,grossMargin:55,opMargin:22,fcfMarginPct:20,debtEbitda:1.2,interestCover:10});
 const defMoat=()=>Object.fromEntries(MOAT_KEYS.map(k=>[k,3]));
