@@ -660,7 +660,7 @@ const LANG = {
     comp_rule72: "La Regla del 72",
     comp_double: "Tu dinero se duplica en",
     comp_table: "Ver tabla año a año",
-    comp_year: "Año", comp_capital: "Capital", comp_interest: "Interés", comp_total: {"Total"},
+    comp_year: "Año", comp_capital: "Capital", comp_interest: "Interés", comp_total: "Total",
     // Profile Tab
     prof_title: "¿Cuál es tu perfil de inversor?",
     prof_sub: "Responde 8 preguntas y nuestra IA construirá un portafolio personalizado para ti — acciones, ETFs, precios de entrada, objetivos y stop loss.",
