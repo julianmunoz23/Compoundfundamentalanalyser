@@ -494,7 +494,7 @@ const LANG = {
   en: {
     nav_brand: "Compounder Analyst",
     nav_sub: "Buffett · Munger · High-Growth Framework",
-    nav_free: (n) => n > 0 ? `${n} free analyses left` : {lang==="es"?"Plan gratuito":"Free plan"},
+    nav_free: (n) => n > 0 ? `${n} free analyses left` : "Free plan",
     nav_premium: "🚀 Go Premium",
     tab_compound: "💰 Calculator",
     tab_whatif: "🚀 What If?",
@@ -521,7 +521,7 @@ const LANG = {
     hero_step4_title: "Track your strategy",
     hero_step4_desc: "Monitor plan vs reality — see what to hold, rebalance, or buy more with live prices.",
     hero_top_label: "Top Compounders — 1Y Return",
-    footer_disc: {lang==="es"?"Solo educativo — no es asesoría financiera.":"Educational only — not financial advice."},
+    footer_disc: "Solo educativo — no es asesoría financiera.",
   },
   es: {
     nav_brand: "Compounder Analyst",
@@ -620,7 +620,7 @@ const LANG = {
     prof_max_drawdown: "Caída Máxima",
     // Portfolio tab
     port_add_position: "➕ Agregar Posición",
-    port_manual: {lang==="es"?"✏️ Manual":"✏️ Manual"}, port_paste: "📋 Pegar de Excel", port_csv: "📂 Importar CSV",
+    port_manual: "✏️ Manual", port_paste: "📋 Pegar de Excel", port_csv: "📂 Importar CSV",
     port_btn_refresh: "🔄 Actualizar Precios",
     port_btn_ai: "🤖 Análisis IA",
     port_alloc_title: "🥧 Asignación del Portafolio",
@@ -660,7 +660,7 @@ const LANG = {
     comp_rule72: "La Regla del 72",
     comp_double: "Tu dinero se duplica en",
     comp_table: "Ver tabla año a año",
-    comp_year: "Año", comp_capital: "Capital", comp_interest: "Interés", comp_total: {lang==="es"?"Total":"Total"},
+    comp_year: "Año", comp_capital: "Capital", comp_interest: "Interés", comp_total: {"Total"},
     // Profile Tab
     prof_title: "¿Cuál es tu perfil de inversor?",
     prof_sub: "Responde 8 preguntas y nuestra IA construirá un portafolio personalizado para ti — acciones, ETFs, precios de entrada, objetivos y stop loss.",
@@ -1374,12 +1374,12 @@ function MillionGoalSection({lang="en"}){
 function WhatIfTab({lang="en"}){
   const LW=LANG[lang]||LANG.en;
   const SCENARIOS=[
-    {ticker:"NVDA",name:"NVIDIA",year:2014,invested:10000,cagr:68,finalValue:3820000,color:T.green,desc:lang==="es"?"Dominio GPU + boom de IA":"GPU dominance + AI boom"},
-    {ticker:"AAPL",name:"Apple",year:2008,invested:10000,cagr:28,finalValue:782000,color:T.blue,desc:lang==="es"?"iPhone, servicios, ecosistema":"iPhone, services, ecosystem"},
-    {ticker:"AMZN",name:"Amazon",year:2010,invested:10000,cagr:32,finalValue:520000,color:T.gold,desc:lang==="es"?"AWS Cloud + comercio electrónico":"AWS Cloud + e-commerce"},
-    {ticker:"MSFT",name:"Microsoft",year:2014,invested:10000,cagr:27,finalValue:248000,color:T.purple,desc:lang==="es"?"Azure Cloud + Satya Nadella":"Azure Cloud + Satya Nadella"},
-    {ticker:"TSLA",name:"Tesla",year:2013,invested:10000,cagr:38,finalValue:1200000,color:T.green,desc:lang==="es"?"VE + energía + software":"EV + energy + software"},
-    {ticker:"COST",name:"Costco",year:2010,invested:10000,cagr:19,finalValue:115000,color:"#f39c12",desc:lang==="es"?"Membresía + retail":"Membership moat + retail"},
+    {ticker:"NVDA",name:"NVIDIA",year:2014,invested:10000,cagr:68,finalValue:3820000,color:T.green,desc:{en:"GPU dominance + AI boom",es:"Dominio GPU + boom de IA"}},
+    {ticker:"AAPL",name:"Apple",year:2008,invested:10000,cagr:28,finalValue:782000,color:T.blue,desc:{en:"iPhone, services, ecosystem",es:"iPhone, servicios, ecosistema"}},
+    {ticker:"AMZN",name:"Amazon",year:2010,invested:10000,cagr:32,finalValue:520000,color:T.gold,desc:{en:"AWS Cloud + e-commerce",es:"AWS Cloud + comercio electrónico"}},
+    {ticker:"MSFT",name:"Microsoft",year:2014,invested:10000,cagr:27,finalValue:248000,color:T.purple,desc:{en:"Azure Cloud + Satya Nadella",es:"Azure Cloud + Satya Nadella"}},
+    {ticker:"TSLA",name:"Tesla",year:2013,invested:10000,cagr:38,finalValue:1200000,color:T.green,desc:{en:"EV + energy + software",es:"VE + energía + software"}},
+    {ticker:"COST",name:"Costco",year:2010,invested:10000,cagr:19,finalValue:115000,color:"#f39c12",desc:{en:"Membership moat + retail",es:"Membresía + retail"}},
   ];
   const [custom,setCustom]=useState({initial:10000,cagr:20,years:10});
   const sc=(k,v)=>setCustom(p=>({...p,[k]:v}));
@@ -1398,7 +1398,7 @@ function WhatIfTab({lang="en"}){
           <div style={{textAlign:"right"}}><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:s.color,fontWeight:700}}>{fmt(s.finalValue)}</div><div style={{fontSize:10,color:s.color}}>CAGR ~{s.cagr}%</div></div>
         </div>
         <div style={{height:3,background:T.border,borderRadius:2,marginBottom:8}}><div style={{height:"100%",width:`${Math.min((s.finalValue/4000000)*100,100)}%`,background:s.color,borderRadius:2}}/></div>
-        <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{s.desc}</div>
+        <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{typeof s.desc==="object"?s.desc[lang]||s.desc.en:s.desc}</div>
         <div style={{marginTop:10,padding:"6px 10px",background:T.accent,borderRadius:6,display:"flex",justifyContent:"space-between"}}>
           <span style={{fontSize:11,color:T.muted}}>$10,000 invested</span>
           <Mn sz={11} c={s.color} s={{fontWeight:700}}>→ {fmt(s.finalValue)}</Mn>
@@ -2992,7 +2992,7 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
         {rebalance&&<div style={{marginTop:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <span style={{fontSize:11,color:T.muted}}>Urgency:</span>
-            <span style={{fontSize:11,padding:"2px 10px",borderRadius:20,background:rebalance.urgency==={lang==="es"?"Urgente":"Urgent"}?`${T.red}20`:rebalance.urgency==="Moderate"?`${T.gold}20`:`${T.green}20`,color:rebalance.urgency==="Urgent"?T.red:rebalance.urgency==="Moderate"?T.gold:T.green,fontWeight:600}}>{rebalance.urgency}</span>
+            <span style={{fontSize:11,padding:"2px 10px",borderRadius:20,background:(rebalance.urgency==="Urgente"||rebalance.urgency==="Urgent")?`${T.red}20`:rebalance.urgency==="Moderate"?`${T.gold}20`:`${T.green}20`,color:rebalance.urgency==="Urgent"?T.red:rebalance.urgency==="Moderate"?T.gold:T.green,fontWeight:600}}>{rebalance.urgency}</span>
           </div>
           <div style={{fontSize:11,color:T.muted,lineHeight:1.6,marginBottom:12}}>{rebalance.summary}</div>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -3312,7 +3312,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCostBasis),0);
   const totalPnL=totalValue-totalCost;
   const totalPnLPct=totalCost>0?(totalPnL/totalCost*100):0;
-  const verdictColor=v=>v==="Hold"||v==={lang==="es"?"Comprar Más":"Buy More"}?T.green:v==="Watch"?T.gold:T.red;
+  const verdictColor=v=>v==="Hold"||v==="Buy More"||v==="Comprar Más"?T.green:v==="Watch"||v==="Ver"?T.gold:v==="Consider Selling"||v==="Considerar Venta"?T.red:T.muted;
 
   // ── PIE CHART data ──
   const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
@@ -3385,7 +3385,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {positions.length>0&&<div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
         {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵"},
-        {l:lang==="es"?"Valor Actual":{lang==="es"?"Valor Actual":"Current Value"},v:fmt(totalValue),c:T.gold,icon:"📊"},
+        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊"},
         {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"📈"},
         {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯"},
       ].map(({l,v,c,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
@@ -3648,7 +3648,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               <div style={{fontSize:13,color:T.text,lineHeight:1.7,marginBottom:10}}>{aiAnalysis.summary}</div>
               <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                 {[
-                  {l:"Risk",v:aiAnalysis.risk,c:aiAnalysis.risk==={lang==="es"?"Bajo":"Low"}?T.green:aiAnalysis.risk==="High"?T.red:T.gold},
+                  {l:"Risk",v:aiAnalysis.risk,c:(aiAnalysis.risk==="Low"||aiAnalysis.risk==="Bajo")?T.green:aiAnalysis.risk==="High"?T.red:T.gold},
                   {l:"Concentration",v:aiAnalysis.concentration,c:T.blue},
                   {l:"vs S&P 500",v:aiAnalysis.vsMarket||"—",c:(aiAnalysis.vsMarket||"").includes("Out")?T.green:(aiAnalysis.vsMarket||"").includes("Under")?T.red:T.gold},
                   {l:"Top Sector",v:aiAnalysis.topSector,c:T.purple},
@@ -3785,7 +3785,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
   },0)||amount;
 
   // Execution status per recommended position
-  const statusColor=s=>s===lang==="es"?"✅ Ejecutado":"✅ Executed"?T.green:s===lang==="es"?"⚠️ Parcial":"⚠️ Partial"?T.gold:T.red;
+  const statusColor=s=>(s.includes("Ejecutado")||s.includes("Executed"))?T.green:(s.includes("Parcial")||s.includes("Partial"))?T.gold:T.red;
 
   const allPositions=[
     ...(portfolio.stocks||[]).map(p=>({...p,isETF:false})),
@@ -3859,7 +3859,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
               const actualPct=currentValue&&totalPortfolioValue>0?((currentValue/totalPortfolioValue)*100).toFixed(1):null;
               const pnl=held&&currentPrice?((currentPrice-held.avgCost)/held.avgCost*100).toFixed(1):null;
               const drift=actualPct&&weight?(parseFloat(actualPct)-weight).toFixed(1):null;
-              const status=!held?lang==="es"?"❌ No ejecutado":"❌ Not executed":Math.abs(parseFloat(actualPct||0)-weight)<=5?"✅ Executed":"⚠️ Partial";
+              const status=!held?(lang==="es"?"❌ No ejecutado":"❌ Not executed"):Math.abs(parseFloat(actualPct||0)-weight)<=5?(lang==="es"?"✅ Ejecutado":"✅ Executed"):(lang==="es"?"⚠️ Parcial":"⚠️ Partial");
               // Is current price in entry zone?
               const inZone=currentPrice&&entryLow&&entryHigh&&currentPrice>=entryLow&&currentPrice<=entryHigh;
               const belowZone=currentPrice&&entryLow&&currentPrice<entryLow;
