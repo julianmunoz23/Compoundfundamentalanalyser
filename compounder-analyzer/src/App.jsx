@@ -3368,10 +3368,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       </div>}
       <div style={{display:"flex",gap:10}}>
         <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
-          {loadingPrices?<><span className="sp">⟳</span> Updating...</>:{lang==="es"?"🔄 Actualizar Precios":"🔄 Refresh Prices"}}
+          {loadingPrices?<><span className="sp">⟳</span> Actualizando...</>:<>{lang==="es"?"🔄 Actualizar Precios":"🔄 Refresh Prices"}</>}
         </button>
         <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
-          {loadingAI?<><span className="sp">⟳</span> Analyzing...</>:{lang==="es"?"🤖 Análisis IA":"🤖 AI Analysis"}}
+          {loadingAI?<><span className="sp">⟳</span> Analizando...</>:<>{lang==="es"?"🤖 Análisis IA":"🤖 AI Analysis"}</>}
         </button>
       </div>
     </div>
