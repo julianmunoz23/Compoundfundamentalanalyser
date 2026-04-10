@@ -3748,9 +3748,9 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
   if(!strategy)return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{textAlign:"center",padding:"60px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
       <div style={{fontSize:56,marginBottom:16}}>📈</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{lang==="es"?"Aún no tienes una estrategia guardada":{lang==="es"?"Aún no tienes una estrategia guardada":"No strategy saved yet"}}</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{lang==="es"?"Aún no tienes una estrategia guardada":"No strategy saved yet"}</div>
       <div style={{fontSize:13,color:T.muted,maxWidth:520,margin:"0 auto 32px",lineHeight:1.8}}>
-        {lang==="es"?"Crea tu Perfil de Riesgo, genera un portafolio IA y haz clic en ":"Create your Risk Profile, generate an AI portfolio, then click "}<strong style={{color:T.green}}>{lang==="es"?'"✅ Sí — Seguir Mi Estrategia"':'{lang==="es"?"✅ Sí — Seguir Mi Estrategia":"✅ Yes — Track My Strategy"}'}</strong>{lang==="es"?" para empezar a rastrear tu plan aquí.":" to start tracking your plan vs reality here."}
+        {lang==="es"?"Crea tu Perfil de Riesgo, genera un portafolio IA y haz clic en ":"Create your Risk Profile, generate an AI portfolio, then click "}<strong style={{color:T.green}}>{lang==="es"?"✅ Sí — Seguir Mi Estrategia":"✅ Yes — Track My Strategy"}</strong>{lang==="es"?" para empezar a rastrear tu plan aquí.":" to start tracking your plan vs reality here."}
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={onGoToProfile} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
