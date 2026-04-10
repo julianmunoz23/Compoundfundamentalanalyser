@@ -1533,7 +1533,7 @@ Respond ONLY with valid JSON, no markdown:
         {/* Return breakdown cards */}
         <div className="cycle-grid-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
           {[
-            {l:"Revenue Growth",k:"rg",note:summary.rgNote,c:T.green,icon:"📈"},
+            {l:lang==="es"?"Crecimiento Ingresos":"Revenue Growth",k:"rg",note:summary.rgNote,c:T.green,icon:"📈"},
             {l:"Margin Expansion",k:"me",note:summary.meNote,c:T.blue,icon:"💎"},
             {l:"Multiple Expansion",k:"mx",note:summary.mxNote,c:inp.mx>=0?T.gold:T.red,icon:"📊"},
             {l:"Dividends",k:"dv",note:summary.dvNote,c:T.muted,icon:"💵"},
@@ -1682,7 +1682,7 @@ function InlineDCF({company,onAnalysis,canAnalyze}){
       {dcf&&<>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
           {[
-            {l:"Intrinsic Value",v:`$${ips.toFixed(2)}`,c:T.green,sub:"per share (DCF)"},
+            {l:lang==="es"?"Valor Intrínseco":"Intrinsic Value",v:`$${ips.toFixed(2)}`,c:T.green,sub:"per share (DCF)"},
             {l:lang==="es"?"Precio Actual":"Current Price",v:dcf.currentPrice?`$${dcf.currentPrice}`:"—",c:T.gold,sub:"market price"},
             {l:"Upside / Downside",v:upside!=null?`${upside>=0?"+":""}${upside.toFixed(1)}%`:"—",c:upside!=null?(upside>=0?T.green:T.red):T.muted,sub:upside!=null?(upside>=15?"Undervalued":upside<=-15?"Overvalued":"Fair Value"):""},
           ].map(({l,v,c,sub})=><div key={l} style={{background:T.accent,borderRadius:10,padding:"12px 14px",textAlign:"center"}}>
@@ -1962,7 +1962,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const [locked,setLocked]=useState(false);
   const score=calcScore(m,moat);const g=grade(score);
   const catS=Object.entries(CRITERIA).map(([cat,cs])=>({cat:cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet",s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length)}));
-  const radarD=MOAT_KEYS.map(k=>({subject:k.split(" ")[0],value:moat[k],fullMark:5}));
+  const radarD=MOAT_KEYS.map(k=>({subject:moatLabel(k,lang).split(" ")[0],value:moat[k],fullMark:5}));
 
   const analyze=async()=>{
     if(!company.trim()){setErr("Enter a company name or ticker.");return;}
@@ -1989,10 +1989,14 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   };
 
   const checklist=[
-    {l:"Revenue CAGR ≥ 15%",p:m.revenueCAGR>=15},{l:"ROIC ≥ 20%",p:m.roic>=20},
-    {l:"Gross Margin ≥ 40%",p:m.grossMargin>=40},{l:"Operating Margin ≥ 18%",p:m.opMargin>=18},
-    {l:"FCF Growth Rate ≥ 15%",p:m.fcfGrowth>=15},{l:"FCF Margin ≥ 15%",p:m.fcfMarginPct>=15},
-    {l:"Debt/EBITDA ≤ 2x",p:m.debtEbitda<=2},{l:"Avg Moat ≥ 3/5",p:Object.values(moat).reduce((a,v)=>a+v,0)/MOAT_KEYS.length>=3},
+    {l:{en:"Revenue CAGR ≥ 15%",es:"Ingresos CAGR ≥ 15%"},p:m.revenueCAGR>=15},
+    {l:{en:"ROIC ≥ 20%",es:"ROIC ≥ 20%"},p:m.roic>=20},
+    {l:{en:"Gross Margin ≥ 40%",es:"Margen Bruto ≥ 40%"},p:m.grossMargin>=40},
+    {l:{en:"Operating Margin ≥ 18%",es:"Margen Operativo ≥ 18%"},p:m.opMargin>=18},
+    {l:{en:"FCF Growth Rate ≥ 15%",es:"Crecimiento FCF ≥ 15%"},p:m.fcfGrowth>=15},
+    {l:{en:"FCF Margin ≥ 15%",es:"Margen FCF ≥ 15%"},p:m.fcfMarginPct>=15},
+    {l:{en:"Debt/EBITDA ≤ 2x",es:"Deuda/EBITDA ≤ 2x"},p:m.debtEbitda<=2},
+    {l:{en:"Avg Moat ≥ 3/5",es:"Moat Promedio ≥ 3/5"},p:Object.values(moat).reduce((a,v)=>a+v,0)/MOAT_KEYS.length>=3},
   ];
 
   const ratingColor=r=>{if(!r)return T.muted;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return T.green;if(r.includes("Sell")||r.includes("Under"))return T.red;return T.gold;};
@@ -2014,7 +2018,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           <Lbl>{lang==="es"?LS.score_input_label:"Ticker or Company Name"}</Lbl>
           <input type="text" value={company} onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}} placeholder={lang==="es"?LS.score_input_placeholder:"NVDA, Apple, Google, Tesla, Costco..."} onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
         </div>
-        <div style={{width:150}}><Lbl>Sector</Lbl><select value={sector} onChange={e=>setSector(e.target.value)}>{SECTORS.map(s=><option key={s}>{s}</option>)}</select></div>
+        <div style={{width:150}}><Lbl>{lang==="es"?"Sector":"Sector"}</Lbl><select value={sector} onChange={e=>setSector(e.target.value)}>{SECTORS.map(s=><option key={s}>{s}</option>)}</select></div>
         <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 24px",fontSize:14}}>
           {loading?<span className="sp">⟳</span>:lang==="es"?LS.score_btn:"🎯 Analyze with AI"}
         </button>
@@ -2065,7 +2069,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             {/* Price targets + estimates */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
               {[
-                {l:"Price Target",v:fh.targetMean?`$${fh.targetMean}`:"—",c:T.gold},
+                {l:lang==="es"?"Precio Objetivo":"Price Target",v:fh.targetMean?`$${fh.targetMean}`:"—",c:T.gold},
                 {l:"Target High",v:fh.targetHigh?`$${fh.targetHigh}`:"—",c:T.green},
                 {l:"Target Low",v:fh.targetLow?`$${fh.targetLow}`:"—",c:T.red},
                 {l:"EPS Growth (est.)",v:fh.epsGrowthNext||"—",c:T.green},
@@ -2100,7 +2104,12 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>✦ {company} — AI Analysis</div>
             <div style={{fontSize:13,color:T.text,lineHeight:1.75,marginBottom:14}}>{info.summary}</div>
             {info.keyMetrics&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
-              {[{l:"Revenue CAGR 5Y",v:info.keyMetrics.revenueGrowth5y,c:T.green},{l:"FCF Growth (CAGR)",v:info.keyMetrics.fcfGrowthDisplay,c:T.green},{l:"FCF Margin",v:info.keyMetrics.fcfMarginDisplay,c:T.blue},{l:"ROIC",v:info.keyMetrics.roicDisplay,c:T.gold},{l:"Debt/Equity",v:info.keyMetrics.debtEquity,c:T.muted},{l:"EPS Growth",v:info.keyMetrics.epsGrowth,c:T.green}].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"8px 12px"}}>
+              {[{l:{en:"Revenue CAGR 5Y",es:"Ingresos CAGR 5A"},v:info.keyMetrics.revenueGrowth5y,c:T.green},
+              {l:{en:"FCF Growth (CAGR)",es:"FCF Growth (CAGR)"},v:info.keyMetrics.fcfGrowthDisplay,c:T.green},
+              {l:{en:"FCF Margin",es:"Margen FCF"},v:info.keyMetrics.fcfMarginDisplay,c:T.blue},
+              {l:{en:"ROIC",es:"ROIC"},v:info.keyMetrics.roicDisplay,c:T.gold},
+              {l:{en:"Debt/Equity",es:"Deuda/Capital"},v:info.keyMetrics.debtEquity,c:T.muted},
+              {l:{en:"EPS Growth",es:"Crecimiento EPS"},v:info.keyMetrics.epsGrowth,c:T.green}].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"8px 12px"}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>{l}</div>
                 <Mn sz={14} c={c} s={{fontWeight:600}}>{v||"—"}</Mn>
               </div>)}
@@ -2142,19 +2151,19 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           <div style={{height:200}}><ResponsiveContainer width="100%" height="100%"><RadarChart data={radarD}><PolarGrid stroke={T.border}/><PolarAngleAxis dataKey="subject" tick={{fill:T.muted,fontSize:10}}/><Radar dataKey="value" stroke={T.gold} fill={T.gold} fillOpacity={0.15}/></RadarChart></ResponsiveContainer></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
             {MOAT_KEYS.map(k=><div key={k}>
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:3,color:T.muted}}><span>{k}</span><Mn sz={10} c={T.gold}>{moat[k]}/5</Mn></div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:10,marginBottom:3,color:T.muted}}><span>{moatLabel(k,lang)}</span><Mn sz={10} c={T.gold}>{moat[k]}/5</Mn></div>
               <div style={{display:"flex",gap:3,opacity:locked?0.45:1}}>{[1,2,3,4,5].map(v=><div key={v} onClick={()=>!locked&&setMoat(p=>({...p,[k]:v}))} style={{flex:1,height:5,borderRadius:3,cursor:locked?"not-allowed":"pointer",background:v<=moat[k]?T.gold:T.border,transition:"background 0.2s"}}/>)}</div>
             </div>)}
           </div>
         </Card>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>📋 Buffett / Munger Checklist</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>{lang==="es"?"📋 Checklist Buffett / Munger":"📋 Buffett / Munger Checklist"}</div>
           {checklist.map(({l,p})=><div key={l} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.border}22`}}>
             <div style={{width:17,height:17,borderRadius:"50%",background:p?`${T.green}22`:`${T.red}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:p?T.green:T.red,flexShrink:0}}>{p?"✓":"✗"}</div>
             <span style={{fontSize:11,color:p?T.text:T.muted}}>{l}</span>
           </div>)}
           <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <span style={{fontSize:12,color:T.muted}}>Criteria met</span>
+            <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"Criterios cumplidos":"Criteria met"}</span>
             <Mn sz={18} c={T.gold}>{checklist.filter(c=>c.p).length}/8</Mn>
           </div>
         </Card>
@@ -2307,19 +2316,19 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>⚙️ Assumptions{ticker?` — ${ticker}`:""}</div>
-          <F l="Base Revenue (M$)" k="rev" u="M" min={10} max={50000} st={10}/>
+          <F l=lang==="es"?"Ingresos Base (M$)":"Base Revenue (M$)" k="rev" u="M" min={10} max={50000} st={10}/>
           <F l="Revenue Growth" k="rg" u="%" min={0} max={50}/>
           <F l="FCF Margin" k="mt" u="%" min={5} max={50}/>
-          <F l="FCF Conversion" k="fc" u="x" min={0.5} max={1} st={0.05}/>
-          <F l="Terminal Growth" k="tg" u="%" min={1} max={4} st={0.5}/>
+          <F l=lang==="es"?"Conversión FCF":"FCF Conversion" k="fc" u="x" min={0.5} max={1} st={0.05}/>
+          <F l=lang==="es"?"Crecimiento Terminal":"Terminal Growth" k="tg" u="%" min={1} max={4} st={0.5}/>
           <F l="WACC" k="w" u="%" min={6} max={15} st={0.5}/>
           <F l="Years" k="yr" u="" min={5} max={15}/>
         </Card>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>🏦 Balance Sheet</div>
-          <F l="Cash (M$)" k="ca" u="M" min={0} max={200000} st={100}/>
-          <F l="Total Debt (M$)" k="de" u="M" min={0} max={200000} st={100}/>
-          <F l="Shares (M)" k="sh" u="M" min={1} max={10000} st={10}/>
+          <F l=lang==="es"?"Caja (M$)":"Cash (M$)" k="ca" u="M" min={0} max={200000} st={100}/>
+          <F l=lang==="es"?"Deuda Total (M$)":"Total Debt (M$)" k="de" u="M" min={0} max={200000} st={100}/>
+          <F l=lang==="es"?"Acciones (M)":"Shares (M)" k="sh" u="M" min={1} max={10000} st={10}/>
           <div style={{marginTop:10,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.6}}>EV = Discounted FCFs + Terminal Value PV<br/>Intrinsic/Share = (EV + Cash − Debt) ÷ Shares</div>
         </Card>
       </div>
@@ -2555,9 +2564,9 @@ Respond ONLY with valid JSON, no markdown:
   if(step==="intro")return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{textAlign:"center",padding:"40px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
       <div style={{fontSize:56,marginBottom:16}}>🧬</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:T.gold,marginBottom:12,fontWeight:700}}>What's Your Investor DNA?</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:T.gold,marginBottom:12,fontWeight:700}}>{lang==="es"?"¿Cuál es tu ADN Inversor?":"What's Your Investor DNA?"}</div>
       <div style={{fontSize:15,color:T.muted,maxWidth:580,margin:"0 auto 32px",lineHeight:1.8}}>
-        {lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"Answer 8 questions and our AI will identify your risk profile — "}<span style={{color:T.text}}>{lang==="es"?"Conservador, Moderado o Agresivo":"Conservative, Moderate, or Aggressive"}</span>{lang==="es"?" — y construirá un portafolio personalizado para ti.":" — then build a personalized portfolio of stocks and ETFs tailored to you."}
+        {lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"{lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"Answer 8 questions and our AI will identify your risk profile — "}"}<span style={{color:T.text}}>{lang==="es"?"Conservador, Moderado o Agresivo":"Conservative, Moderate, or Aggressive"}</span>{lang==="es"?" — y construirá un portafolio personalizado para ti.":" — then build a personalized portfolio of stocks and ETFs tailored to you."}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:600,margin:"0 auto 36px"}}>
         {Object.values(PROFILES).map((prof)=>{
