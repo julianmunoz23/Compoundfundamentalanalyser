@@ -2566,7 +2566,7 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{fontSize:56,marginBottom:16}}>🧬</div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:T.gold,marginBottom:12,fontWeight:700}}>{lang==="es"?"¿Cuál es tu ADN Inversor?":"What's Your Investor DNA?"}</div>
       <div style={{fontSize:15,color:T.muted,maxWidth:580,margin:"0 auto 32px",lineHeight:1.8}}>
-        {lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"{lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"Answer 8 questions and our AI will identify your risk profile — "}"}<span style={{color:T.text}}>{lang==="es"?"Conservador, Moderado o Agresivo":"Conservative, Moderate, or Aggressive"}</span>{lang==="es"?" — y construirá un portafolio personalizado para ti.":" — then build a personalized portfolio of stocks and ETFs tailored to you."}
+        {lang==="es"?"Responde 8 preguntas y la IA identificará tu perfil de riesgo — ":"Answer 8 questions and our AI will identify your risk profile — "}<span style={{color:T.text}}>{lang==="es"?"Conservador, Moderado o Agresivo":"Conservative, Moderate, or Aggressive"}</span>{lang==="es"?" — y construirá un portafolio personalizado para ti.":" — then build a personalized portfolio of stocks and ETFs tailored to you."}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,maxWidth:600,margin:"0 auto 36px"}}>
         {Object.values(PROFILES).map((prof)=>{
