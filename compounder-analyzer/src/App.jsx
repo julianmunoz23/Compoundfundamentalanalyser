@@ -1,4 +1,34 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ── SUPABASE CLIENT ──────────────────────────────────────────────────────────
+const SUPA_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+
+// Helper — save user data to Supabase or fallback to localStorage
+async function cloudSave(table, key, data, userId) {
+  if (!supabase || !userId) {
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {}
+    return;
+  }
+  try {
+    await supabase.from(table).upsert({ user_id: userId, key, data, updated_at: new Date().toISOString() }, { onConflict: "user_id,key" });
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch(e) {} // keep local copy too
+  } catch(e) { console.warn("Cloud save failed, using localStorage:", e.message); }
+}
+
+async function cloudLoad(table, key, userId) {
+  if (!supabase || !userId) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+  }
+  try {
+    const { data } = await supabase.from(table).select("data").eq("user_id", userId).eq("key", key).single();
+    if (data?.data) return data.data;
+  } catch(e) {}
+  // fallback to localStorage
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
+}
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -230,7 +260,7 @@ function AdBanner({size="leaderboard"}){
 }
 
 // ── PAYWALL ───────────────────────────────────────────────────────────────────
-function PaywallModal({onClose,context="stock"}){
+function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
   const configs={
     stock:{
       icon:"🎯",
@@ -259,7 +289,7 @@ function PaywallModal({onClose,context="stock"}){
       features:["AI-Curated Stock Portfolio","ETF Recommendations","Asset Allocation Breakdown","Expected Return Modeling","Quarterly Rebalance Guide","Broker Recommendations"],
       price:"$19.99/mo",
       trial:"7-day free trial · Cancel anytime",
-      cta:{lang==="es"?"🚀 Construir Mi Portafolio IA":"🚀 Build My AI Portfolio"},
+      cta:"🚀 Build My AI Portfolio",
       proof:"The portfolio Buffett would build for your risk profile",
     },
   };
@@ -291,7 +321,7 @@ function PaywallModal({onClose,context="stock"}){
           </div>
           <div style={{fontSize:11,color:T.green,marginBottom:12}}>🎁 {c.trial}</div>
           <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,width:"100%"}}
-            onClick={()=>alert("💳 Coming soon! Email us at hello@compounderanalyst.com for early access.")}>
+            onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hello@compounderanalyst.com for early access.");}}>
             {c.cta}
         </button>
         </div>
@@ -666,6 +696,136 @@ const LANG = {
   }
 };
 
+
+// ── AUTH MODAL ────────────────────────────────────────────────────────────────
+function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
+  const [mode, setMode] = useState(initialMode); // signup | login | reset
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [success, setSuccess] = useState("");
+  const isEs = lang === "es";
+
+  const handleSubmit = async () => {
+    if (!email || (!password && mode !== "reset")) {
+      setErr(isEs ? "Por favor completa todos los campos" : "Please fill in all fields");
+      return;
+    }
+    if (password && password.length < 6 && mode !== "reset") {
+      setErr(isEs ? "La contraseña debe tener al menos 6 caracteres" : "Password must be at least 6 characters");
+      return;
+    }
+    setLoading(true); setErr(""); setSuccess("");
+    try {
+      if (!supabase) throw new Error("Auth service not configured");
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setSuccess(isEs
+          ? "✅ ¡Cuenta creada! Revisa tu email para confirmar."
+          : "✅ Account created! Check your email to confirm.");
+        if (data.user) onAuth(data.user);
+      } else if (mode === "login") {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        onAuth(data.user);
+        onClose();
+      } else if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setSuccess(isEs
+          ? "✅ Email enviado. Revisa tu bandeja de entrada."
+          : "✅ Reset email sent. Check your inbox.");
+      }
+    } catch(e) {
+      const msg = e.message || "";
+      if (msg.includes("already registered")) setErr(isEs ? "Este email ya está registrado. Inicia sesión." : "Email already registered. Please sign in.");
+      else if (msg.includes("Invalid login")) setErr(isEs ? "Email o contraseña incorrectos." : "Invalid email or password.");
+      else if (msg.includes("Email not confirmed")) setErr(isEs ? "Confirma tu email antes de entrar." : "Please confirm your email first.");
+      else setErr(msg || (isEs ? "Error. Intenta de nuevo." : "Something went wrong. Try again."));
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:420,width:"100%",position:"relative"}}>
+        <button onClick={onClose} style={{position:"absolute",top:14,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20}}>✕</button>
+
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:32,marginBottom:8}}>📈</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.gold,fontWeight:700}}>Compounder Analyst</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:4}}>
+            {mode==="signup"?(isEs?"Crea tu cuenta gratis":"Create your free account")
+             :mode==="login"?(isEs?"Bienvenido de vuelta":"Welcome back")
+             :(isEs?"Recuperar contraseña":"Reset your password")}
+          </div>
+        </div>
+
+        {/* Toggle signup/login */}
+        {mode!=="reset"&&<div style={{display:"flex",background:T.accent,borderRadius:10,padding:4,marginBottom:20}}>
+          {["signup","login"].map(m=>(
+            <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,
+              background:mode===m?T.gold:"transparent",color:mode===m?"#0a0c10":T.muted,transition:"all 0.2s"}}>
+              {m==="signup"?(isEs?"Registrarme":"Sign Up"):(isEs?"Iniciar Sesión":"Sign In")}
+            </button>
+          ))}
+        </div>}
+
+        {/* Fields */}
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:11,color:T.muted,marginBottom:6}}>Email</div>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+            placeholder={isEs?"tu@email.com":"you@email.com"}
+            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+            style={{fontSize:15,padding:"11px 14px"}}/>
+        </div>
+        {mode!=="reset"&&<div style={{marginBottom:20}}>
+          <div style={{fontSize:11,color:T.muted,marginBottom:6}}>{isEs?"Contraseña":"Password"}</div>
+          <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+            placeholder={isEs?"Mínimo 6 caracteres":"At least 6 characters"}
+            onKeyDown={e=>e.key==="Enter"&&handleSubmit()}
+            style={{fontSize:15,padding:"11px 14px"}}/>
+        </div>}
+
+        {err&&<div style={{padding:"10px 14px",background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,marginBottom:14,border:`1px solid ${T.red}33`}}>{err}</div>}
+        {success&&<div style={{padding:"10px 14px",background:`${T.green}15`,borderRadius:8,fontSize:12,color:T.green,marginBottom:14,border:`1px solid ${T.green}33`}}>{success}</div>}
+
+        <button className="btn btn-gold" onClick={handleSubmit} disabled={loading}
+          style={{width:"100%",padding:"13px 0",fontSize:15,borderRadius:10,marginBottom:14}}>
+          {loading?<><span className="sp">⟳</span> {isEs?"Procesando...":"Processing..."}</>
+           :mode==="signup"?(isEs?"Crear Cuenta Gratis":"Create Free Account")
+           :mode==="login"?(isEs?"Entrar":"Sign In")
+           :(isEs?"Enviar Email":"Send Reset Email")}
+        </button>
+
+        {/* Forgot password */}
+        {mode==="login"&&<div style={{textAlign:"center",marginBottom:10}}>
+          <button onClick={()=>setMode("reset")} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:T.muted,textDecoration:"underline"}}>
+            {isEs?"¿Olvidaste tu contraseña?":"Forgot password?"}
+          </button>
+        </div>}
+        {mode==="reset"&&<div style={{textAlign:"center"}}>
+          <button onClick={()=>setMode("login")} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:T.muted,textDecoration:"underline"}}>
+            {isEs?"Volver al inicio de sesión":"Back to sign in"}
+          </button>
+        </div>}
+
+        {/* Privacy note */}
+        <div style={{fontSize:10,color:T.muted,textAlign:"center",lineHeight:1.6,marginTop:10}}>
+          {isEs
+            ?"Al registrarte aceptas nuestros Términos de Uso. Tus datos están protegidos y nunca los vendemos."
+            :"By signing up you agree to our Terms. Your data is protected and never sold."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── HERO ──────────────────────────────────────────────────────────────────────
 function Hero({onStart,lang="en"}){
   const L=LANG[lang]||LANG.en;
@@ -856,7 +1016,7 @@ function CompoundTab({onGoToTab,lang="en"}){
         {l:lang==="es"?"Balance Final":"Final Balance",v:fmt(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
         {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
         {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmt(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
-        {l:{lang==="es"?"Multiplicador":"Multiplier"},v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
+        {l:lang==="es"?"Multiplicador":"Multiplier",v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
       ].map(({l,v,c,sub,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
         <Lbl>{l}</Lbl>
@@ -899,9 +1059,9 @@ function CompoundTab({onGoToTab,lang="en"}){
         <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:12}}>{lang==="es"?"✨ La Magia del Interés Compuesto":"✨ The Magic of Compounding"}</div>
           {[
-            {l:{lang==="es"?"Solo Capital (sin interés)":"Capital only (no interest)"},v:fmt(last.contributed||0)},
-            {l:{lang==="es"?"Con interés compuesto 🏆":"With compound interest 🏆"},v:fmt(last.balance||0),hi:true},
-            {l:{lang==="es"?"Generado solo por interés":"Generated by interest alone"},v:`+${fmt(last.interest||0)}`,pos:true},
+            {l:lang==="es"?"Solo Capital (sin interés)":"Capital only (no interest)",v:fmt(last.contributed||0)},
+            {l:lang==="es"?"Con interés compuesto 🏆":"With compound interest 🏆",v:fmt(last.balance||0),hi:true},
+            {l:lang==="es"?"Generado solo por interés":"Generated by interest alone",v:`+${fmt(last.interest||0)}`,pos:true},
           ].map(({l,v,hi,pos})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${T.border}22`,alignItems:"center"}}>
             <span style={{fontSize:11,color:hi?T.text:T.muted}}>{l}</span>
             <Mn sz={hi?12:11} c={pos?T.green:hi?T.gold:T.muted} s={hi?{fontWeight:700}:{}}>{v}</Mn>
@@ -1053,7 +1213,7 @@ function CompoundTab({onGoToTab,lang="en"}){
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:860,margin:"0 auto"}}>
         {[
-          {icon:"🧬",title:"Discover Your Investor DNA",desc:"Take our 8-question quiz and get a Conservative, Moderate, or Aggressive profile with a personalized AI portfolio.",cta:{lang==="es"?"Tomar el Quiz →":"Take the Quiz →"},tab:"profile",color:T.purple},
+          {icon:"🧬",title:"Discover Your Investor DNA",desc:"Take our 8-question quiz and get a Conservative, Moderate, or Aggressive profile with a personalized AI portfolio.",cta:lang==="es"?"Tomar el Quiz →":"Take the Quiz →",tab:"profile",color:T.purple},
           {icon:"🎯",title:"Analyze a Specific Stock",desc:"Enter any ticker — NVDA, AAPL, COST — and get a Buffett/Munger quality score, moat analysis, and Wall Street consensus.",cta:"Analyze a Stock →",tab:"score",color:T.gold},
           {icon:"📁",title:"Audit Your Portfolio",desc:"Already invested? Upload your positions and our AI will tell you what to hold, buy more, or sell — with live prices.",cta:"Analyze Portfolio →",tab:"portfolio",color:T.green},
         ].map(({icon,title,desc,cta,tab,color})=>(
@@ -1214,12 +1374,12 @@ function MillionGoalSection({lang="en"}){
 function WhatIfTab({lang="en"}){
   const LW=LANG[lang]||LANG.en;
   const SCENARIOS=[
-    {ticker:"NVDA",name:"NVIDIA",year:2014,invested:10000,cagr:68,finalValue:3820000,color:T.green,desc:{lang==="es"?"Dominio GPU + boom de IA":"GPU dominance + AI boom"}},
-    {ticker:"AAPL",name:"Apple",year:2008,invested:10000,cagr:28,finalValue:782000,color:T.blue,desc:{lang==="es"?"iPhone, servicios, ecosistema":"iPhone, services, ecosystem"}},
-    {ticker:"AMZN",name:"Amazon",year:2010,invested:10000,cagr:32,finalValue:520000,color:T.gold,desc:{lang==="es"?"AWS Cloud + comercio electrónico":"AWS Cloud + e-commerce"}},
-    {ticker:"MSFT",name:"Microsoft",year:2014,invested:10000,cagr:27,finalValue:248000,color:T.purple,desc:{lang==="es"?"Azure Cloud + Satya Nadella":"Azure Cloud + Satya Nadella"}},
-    {ticker:"TSLA",name:"Tesla",year:2013,invested:10000,cagr:38,finalValue:1200000,color:T.green,desc:{lang==="es"?"VE + energía + software":"EV + energy + software"}},
-    {ticker:"COST",name:"Costco",year:2010,invested:10000,cagr:19,finalValue:115000,color:"#f39c12",desc:{lang==="es"?"Membresía + retail":"Membership moat + retail"}},
+    {ticker:"NVDA",name:"NVIDIA",year:2014,invested:10000,cagr:68,finalValue:3820000,color:T.green,desc:lang==="es"?"Dominio GPU + boom de IA":"GPU dominance + AI boom"},
+    {ticker:"AAPL",name:"Apple",year:2008,invested:10000,cagr:28,finalValue:782000,color:T.blue,desc:lang==="es"?"iPhone, servicios, ecosistema":"iPhone, services, ecosystem"},
+    {ticker:"AMZN",name:"Amazon",year:2010,invested:10000,cagr:32,finalValue:520000,color:T.gold,desc:lang==="es"?"AWS Cloud + comercio electrónico":"AWS Cloud + e-commerce"},
+    {ticker:"MSFT",name:"Microsoft",year:2014,invested:10000,cagr:27,finalValue:248000,color:T.purple,desc:lang==="es"?"Azure Cloud + Satya Nadella":"Azure Cloud + Satya Nadella"},
+    {ticker:"TSLA",name:"Tesla",year:2013,invested:10000,cagr:38,finalValue:1200000,color:T.green,desc:lang==="es"?"VE + energía + software":"EV + energy + software"},
+    {ticker:"COST",name:"Costco",year:2010,invested:10000,cagr:19,finalValue:115000,color:"#f39c12",desc:lang==="es"?"Membresía + retail":"Membership moat + retail"},
   ];
   const [custom,setCustom]=useState({initial:10000,cagr:20,years:10});
   const sc=(k,v)=>setCustom(p=>({...p,[k]:v}));
@@ -1523,7 +1683,7 @@ function InlineDCF({company,onAnalysis,canAnalyze}){
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:16}}>
           {[
             {l:"Intrinsic Value",v:`$${ips.toFixed(2)}`,c:T.green,sub:"per share (DCF)"},
-            {l:{lang==="es"?"Precio Actual":"Current Price"},v:dcf.currentPrice?`$${dcf.currentPrice}`:"—",c:T.gold,sub:"market price"},
+            {l:lang==="es"?"Precio Actual":"Current Price",v:dcf.currentPrice?`$${dcf.currentPrice}`:"—",c:T.gold,sub:"market price"},
             {l:"Upside / Downside",v:upside!=null?`${upside>=0?"+":""}${upside.toFixed(1)}%`:"—",c:upside!=null?(upside>=0?T.green:T.red):T.muted,sub:upside!=null?(upside>=15?"Undervalued":upside<=-15?"Overvalued":"Fair Value"):""},
           ].map(({l,v,c,sub})=><div key={l} style={{background:T.accent,borderRadius:10,padding:"12px 14px",textAlign:"center"}}>
             <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>{l}</div>
@@ -2304,7 +2464,7 @@ const PROFILES={
             es:["Baja tolerancia a la volatilidad","Horizonte corto a mediano","Enfocado en ingresos","Seguridad primero"]},
   },
   moderate:{
-    label:{en:{lang==="es"?"Moderado":"Moderate"},es:"Moderado"},icon:"⚖️",color:"#c9a84c",
+    label:{en:"Moderate",es:"Moderado"},icon:"⚖️",color:"#c9a84c",
     desc:{en:"You seek a balance between growth and security. Comfortable with some market fluctuations in exchange for long-term returns. A diversified mix of stocks and bonds suits you well.",
           es:"Buscas equilibrio entre crecimiento y seguridad. Cómodo con fluctuaciones del mercado a cambio de retornos a largo plazo."},
     traits:{en:["Medium volatility tolerance","5–10 year horizon","Balanced growth + income","Diversification focused"],
@@ -2319,7 +2479,7 @@ const PROFILES={
   },
 };
 
-function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="en"}){
+function ProfileTab({onAnalysis,canAnalyze,onGoToPortfolio,onGoToStrategy,lang="en",user=null}){
   const [step,setStep]=useState("intro"); // intro | quiz | result | portfolio
   const [answers,setAnswers]=useState({});
   const [current,setCurrent]=useState(0);
@@ -2379,7 +2539,11 @@ Respond ONLY with valid JSON, no markdown:
   "summary":"<3 sentences: strategy, why it fits the profile, and why these specific picks make sense for $${amount.toLocaleString()}>"
 }`);
       // Save profile to localStorage so Portfolio Tracker can use it
-      try{localStorage.setItem("compoundr_risk_profile",JSON.stringify({label:pLabel(profile,"en"),desc:pDesc(profile,"en"),icon:profile.icon,color:profile.color}));}catch(e){}
+      try{
+        const rp={label:pLabel(profile,"en"),desc:pDesc(profile,"en"),icon:profile.icon,color:profile.color};
+        localStorage.setItem("compoundr_risk_profile",JSON.stringify(rp));
+        cloudSave("user_data","compoundr_risk_profile",rp,user?.id).catch(()=>{});
+      }catch(e){}
       setPortfolio(p);onAnalysis();setStep("portfolio");
     }catch(e){setErr(`Error: ${e.message||"Could not generate portfolio."}`);}
     setLoading(false);
@@ -2680,12 +2844,12 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={()=>{
           try{
-            localStorage.setItem("compoundr_strategy",JSON.stringify({
+            const stratData={
               profile:{label:pLabel(profile,lang),icon:profile.icon,color:profile.color},
               amount,portfolio,
               createdAt:new Date().toISOString(),
               executedAt:new Date().toISOString(),
-            }));
+            };localStorage.setItem("compoundr_strategy",JSON.stringify(stratData));cloudSave("user_data","compoundr_strategy",stratData,user?.id).catch(()=>{});
           }catch(e){}
           onGoToStrategy&&onGoToStrategy();
         }} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
@@ -2939,7 +3103,7 @@ function PieChart({data,stockCount,size=220}){
   </svg>;
 }
 
-function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en"}){
+function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("compoundr_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
@@ -3007,16 +3171,24 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en"}){
     reader.readAsText(file);
   };
 
-  // Load saved positions from localStorage
-  useState(()=>{
-    try{
-      const saved=localStorage.getItem("compoundr_portfolio");
-      if(saved)setPositions(JSON.parse(saved));
-    }catch(e){}
-  });
+  // Load saved positions — cloud first, localStorage fallback
+  useEffect(()=>{
+    const load=async()=>{
+      try{
+        const saved=await cloudLoad("user_data","compoundr_portfolio",user?.id);
+        if(saved&&Array.isArray(saved))setPositions(saved);
+        else{
+          const local=localStorage.getItem("compoundr_portfolio");
+          if(local)setPositions(JSON.parse(local));
+        }
+      }catch(e){}
+    };
+    load();
+  },[user?.id]);
 
   const save=(pos)=>{
     try{localStorage.setItem("compoundr_portfolio",JSON.stringify(pos));}catch(e){}
+    cloudSave("user_data","compoundr_portfolio",pos,user?.id).catch(()=>{});
   };
 
   const FREE_POSITION_LIMIT=3;
@@ -3231,7 +3403,11 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
         {/* Mode tabs */}
         <div style={{display:"flex",gap:6,marginBottom:16}}>
-          {[{id:"manual",l:"✏️ Manual"},{id:"paste",l:{lang==="es"?"📋 Pegar de Excel":"📋 Paste from Excel"}},{id:"csv",l:{lang==="es"?"📂 Importar CSV":"📂 Import CSV"}}].map(({id,l})=>(
+          {[
+            {id:"manual",l:"✏️ Manual"},
+            {id:"paste",l:lang==="es"?"📋 Pegar de Excel":"📋 Paste from Excel"},
+            {id:"csv",l:lang==="es"?"📂 Importar CSV":"📂 Import CSV"},
+          ].map(({id,l})=>(
             <button key={id} className={`seg ${importMode===id?"seg-on":""}`} onClick={()=>{setImportMode(id);setImportErr("");}}>
               {l}
             </button>
@@ -3380,7 +3556,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
-                    {["","Ticker","Shares",{lang==="es"?"Costo Prom.":"Avg Cost"},"Current Price",{lang==="es"?"Costo Total":"Total Cost"},"Current Value","P&L $","P&L %","Today",{lang==="es"?"Veredicto IA":"AI Verdict"},""].map((h,i)=>(
+                    {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price",lang==="es"?"Costo Total":"Total Cost",lang==="es"?"Valor Actual":"Current Value","P&L $","P&L %",lang==="es"?"Hoy":"Today",lang==="es"?"Veredicto IA":"AI Verdict",""].map((h,i)=>(
                       <th key={i} style={{padding:"10px 12px",textAlign:i<=1||i===11?"center":"right",fontSize:9,color:h==="P&L $"||h==="P&L %"?T.green:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
                     ))}
                   </tr></thead>
@@ -3529,7 +3705,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 }
 
 // ── MY STRATEGY TAB ──────────────────────────────────────────────────────────
-function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en"}){
+function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
   const [strategy,setStrategy]=useState(null);
   const [positions,setPositions]=useState([]);
   const [prices,setPrices]=useState({});
@@ -3816,6 +3992,10 @@ function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.
 
 export default function App(){
   const [tab,setTab]=useState(null);
+  const [user,setUser]=useState(null);          // Supabase user object
+  const [userPlan,setUserPlan]=useState("free"); // free | basic | premium
+  const [showAuth,setShowAuth]=useState(false);
+  const [authMode,setAuthMode]=useState("signup");
   const [lang,setLang]=useState(()=>{try{return localStorage.getItem("compoundr_lang")||"en";}catch{return "en";}});
   const L=LANG[lang]||LANG.en;
   const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{} };
@@ -3860,14 +4040,48 @@ export default function App(){
     window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
   });
 
-  const canAnalyze=(ctx="stock")=>{const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setShowPaywall(true);return false;}return true;};
+  // ── SUPABASE AUTH LISTENER ──
+  useEffect(()=>{
+    if(!supabase)return;
+    // Get current session on mount
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+    });
+    // Listen for auth changes
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+      else{setUser(null);setUserPlan("free");}
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  const syncUserPlan=async(userId)=>{
+    try{
+      const {data}=await supabase.from("user_plans").select("plan").eq("user_id",userId).single();
+      if(data?.plan)setUserPlan(data.plan);
+    }catch(e){setUserPlan("free");}
+  };
+
+  const signOut=async()=>{
+    if(supabase)await supabase.auth.signOut();
+    setUser(null);setUserPlan("free");
+  };
+
+  const isPremium=()=>isAdmin()||userPlan==="basic"||userPlan==="premium";
+  const isPro=()=>isAdmin()||userPlan==="premium";
+
+  const canAnalyze=(ctx="stock")=>{if(isPremium())return true;const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setShowPaywall(true);return false;}return true;};
   const onAnalysis=()=>{incCount();};
   const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
 
   return<ErrorBoundary>
   <div style={{minHeight:"100vh",background:T.bg}} onClick={()=>showCurrMenu&&setShowCurrMenu(false)}>
     <style>{css}</style>
-    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext}/>}
+    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext} lang={lang}
+      onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
+    {showAuth&&<AuthModal lang={lang} initialMode={authMode}
+      onClose={()=>setShowAuth(false)}
+      onAuth={(u)=>{setUser(u);setShowAuth(false);}}/>}
     <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(8px)"}}>
       <div style={{maxWidth:1380,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
@@ -3925,12 +4139,28 @@ export default function App(){
                 </div>
               </div>}
             </div>
+            {user&&<div style={{display:"flex",alignItems:"center",gap:6,background:T.accent,borderRadius:20,padding:"4px 10px",border:`1px solid ${T.border}`}}>
+              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#0a0c10",fontWeight:700}}>
+                {user.email?.[0]?.toUpperCase()||"U"}
+              </div>
+              <span style={{fontSize:11,color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted,fontWeight:600}}>
+                {userPlan==="premium"?"⭐ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
+              </span>
+              <button onClick={signOut} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:T.muted,padding:"0 2px"}}
+                title={lang==="es"?"Cerrar sesión":"Sign out"}>✕</button>
+            </div>}
+            {!user&&<button onClick={()=>{setAuthMode("login");setShowAuth(true);}} style={{background:"none",border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,color:T.muted}}>
+              {lang==="es"?"Iniciar Sesión":"Sign In"}
+            </button>}
             {adminMode
               ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin</div>
               :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
                   {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
                 </div>
-                <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:12,padding:"8px 16px"}}>
+                <button className="btn btn-gold" onClick={()=>{
+                  if(!user){setAuthMode("signup");setShowAuth(true);}
+                  else{setPaywallContext("stock");setShowPaywall(true);}
+                }} style={{fontSize:12,padding:"8px 16px"}}>
                   {L.nav_premium}
                 </button></>
             }
@@ -3954,9 +4184,9 @@ export default function App(){
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
-      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
-      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang}/>}
+      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
+      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
