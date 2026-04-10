@@ -1084,7 +1084,7 @@ function CompoundTab({onGoToTab,lang="en"}){
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
                 <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
                 <Tooltip content={<StackedTT/>}/>
-                <Legend formatter={n=>n==="contributed"?{lang==="es"?"Capital Invertido":"Capital Invested"}:"Interest Earned"} wrapperStyle={{fontSize:11,color:T.muted,paddingTop:8}}/>
+                <Legend formatter={n=>n==="contributed"?(lang==="es"?"Capital Invertido":"Capital Invested"):(lang==="es"?"Interés Ganado":"Interest Earned")} wrapperStyle={{fontSize:11,color:T.muted,paddingTop:8}}/>
                 <Bar dataKey="contributed" stackId="a" fill={T.blue} opacity={0.85} name="contributed"/>
                 <Bar dataKey="interest" stackId="a" fill={T.green} opacity={0.85} name="interest" radius={[3,3,0,0]}/>
               </BarChart>
