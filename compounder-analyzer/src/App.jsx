@@ -1454,7 +1454,7 @@ function WhatIfTab({lang="en"}){
 }
 
 // ── INLINE EXPECTED RETURN — embedded in Stock Analyze ────────────────────────
-function InlineExpectedReturn({company,sector,onAnalysis,canAnalyze}){
+function InlineExpectedReturn({company,sector,onAnalysis,canAnalyze,lang="en"}){
   const [open,setOpen]=useState(false);
   const [loading,setLoading]=useState(false);
   const [loaded,setLoaded]=useState(false);
@@ -1627,7 +1627,7 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 // ── INLINE DCF — embedded in Stock Analyze ────────────────────────────────────
-function InlineDCF({company,onAnalysis,canAnalyze}){
+function InlineDCF({company,onAnalysis,canAnalyze,lang="en"}){
   const [open,setOpen]=useState(false);
   const [loading,setLoading]=useState(false);
   const [dcf,setDcf]=useState(null);
@@ -2148,10 +2148,10 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     </div>}
 
     {/* ── INLINE EXPECTED RETURN — auto-fills from AI analysis ── */}
-    {info&&<InlineExpectedReturn company={company} sector={sector} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
+    {info&&<InlineExpectedReturn company={company} sector={sector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} lang={lang}/>}
 
     {/* ── INLINE DCF — auto-fills from AI analysis ── */}
-    {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze}/>}
+    {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze} lang={lang}/>}
 
     <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -2292,7 +2292,7 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 // ── DCF ───────────────────────────────────────────────────────────────────────
-function DCFTab({onAnalysis,canAnalyze}){
+function DCFTab({onAnalysis,canAnalyze,lang="en"}){
   const [ticker,setTicker]=useState("");
   const [loading,setLoading]=useState(false);
   const [err,setErr]=useState("");
@@ -2956,7 +2956,7 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 // ── REBALANCE + DCA COMPONENT ────────────────────────────────────────────────
-function RebalanceDCA({positions,totalValue,savedProfile,callAI}){
+function RebalanceDCA({positions,totalValue,savedProfile,callAI,lang="en"}){
   const [cash,setCash]=useState("");
   const [loadingReb,setLoadingReb]=useState(false);
   const [loadingDCA,setLoadingDCA]=useState(false);
@@ -3719,7 +3719,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         </Card>}
 
         {/* ── REBALANCE + DCA ── */}
-        {aiAnalysis&&<RebalanceDCA positions={enriched} totalValue={totalValue} savedProfile={savedProfile} callAI={callAI}/>}
+        {aiAnalysis&&<RebalanceDCA positions={enriched} totalValue={totalValue} savedProfile={savedProfile} callAI={callAI} lang={lang}/>}
       </div>
     </div>
 
