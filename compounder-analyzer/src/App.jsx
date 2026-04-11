@@ -360,7 +360,15 @@ const defM=()=>({revenueCAGR:20,fcfGrowth:25,tamGrowth:12,roic:25,grossMargin:55
 const defMoat=()=>Object.fromEntries(MOAT_KEYS.map(k=>[k,3]));
 function sm(c,v){if(c.invert){if(v<=c.threshold)return 100;if(v>=c.max)return 0;return Math.round((1-(v-c.threshold)/(c.max-c.threshold))*100);}if(v>=c.threshold*1.5)return 100;if(v>=c.threshold)return Math.round(60+((v-c.threshold)/(c.threshold*0.5))*40);return Math.round((v/c.threshold)*60);}
 function calcScore(m,moat){let tw=0,ts=0;Object.values(CRITERIA).flat().forEach(c=>{const s=sm(c,m[c.key]||0);ts+=s*c.weight;tw+=c.weight;});const moatAvg=Object.values(moat).reduce((a,v)=>a+v,0)/(MOAT_KEYS.length*5)*100;ts+=moatAvg*10;tw+=10;return Math.round(ts/tw);}
-function grade(s){if(s>=85)return{l:"A+",c:T.green,label:CL("Elite Compounder","Elite Compounder")};if(s>=75)return{l:"A",c:T.green,label:"High Quality"};if(s>=65)return{l:"B+",c:T.gold,label:"Good Business"};if(s>=55)return{l:"B",c:T.gold,label:"Promising"};if(s>=45)return{l:"C",c:"#f39c12",label:"Needs Improvement"};return{l:"D",c:T.red,label:"Avoid"};}
+function grade(s,lang="en"){
+  const isEs=lang==="es";
+  if(s>=85)return{l:"A+",c:T.green,label:isEs?"Elite Compounder":"Elite Compounder"};
+  if(s>=75)return{l:"A",c:T.green,label:isEs?"Alta Calidad":"High Quality"};
+  if(s>=65)return{l:"B+",c:T.gold,label:isEs?"Buen Negocio":"Good Business"};
+  if(s>=55)return{l:"B",c:T.gold,label:isEs?"Prometedor":"Promising"};
+  if(s>=45)return{l:"C",c:"#f39c12",label:isEs?"Necesita Mejorar":"Needs Improvement"};
+  return{l:"D",c:T.red,label:isEs?"Evitar":"Avoid"};
+}
 
 // ── SHARED ────────────────────────────────────────────────────────────────────
 const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
@@ -368,7 +376,7 @@ const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTr
 const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
 
 function ScoreRing({score,size=80}){
-  const g=grade(score);const r=size*0.38,cx=size/2,cy=size/2;
+  const g=grade(score,lang);const r=size*0.38,cx=size/2,cy=size/2;
   const arc=v=>{const a=-135+(v/100)*270,rd=x=>x*Math.PI/180;return`M ${cx+r*Math.cos(rd(-135))} ${cy+r*Math.sin(rd(-135))} A ${r} ${r} 0 ${a>45?1:0} 1 ${cx+r*Math.cos(rd(a))} ${cy+r*Math.sin(rd(a))}`;};
   return<svg width={size} height={size*0.78} viewBox={`0 0 ${size} ${size*0.78}`}>
     <path d={arc(100)} fill="none" stroke={T.border} strokeWidth={size*0.065} strokeLinecap="round"/>
@@ -1540,13 +1548,13 @@ Respond ONLY with valid JSON, no markdown:
             {l:"Margin Expansion",k:"me",note:summary.meNote,c:T.blue,icon:"💎"},
             {l:"Multiple Expansion",k:"mx",note:summary.mxNote,c:inp.mx>=0?T.gold:T.red,icon:"📊"},
             {l:"Dividends",k:"dv",note:summary.dvNote,c:T.muted,icon:"💵"},
-          ].map(({l,k,note,c,icon})=><div key={k} style={{background:T.accent,borderRadius:10,padding:"12px 12px",border:`1px solid ${c}22`}}>
-            <div style={{fontSize:10,color:T.muted,marginBottom:4}}>{icon} {l}</div>
+          ].map(({l,k,note,c,icon})=>{const lText=typeof l==="object"?l[lang]||l.en:l;return<div key={k} style={{background:T.accent,borderRadius:10,padding:"12px 12px",border:`1px solid ${c}22`}}>
+            <div style={{fontSize:10,color:T.muted,marginBottom:4}}>{icon} {lText}</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:c,fontWeight:700,marginBottom:4}}>
               {inp[k]>=0?"+":""}{inp[k].toFixed(1)}%
             </div>
             <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{note}</div>
-          </div>)}
+          </div>)}}
         </div>
 
         {/* Total + benchmark */}
@@ -1717,7 +1725,7 @@ function InlineDCF({company,onAnalysis,canAnalyze}){
 }
 
 // ── SCORECARD ─────────────────────────────────────────────────────────────────
-function MRow({c,value,onChange,locked}){
+function MRow({c,value,onChange,locked,lang="en"}){
   const s=sm(c,value),pass=c.invert?value<=c.threshold:value>=c.threshold;
   return<div style={{display:"grid",gridTemplateColumns:"1fr 85px 50px 28px",alignItems:"center",gap:8,padding:"8px 0",borderBottom:`1px solid ${T.border}22`}}>
     <div><div style={{fontSize:12,color:T.text,marginBottom:3}}>{typeof c.label==="object"?c.label[lang]||c.label.en:c.label}</div><input type="range" min={0} max={c.max} step={0.1} value={value} disabled={locked} onChange={e=>!locked&&onChange(c.key,parseFloat(e.target.value))}/></div>
@@ -1867,10 +1875,12 @@ Respond ONLY with valid JSON, no markdown:
             {l:lang==="es"?"Tasas de Interés":"Interest Rates",v:cycle.interestRates,c:cycle.interestRates==="Falling"?T.green:cycle.interestRates==="Rising"?T.red:T.gold},
             {l:lang==="es"?"Materias Primas":"Commodities",v:cycle.commodities,c:cycle.commodities==="Bullish"?T.green:cycle.commodities==="Bearish"?T.red:T.gold},
             {l:lang==="es"?"Emergentes vs USA":"Emerging vs US",v:cycle.emergingVsDeveloped.replace("Favor ",""),c:cycle.emergingVsDeveloped.includes("Emerging")?T.green:cycle.emergingVsDeveloped.includes("Developed")?T.blue:T.gold},
-          ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px",textAlign:"center",border:`1px solid ${c}22`}}>
-            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
+          ].map(({l,v,c},ki)=>{
+              const lText=typeof l==="object"?l[lang]||l.en:l;
+              return<div key={ki} style={{background:T.card,borderRadius:8,padding:"10px 12px",textAlign:"center",border:`1px solid ${c}22`}}>
+            <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{lText}</div>
             <div style={{fontSize:12,color:c,fontWeight:700}}>{v}</div>
-          </div>)}
+          </div>)}}
         </div>
 
         <div className="cycle-grid-2 g-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
@@ -2076,10 +2086,10 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
               {[
                 {l:lang==="es"?"Precio Objetivo":"Price Target",v:fh.targetMean?`$${fh.targetMean}`:"—",c:T.gold},
-                {l:"Target High",v:fh.targetHigh?`$${fh.targetHigh}`:"—",c:T.green},
-                {l:"Target Low",v:fh.targetLow?`$${fh.targetLow}`:"—",c:T.red},
-                {l:"EPS Growth (est.)",v:fh.epsGrowthNext||"—",c:T.green},
-              ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
+                {l:lang==="es"?"Target Alto":"Target High",v:fh.targetHigh?`$${fh.targetHigh}`:"—",c:T.green},
+                {l:lang==="es"?"Target Bajo":"Target Low",v:fh.targetLow?`$${fh.targetLow}`:"—",c:T.red},
+                {l:lang==="es"?"Crecimiento EPS (est.)":"EPS Growth (est.)",v:fh.epsGrowthNext||"—",c:T.green},
+              ].map(({l,v,c},pi)=><div key={pi} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
                 <Mn sz={15} c={c} s={{fontWeight:600}}>{v}</Mn>
               </div>)}
@@ -2096,7 +2106,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <Card s={{textAlign:"center",padding:18}}>
           <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Quality Score</div>
           <ScoreRing score={score} size={110}/>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{typeof g.label==="object"?g.label[lang]||g.label.en:g.label}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{g.label}</div>
           <div style={{fontSize:11,color:T.muted,marginTop:6}}>{checklist.filter(c=>c.p).length}/8 criteria</div>
           <div style={{marginTop:12}}>
             {catS.map(({cat,s})=><div key={cat} style={{marginBottom:7}}>
@@ -2148,7 +2158,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold}}>{cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow (Growth)":"🏦 Balance Sheet"}</div>
             {locked&&<span style={{fontSize:9,color:T.muted,background:T.accent,padding:"2px 6px",borderRadius:4}}>🔒 locked</span>}
           </div>
-          {cs.map(c=><MRow key={c.key} c={c} value={m[c.key]||0} onChange={(k,v)=>setM(p=>({...p,[k]:v}))} locked={locked}/>)}
+          {cs.map(c=><MRow key={c.key} c={c} value={m[c.key]||0} onChange={(k,v)=>setM(p=>({...p,[k]:v}))} locked={locked} lang={lang}/>)}
         </Card>)}
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
