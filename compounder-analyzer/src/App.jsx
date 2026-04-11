@@ -1880,7 +1880,7 @@ Respond ONLY with valid JSON, no markdown:
               return<div key={ki} style={{background:T.card,borderRadius:8,padding:"10px 12px",textAlign:"center",border:`1px solid ${c}22`}}>
             <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{lText}</div>
             <div style={{fontSize:12,color:c,fontWeight:700}}>{v}</div>
-          </div>)}}
+          </div>;})}
         </div>
 
         <div className="cycle-grid-2 g-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
