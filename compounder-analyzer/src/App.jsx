@@ -3662,7 +3662,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             <span style={{fontSize:18,flexShrink:0}}>{savedProfile.icon}</span>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?T.green:T.red,marginBottom:3}}>
-                {aiAnalysis.profileMatch} — {typeof savedProfile.label==="object"?savedProfile.label[lang]||savedProfile.label.en:savedProfile.label} Investor Profile
+                {aiAnalysis.profileMatch} — {typeof savedProfile.label==="object"?savedProfile.label[lang||"en"]||savedProfile.label.en:savedProfile.label} Investor Profile
               </div>
               <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{aiAnalysis.profileMatchReason}</div>
             </div>
