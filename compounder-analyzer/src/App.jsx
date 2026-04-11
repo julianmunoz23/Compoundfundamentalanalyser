@@ -1554,7 +1554,7 @@ Respond ONLY with valid JSON, no markdown:
               {inp[k]>=0?"+":""}{inp[k].toFixed(1)}%
             </div>
             <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{note}</div>
-          </div>)}}
+          </div>;})}
         </div>
 
         {/* Total + benchmark */}
