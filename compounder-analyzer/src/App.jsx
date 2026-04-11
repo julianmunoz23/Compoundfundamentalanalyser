@@ -375,7 +375,7 @@ const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.c
 const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,fontWeight:500,marginBottom:5,...s}}>{children}</div>;
 const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
 
-function ScoreRing({score,size=80}){
+function ScoreRing({score,size=80,lang="en"}){
   const g=grade(score,lang);const r=size*0.38,cx=size/2,cy=size/2;
   const arc=v=>{const a=-135+(v/100)*270,rd=x=>x*Math.PI/180;return`M ${cx+r*Math.cos(rd(-135))} ${cy+r*Math.sin(rd(-135))} A ${r} ${r} 0 ${a>45?1:0} 1 ${cx+r*Math.cos(rd(a))} ${cy+r*Math.sin(rd(a))}`;};
   return<svg width={size} height={size*0.78} viewBox={`0 0 ${size} ${size*0.78}`}>
@@ -1973,7 +1973,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const [fh,setFh]=useState(null);
   const [err,setErr]=useState("");
   const [locked,setLocked]=useState(false);
-  const score=calcScore(m,moat);const g=grade(score);
+  const score=calcScore(m,moat);const g=grade(score,lang);
   const catLabel=(cat)=>lang==="es"
     ?cat==="growth"?"📈 Crecimiento":cat==="profitability"?"💎 Rentabilidad":cat==="cashflow"?"💵 Flujo de Caja":"🏦 Balance General"
     :cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet";
@@ -2105,7 +2105,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       <div style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
         <Card s={{textAlign:"center",padding:18}}>
           <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Quality Score</div>
-          <ScoreRing score={score} size={110}/>
+          <ScoreRing score={score} size={110} lang={lang}/>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{g.label}</div>
           <div style={{fontSize:11,color:T.muted,marginTop:6}}>{checklist.filter(c=>c.p).length}/8 criteria</div>
           <div style={{marginTop:12}}>
@@ -2125,10 +2125,12 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               {l:{en:"FCF Margin",es:"Margen FCF"},v:info.keyMetrics.fcfMarginDisplay,c:T.blue},
               {l:{en:"ROIC",es:"ROIC"},v:info.keyMetrics.roicDisplay,c:T.gold},
               {l:{en:"Debt/Equity",es:"Deuda/Capital"},v:info.keyMetrics.debtEquity,c:T.muted},
-              {l:{en:"EPS Growth",es:"Crecimiento EPS"},v:info.keyMetrics.epsGrowth,c:T.green}].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"8px 12px"}}>
-                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>{l}</div>
+              {l:{en:"EPS Growth",es:"Crecimiento EPS"},v:info.keyMetrics.epsGrowth,c:T.green}].map(({l,v,c},ki)=>{
+              const lText=typeof l==="object"?l[lang]||l.en:l;
+              return<div key={ki} style={{background:T.card,borderRadius:8,padding:"8px 12px"}}>
+                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:3}}>{lText}</div>
                 <Mn sz={14} c={c} s={{fontWeight:600}}>{v||"—"}</Mn>
-              </div>)}
+              </div>;})}
             </div>}
             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>{(info.catalysts||[]).map((c,i)=><span key={i} style={{fontSize:11,padding:"4px 10px",borderRadius:20,background:`${T.green}15`,color:T.green,border:`1px solid ${T.green}33`}}>✓ {c}</span>)}</div>
           </Card>
@@ -2138,7 +2140,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     </>}
 
     {!info&&<div style={{display:"flex",alignItems:"center",gap:20,padding:"14px 20px",background:T.card,border:`1px solid ${T.border}`,borderRadius:12}}>
-      <ScoreRing score={score} size={100}/>
+      <ScoreRing score={score} size={100} lang={lang}/>
       <div style={{flex:1}}>{catS.map(({cat,s})=><div key={cat} style={{marginBottom:8}}>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}><span style={{color:T.muted}}>{cat}</span><Mn sz={11} c={s>=60?T.green:s>=40?T.gold:T.red}>{s}%</Mn></div>
         <div style={{height:3,background:T.border,borderRadius:2}}><div style={{height:"100%",width:`${s}%`,background:s>=60?T.green:s>=40?T.gold:T.red,borderRadius:2,transition:"width 0.5s"}}/></div>
