@@ -179,11 +179,13 @@ const css=`
     .hero-h1{font-size:22px!important;}
     .hero-steps{grid-template-columns:1fr!important;}
     .kpi-4{grid-template-columns:1fr 1fr!important;}
-    .kpi-3{grid-template-columns:1fr!important;}
+    .kpi-3{grid-template-columns:1fr 1fr!important;}
     .g-2{grid-template-columns:1fr!important;}
     .tbtn{padding:6px 8px;font-size:9px;}
-    .nav-actions .btn{display:none!important;}
-    .nav-actions .nav-premium-btn{display:flex!important;}
+    .score-card-grid{grid-template-columns:1fr!important;}
+    .portfolio-grid{grid-template-columns:1fr!important;}
+    .analyze-row{flex-direction:column!important;}
+    .analyze-row>*{width:100%!important;min-width:unset!important;}
   }
 `;
 
@@ -2159,7 +2161,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           {fh.period&&!fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
           {fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Estimación basada en datos públicos recientes</span>}
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20,alignItems:"center"}}>
+        <div className="score-card-grid" style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20,alignItems:"center"}}>
           {/* Big rating */}
           <div style={{textAlign:"center",padding:"16px 10px",background:ratingBg(fh.rating),borderRadius:12,border:`1px solid ${ratingColor(fh.rating)}33`}}>
             <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Wall St. Consensus</div>
@@ -2187,7 +2189,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               </div>
             </div>}
             {/* Price targets + estimates */}
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+            <div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
               {[
                 {l:lang==="es"?"Precio Objetivo":"Price Target",v:fh.targetMean?`$${fh.targetMean}`:"—",c:T.gold},
                 {l:lang==="es"?"Target Alto":"Target High",v:fh.targetHigh?`$${fh.targetHigh}`:"—",c:T.green},
@@ -2223,7 +2225,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           <Card s={{background:T.accent}}>
             <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>✦ {company} — AI Analysis</div>
             <div style={{fontSize:13,color:T.text,lineHeight:1.75,marginBottom:14}}>{info.summary}</div>
-            {info.keyMetrics&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+            {info.keyMetrics&&<div className="kpi-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
               {[{l:{en:"Revenue CAGR 5Y",es:"Ingresos CAGR 5A"},v:info.keyMetrics.revenueGrowth5y,c:T.green},
               {l:{en:"FCF Growth (CAGR)",es:"FCF Growth (CAGR)"},v:info.keyMetrics.fcfGrowthDisplay,c:T.green},
               {l:{en:"FCF Margin",es:"Margen FCF"},v:info.keyMetrics.fcfMarginDisplay,c:T.blue},
@@ -2726,20 +2728,20 @@ Respond ONLY with valid JSON, no markdown:
       </div>
 
       {/* Question card */}
-      <Card s={{padding:32,background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
+      <Card s={{padding:"24px 20px",background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
         <div style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
           {lang==="es"
             ?["⏱️ Horizonte Temporal","📉 Reacción al Riesgo","🎯 Tu Objetivo","📚 Experiencia","💸 Impacto de Vida","🌊 Volatilidad","📊 Diversificación","🎂 Tu Edad"][current]
             :["⏱️ Time Horizon","📉 Risk Reaction","🎯 Your Goal","📚 Experience","💸 Life Impact","🌊 Volatility","📊 Diversification","🎂 Your Age"][current]}
         </div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:28,lineHeight:1.4}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(16px,3.5vw,22px)",color:T.text,marginBottom:20,lineHeight:1.4}}>
           {typeof q.q==="object"?q.q[lang]||q.q.en:q.q}
         </div>
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
           {q.opts.map((opt,oi)=>{
             const optLabel=typeof opt.l==="object"?opt.l[lang]||opt.l.en:opt.l;
             return<button key={oi} onClick={()=>answer(opt.s)}
-              style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"14px 18px",textAlign:"left",cursor:"pointer",fontSize:14,color:T.text,transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif"}}
+              style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"12px 14px",textAlign:"left",cursor:"pointer",fontSize:"clamp(12px,2.5vw,14px)",color:T.text,transition:"all 0.2s",fontFamily:"'DM Sans',sans-serif"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.background=`${T.gold}12`;e.currentTarget.style.color=T.gold;}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.background=T.accent;e.currentTarget.style.color=T.text;}}>
               <span style={{color:T.goldDim,marginRight:10,fontFamily:"'DM Mono',monospace"}}>{["A","B","C","D"][oi]||"•"}</span>
@@ -2772,7 +2774,7 @@ Respond ONLY with valid JSON, no markdown:
       </div>
 
       {/* Score breakdown */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,maxWidth:560,margin:"0 auto 28px",textAlign:"left"}}>
+      <div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,maxWidth:560,margin:"0 auto 28px",textAlign:"left"}}>
         {QUESTIONS.map(q=><div key={q.id} style={{background:T.card,borderRadius:8,padding:"8px 10px"}}>
           <div style={{fontSize:9,color:T.muted,marginBottom:3,textTransform:"uppercase",letterSpacing:"0.08em"}}>{q.id}</div>
           <div style={{display:"flex",gap:4}}>
@@ -2864,7 +2866,7 @@ Respond ONLY with valid JSON, no markdown:
     </div>
 
     {/* Allocation + Stocks grid */}
-    <div style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18}}>
+    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18}}>
       {/* Allocation breakdown */}
       <Card>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:16}}>📊 Asset Allocation</div>
