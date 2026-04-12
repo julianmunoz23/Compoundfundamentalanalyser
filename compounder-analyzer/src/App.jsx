@@ -2063,7 +2063,16 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         callFinnhub(tickerToUse),
         callAI(`You are a Buffett/Munger investment analyst. Analyze "${tickerToUse}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
       ]);
-      if(fhResult.status==="fulfilled"&&fhResult.value)setFh(fhResult.value);
+      let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
+      // If Finnhub has no analyst data, use AI to estimate consensus
+      if(!fhData||fhData.totalAnalysts===0){
+        try{
+          const consensus=await callAI(`For the stock "${tickerToUse}", provide a Wall Street analyst consensus estimate based on the most recent public data available. Respond ONLY with valid JSON, no markdown:
+{"rating":"<Strong Buy|Buy|Hold|Sell|Strong Sell>","totalAnalysts":<number 5-50>,"bullish":<number>,"bearish":<number>,"hold":<number>,"currentPrice":<number or null>,"targetMean":"<e.g. 285.00>","targetHigh":"<e.g. 350.00>","targetLow":"<e.g. 180.00>","upside":"<e.g. 18.5>","epsGrowthNext":"<e.g. +12.4%>","breakdown":{"strongBuy":<n>,"buy":<n>,"hold":<n>,"sell":<n>,"strongSell":<n>},"isAiEstimate":true}`);
+          fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
+        }catch(e){fhData=null;}
+      }
+      if(fhData)setFh(fhData);
       if(aiResult.status==="fulfilled"){
         const p=aiResult.value;
         setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
@@ -2122,8 +2131,11 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
       {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          <span style={{fontSize:10,color:T.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>🟢 LIVE — Datos en Tiempo Real · Wall Street</span>
-          {fh.period&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
+          {fh.isAiEstimate
+          ?<span style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>🤖 Consenso Estimado por IA · Wall Street</span>
+          :<span style={{fontSize:10,color:T.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>🟢 LIVE — Datos en Tiempo Real · Wall Street</span>}
+          {fh.period&&!fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
+          {fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Estimación basada en datos públicos recientes</span>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20,alignItems:"center"}}>
           {/* Big rating */}
@@ -2164,7 +2176,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
                 <Mn sz={15} c={c} s={{fontWeight:600}}>{v}</Mn>
               </div>)}
             </div>
-            <div style={{fontSize:10,color:T.muted}}>Datos en tiempo real · Consenso Wall Street · {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
+            <div style={{fontSize:10,color:T.muted}}>{fh.isAiEstimate?"🤖 Consenso IA · Estimación basada en datos públicos recientes":"Datos en tiempo real · Consenso Wall Street · "+new Date().toLocaleDateString("es-CO",{month:"short",day:"numeric",year:"numeric"})} {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
           </div>
         </div>
       </div>}
