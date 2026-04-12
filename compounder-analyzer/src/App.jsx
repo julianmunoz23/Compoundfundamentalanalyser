@@ -266,7 +266,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       icon:"🎯",
       title:"You've seen the potential. Now act on it.",
       sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
-      features:["Unlimited AI Stock Analyses","Consenso Wall Street en Tiempo Real","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
+      features:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Consenso Wall Street en Tiempo Real","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
       price:"$9.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🎯 Unlock Unlimited Analysis",
@@ -1806,7 +1806,7 @@ function MRow({c,value,onChange,locked,lang="en"}){
 }
 
 // ── MARKET CYCLE DASHBOARD ───────────────────────────────────────────────────
-function MarketCycleBanner({ticker="",sector="",portfolioTickers=[],lang="en"}){
+function MarketCycleBanner({ticker="",sector="",portfolioTickers=[],lang="en",canAnalyze=null}){
   const [cycle,setCycle]=useState(null);
   const [loading,setLoading]=useState(false);
   const [open,setOpen]=useState(false);
@@ -1826,6 +1826,8 @@ function MarketCycleBanner({ticker="",sector="",portfolioTickers=[],lang="en"}){
 
   const fetchCycle=async()=>{
     if(loading)return;
+    // Premium feature — require login/premium to run cycle analysis
+    if(!isAdmin()&&typeof canAnalyze==="function"&&!canAnalyze("cycle"))return;
     setLoading(true);
     try{
       const context=ticker?`The user is analyzing: ${ticker} (${sector} sector).`
@@ -1867,19 +1869,28 @@ Respond ONLY with valid JSON, no markdown:
   // Auto-load cached on mount, don't auto-fetch to save API calls
   useState(()=>{loadCached();});
 
+  const isPrem=isAdmin()||(typeof canAnalyze==="function");
+
   if(!cycle&&!loading&&!open)return(
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",
-      background:`linear-gradient(90deg,${T.blue}10,${T.purple}10)`,
-      border:`1px solid ${T.blue}33`,borderRadius:10,cursor:"pointer"}}
-      onClick={()=>{setOpen(true);fetchCycle();}}>
+      background:isPrem?`linear-gradient(90deg,${T.blue}10,${T.purple}10)`:`linear-gradient(90deg,${T.gold}08,${T.purple}08)`,
+      border:`1px solid ${isPrem?T.blue:T.goldDim}33`,borderRadius:10,cursor:"pointer"}}
+      onClick={()=>{if(isPrem){setOpen(true);fetchCycle();}else{alert(lang==="es"?"🔒 El análisis de ciclos de mercado es Premium. Suscríbete para acceder.":"🔒 Market cycle analysis is a Premium feature. Subscribe to access.");}}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <span style={{fontSize:16}}>🔄</span>
-        <span style={{fontSize:12,color:T.blue,fontWeight:600}}>
-          {lang==="es"?"Ver ciclo de mercado actual — contexto macro para tu análisis":"See current market cycle — macro context for your analysis"}
-        </span>
+        <span style={{fontSize:16}}>{isPrem?"🔄":"🔒"}</span>
+        <div>
+          <span style={{fontSize:12,color:isPrem?T.blue:T.gold,fontWeight:600}}>
+            {isPrem
+              ?(lang==="es"?"Ver ciclo de mercado actual — contexto macro para tu análisis":"See current market cycle — macro context for your analysis")
+              :(lang==="es"?"Análisis de Ciclo de Mercado — Premium":"Market Cycle Analysis — Premium")}
+          </span>
+          {!isPrem&&<div style={{fontSize:10,color:T.muted,marginTop:1}}>
+            {lang==="es"?"Sectores líderes, tasas, geopolítica, implicaciones para tu portafolio":"Leading sectors, rates, geopolitics, portfolio implications"}
+          </div>}
+        </div>
       </div>
-      <span style={{fontSize:11,color:T.muted,padding:"3px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
-        {lang==="es"?"Analizar ciclo →":"Analyze cycle →"}
+      <span style={{fontSize:11,color:isPrem?T.muted:T.gold,padding:"3px 10px",border:`1px solid ${isPrem?T.border:T.goldDim}`,borderRadius:6}}>
+        {isPrem?(lang==="es"?"Analizar ciclo →":"Analyze cycle →"):(lang==="es"?"🚀 Ver Planes":"🚀 See Plans")}
       </span>
     </div>
   );
@@ -2105,7 +2116,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <span style={{fontSize:11,color:T.purple,fontWeight:600}}>{lang==="es"?LS.score_build_portfolio:"Build me a portfolio →"}</span>
       </button>
     </div>
-    <MarketCycleBanner ticker={company} sector={sector} lang="en"/>
+    <MarketCycleBanner ticker={company} sector={sector} lang={lang} canAnalyze={canAnalyze}/>
 
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
       <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
@@ -3049,6 +3060,12 @@ function RebalanceDCA({positions,totalValue,savedProfile,callAI,lang="en"}){
   const profileLabel=(typeof savedProfile?.label==="object"?savedProfile?.label?.en:savedProfile?.label)||"Balanced";
 
   const runRebalance=async()=>{
+    if(!canUseRebFree()){
+      setErr(lang==="es"
+        ?`🔒 Usaste tus ${REB_FREE_LIMIT} planes de rebalanceo gratis. Actualiza a Premium para planes ilimitados.`
+        :`🔒 You've used your ${REB_FREE_LIMIT} free rebalance plans. Upgrade to Premium for unlimited.`);
+      return;
+    }
     setLoadingReb(true);setErr("");setRebalance(null);
     const summary=positions.map(p=>{
       const w=totalValue>0?((p.currentValue||p.totalCostBasis)/totalValue*100).toFixed(1):0;
@@ -3059,13 +3076,19 @@ function RebalanceDCA({positions,totalValue,savedProfile,callAI,lang="en"}){
 Current portfolio: ${summary}. Total value: $${Math.round(totalValue).toLocaleString()}.
 Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
 {"actions":[{"ticker":"<ticker>","action":"<Reduce|Increase|Hold|Exit>","currentPct":<number>,"targetPct":<number>,"reason":"<1 sentence>"}],"summary":"<2 sentences overall rebalancing rationale>","urgency":"<Urgent|Moderate|Low>"}`);
-      setRebalance(r);
+      setRebalance(r);incRebCount();
     }catch(e){setErr("Rebalance error: "+e.message);}
     setLoadingReb(false);
   };
 
   const runDCA=async()=>{
-    if(!cash||parseFloat(cash)<=0){setErr("Enter a valid cash amount first.");return;}
+    if(!cash||parseFloat(cash)<=0){setErr(lang==="es"?"Ingresa un monto válido primero.":"Enter a valid cash amount first.");return;}
+    if(!canUseDCAFree()){
+      setErr(lang==="es"
+        ?`🔒 Usaste tus ${DCA_FREE_LIMIT} planes DCA gratis. Actualiza a Premium para planes ilimitados.`
+        :`🔒 You've used your ${DCA_FREE_LIMIT} free DCA plans. Upgrade to Premium for unlimited.`);
+      return;
+    }
     setLoadingDCA(true);setErr("");setDca(null);
     const summary=positions.map(p=>{
       const w=totalValue>0?((p.currentValue||p.totalCostBasis)/totalValue*100).toFixed(1):0;
@@ -3076,7 +3099,7 @@ Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
 Current portfolio: ${summary}. Available cash to invest: $${parseFloat(cash).toLocaleString()}.
 Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no markdown:
 {"allocations":[{"ticker":"<ticker or new stock>","amount":<dollar amount>,"pct":<% of available cash>,"reason":"<1 sentence>","isNew":<true if new position, false if adding to existing>}],"summary":"<2 sentences explaining the DCA strategy>","totalDeployed":<number>}`);
-      setDca(r);
+      setDca(r);incDCACount();
     }catch(e){setErr("DCA error: "+e.message);}
     setLoadingDCA(false);
   };
@@ -3099,7 +3122,11 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
           AI will analyze your current weights and suggest which positions to reduce, increase, or exit to align with your <strong style={{color:T.text}}>{profileLabel}</strong> profile.
         </div>
         <button className="btn btn-gold" onClick={runRebalance} disabled={loadingReb} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9}}>
-          {loadingReb?<><span className="sp">⟳</span> Analyzing...</>:"🔄 Get Rebalance Plan"}
+          {loadingReb
+            ?<><span className="sp">⟳</span> {lang==="es"?"Analizando...":"Analyzing..."}</>
+            :canUseRebFree()
+              ?`🔄 ${lang==="es"?"Obtener Plan de Rebalanceo":"Get Rebalance Plan"} (${REB_FREE_LIMIT-getRebCount()} ${lang==="es"?"gratis":"free"})`
+              :`🔒 ${lang==="es"?"Plan Rebalanceo — Premium":"Rebalance Plan — Premium"}`}
         </button>
         {rebalance&&<div style={{marginTop:14}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -3145,7 +3172,11 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
           <span style={{fontSize:11,color:T.muted,alignSelf:"center",whiteSpace:"nowrap"}}>available</span>
         </div>
         <button className="btn btn-gold" onClick={runDCA} disabled={loadingDCA||!cash} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9,background:T.green,color:"#0a0c10"}}>
-          {loadingDCA?<><span className="sp">⟳</span> Planning...</>:"💵 Get DCA Plan"}
+          {loadingDCA
+            ?<><span className="sp">⟳</span> {lang==="es"?"Planificando...":"Planning..."}</>
+            :canUseDCAFree()
+              ?`💵 ${lang==="es"?"Obtener Plan DCA":"Get DCA Plan"} (${DCA_FREE_LIMIT-getDCACount()} ${lang==="es"?"gratis":"free"})`
+              :`🔒 ${lang==="es"?"Plan DCA — Premium":"DCA Plan — Premium"}`}
         </button>
         {dca&&<div style={{marginTop:14}}>
           <div style={{fontSize:11,color:T.muted,lineHeight:1.6,marginBottom:12}}>{dca.summary}</div>
@@ -3491,7 +3522,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
 
     {/* Market Cycle Banner */}
-    <MarketCycleBanner portfolioTickers={[...new Set(positions.map(p=>p.ticker))]} lang={lang}/>
+    <MarketCycleBanner portfolioTickers={[...new Set(positions.map(p=>p.ticker))]} lang={lang} canAnalyze={canAnalyze}/>
 
     {/* KPI Cards */}
     {positions.length>0&&<div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
@@ -4102,6 +4133,16 @@ const FREE_LIMIT=3;
 function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
 function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_count")||"0");}catch{return 0;}}
 function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("compoundr_count",String(n));return n;}catch{return 999;}}
+// DCA usage counter — 2 free uses
+const DCA_FREE_LIMIT=2;
+function getDCACount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_dca_count")||"0");}catch{return 0;}}
+function incDCACount(){try{if(isAdmin())return 0;const n=getDCACount()+1;localStorage.setItem("compoundr_dca_count",String(n));return n;}catch{return 999;}}
+function canUseDCAFree(){return isAdmin()||getDCACount()<DCA_FREE_LIMIT;}
+// Rebalance usage counter — 2 free uses
+const REB_FREE_LIMIT=2;
+function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_reb_count")||"0");}catch{return 0;}}
+function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("compoundr_reb_count",String(n));return n;}catch{return 999;}}
+function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
 
 export default function App(){
   const [tab,setTab]=useState(null);
