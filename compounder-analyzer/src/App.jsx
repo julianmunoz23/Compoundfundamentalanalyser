@@ -100,79 +100,90 @@ const css=`
 
   /* ── RESPONSIVE — Mobile first ── */
   @media(max-width:768px){
-    /* Global */
     body{font-size:14px;}
-    input[type=number],input[type=text],select{font-size:16px!important;} /* prevent zoom on iOS */
+    input[type=number],input[type=text],select,textarea{font-size:16px!important;}
 
-    /* Nav tabs — scrollable */
+    /* Nav */
     .tabs-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
     .tabs-wrap::-webkit-scrollbar{display:none;}
     .tbtn{padding:8px 12px;font-size:10px;white-space:nowrap;}
+    .nav-brand-sub{display:none!important;}
+    .nav-actions{gap:4px!important;}
+    .nav-actions .btn{font-size:11px!important;padding:6px 10px!important;}
 
-    /* Page padding */
-    .page-wrap{padding:16px 14px!important;}
-    .hero-pad{padding:32px 16px 40px!important;}
-
-    /* Grid helpers */
-    .g-2{grid-template-columns:1fr 1fr!important;}
-    .g-1{grid-template-columns:1fr!important;}
-    .g-auto-1{grid-template-columns:1fr!important;}
-
-    /* Cards */
-    .card-pad{padding:14px!important;}
+    /* Page */
+    .page-wrap{padding:12px 12px!important;}
+    .hero-pad{padding:28px 16px 32px!important;}
 
     /* Hero */
-    .hero-h1{font-size:28px!important;}
-    .hero-steps{grid-template-columns:1fr 1fr!important;}
+    .hero-h1{font-size:26px!important;line-height:1.2!important;}
+    .hero-steps{grid-template-columns:1fr!important;gap:10px!important;}
     .hero-connector{display:none!important;}
+    .step-connector{display:none!important;}
 
-    /* Compound calc — stack form + chart */
+    /* Grids */
     .compound-layout{grid-template-columns:1fr!important;}
-
-    /* Portfolio table — horizontal scroll */
-    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-
-    /* Score tab — stack layout */
+    .g-2{grid-template-columns:1fr 1fr!important;}
+    .g-1{grid-template-columns:1fr!important;}
     .score-layout{grid-template-columns:1fr!important;}
 
-    /* Profile — amount input */
-    .amount-input{font-size:16px!important;}
-
-    /* Buttons — full width on mobile */
-    .btn-mobile-full{width:100%!important;justify-content:center;}
-
-    /* Paywall modal */
-    .paywall-modal{padding:24px 18px!important;}
-    .paywall-grid{grid-template-columns:1fr!important;}
-
-    /* KPI cards — 2 cols on mobile */
+    /* KPIs */
     .kpi-4{grid-template-columns:1fr 1fr!important;}
     .kpi-3{grid-template-columns:1fr 1fr!important;}
 
-    /* Strategy table */
+    /* Tables */
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
     .strategy-table{min-width:600px;}
 
-    /* Currency / lang picker */
+    /* Cards */
+    .card-pad{padding:12px!important;}
+
+    /* Profile */
+    .amount-input{font-size:16px!important;}
+
+    /* Buttons */
+    .btn-mobile-full{width:100%!important;text-align:center;}
+
+    /* Modals */
+    .paywall-modal{padding:20px 16px!important;margin:8px!important;}
+    .paywall-grid{grid-template-columns:1fr!important;}
+
+    /* Currency */
     .curr-dropdown{right:0;left:auto;min-width:180px!important;}
 
-    /* Cycle banner */
+    /* Cycle */
     .cycle-grid-4{grid-template-columns:1fr 1fr!important;}
     .cycle-grid-2{grid-template-columns:1fr!important;}
 
-    /* Navbar */
-    .nav-brand-sub{display:none!important;}
-    .nav-actions{gap:6px!important;}
+    /* Auth modal */
+    .auth-modal{padding:24px 16px!important;margin:12px!important;}
 
-    /* Market cycle steps connector */
-    .step-connector{display:none!important;}
+    /* Analyze stock — stack ticker + sector + button */
+    .analyze-row{flex-direction:column!important;gap:10px!important;}
+    .analyze-row>*{width:100%!important;}
+
+    /* Score ring card */
+    .score-card-grid{grid-template-columns:1fr!important;}
+
+    /* Portfolio form */
+    .portfolio-grid{grid-template-columns:1fr!important;}
   }
 
+  /* Ensure proper mobile viewport */
+  @media screen and (max-width:768px){
+    .nav-actions>button:not(.nav-premium-btn):not([onClick*="toggleLang"]):not([onClick*="showCurrMenu"]){
+      font-size:10px!important;
+    }
+  }
   @media(max-width:480px){
+    .hero-h1{font-size:22px!important;}
     .hero-steps{grid-template-columns:1fr!important;}
     .kpi-4{grid-template-columns:1fr 1fr!important;}
+    .kpi-3{grid-template-columns:1fr!important;}
     .g-2{grid-template-columns:1fr!important;}
-    .hero-h1{font-size:24px!important;}
-    .tbtn{padding:6px 10px;font-size:9px;}
+    .tbtn{padding:6px 8px;font-size:9px;}
+    .nav-actions .btn{display:none!important;}
+    .nav-actions .nav-premium-btn{display:flex!important;}
   }
 `;
 
@@ -296,7 +307,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
   const c=configs[context]||configs.stock;
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-      <div className="paywall-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:520,width:"100%",textAlign:"center",position:"relative"}}>
+      <div className="paywall-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:520,width:"100%",textAlign:"center",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
         {/* Close button */}
         <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:18,lineHeight:1}}>✕</button>
         {/* Social proof badge */}
@@ -783,7 +794,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
 
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-      <div style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:420,width:"100%",position:"relative"}}>
+      <div className="auth-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:420,width:"100%",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
         <button onClick={onClose} style={{position:"absolute",top:14,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20}}>✕</button>
 
         {/* Logo */}
@@ -894,7 +905,7 @@ function Hero({onStart,lang="en"}){
       </p>
 
       {/* CTA buttons */}
-      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12}}>
+      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
         <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("score")}
           style={{fontSize:16,padding:"15px 36px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
           {isEs?"🎯 Analizar mi primera acción gratis":"🎯 Analyze my first stock — free"}
@@ -918,7 +929,7 @@ function Hero({onStart,lang="en"}){
       <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:20}}>
         {isEs?"Cómo funciona — 3 pasos":"How it works — 3 steps"}
       </div>
-      <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+      <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:"100%"}}>
         {[
           {
             step:isEs?"Paso 1 — Gratis":"Step 1 — Free",
@@ -964,7 +975,7 @@ function Hero({onStart,lang="en"}){
 
     {/* ── STATS STRIP ── */}
     <div style={{borderTop:`1px solid ${T.border}22`,borderBottom:`1px solid ${T.border}22`,background:`${T.accent}88`,padding:"20px 28px",marginBottom:0}}>
-      <div style={{maxWidth:800,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,textAlign:"center"}}>
+      <div className="kpi-4" style={{maxWidth:800,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,textAlign:"center"}}>
         {[
           {n:"500+",l:isEs?"inversores activos":"active investors"},
           {n:"30s",l:isEs?"por análisis":"per analysis"},
@@ -2119,7 +2130,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     <MarketCycleBanner ticker={company} sector={sector} lang={lang} canAnalyze={canAnalyze}/>
 
     <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
-      <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
+      <div className="analyze-row" style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
         <div style={{flex:1,minWidth:200}}>
           <Lbl>{lang==="es"?LS.score_input_label:"Ticker or Company Name"}</Lbl>
           <input type="text" value={company} onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}} placeholder={lang==="es"?LS.score_input_placeholder:"NVDA, Apple, Google, Tesla, Costco..."} onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
@@ -2195,7 +2206,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         ⚠️ Datos en tiempo real no disponibles para {company} — verifica la configuración en Vercel.
       </div>}
 
-      <div style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
+      <div className="score-card-grid" style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
         <Card s={{textAlign:"center",padding:18}}>
           <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Quality Score</div>
           <ScoreRing score={score} size={110} lang={lang}/>
@@ -2965,7 +2976,7 @@ Respond ONLY with valid JSON, no markdown:
         Mark this strategy as executed and we'll track your progress — comparing what the AI recommended vs what you actually hold, month after month.
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold" onClick={()=>{
+        <button className="btn btn-gold nav-premium-btn" onClick={()=>{
           try{
             const stratData={
               profile:{label:pLabel(profile,lang),icon:profile.icon,color:profile.color},
@@ -3538,7 +3549,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       </Card>)}
     </div>}
 
-    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
+    <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
       <Card>
@@ -4255,9 +4266,9 @@ export default function App(){
             {/* Currency picker */}
             <div style={{position:"relative"}}>
               <button onClick={()=>setShowCurrMenu(v=>!v)}
-                style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:4}}>
-                <span>{currObj.flag}</span>
-                <span style={{color:T.text,fontWeight:600}}>{currCode}</span>
+                style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:3}}>
+                <span style={{fontSize:14}}>{currObj.flag}</span>
+                <span style={{color:T.text,fontWeight:600,fontSize:10}}>{currCode}</span>
                 <span style={{fontSize:8}}>▼</span>
               </button>
               {showCurrMenu&&<div className="curr-dropdown" style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:6,zIndex:200,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
