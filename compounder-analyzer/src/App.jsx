@@ -840,84 +840,134 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
 // ── HERO ──────────────────────────────────────────────────────────────────────
 function Hero({onStart,lang="en"}){
   const L=LANG[lang]||LANG.en;
-  const TOP=[{t:"NVDA",r:"142%"},{t:"MSFT",r:"28%"},{t:"AAPL",r:"21%"},{t:"COST",r:"38%"},{t:"AMZN",r:"81%"},{t:"META",r:"194%"}];
-  const STEPS=[
-    {n:"1",icon:"💰",title:L.hero_step1_title,desc:L.hero_step1_desc,tab:"compound",color:T.gold},
-    {n:"2",icon:"🧬",title:L.hero_step2_title,desc:L.hero_step2_desc,tab:"profile",color:T.purple},
-    {n:"3",icon:"🤖",title:L.hero_step3_title,desc:L.hero_step3_desc,tab:"profile",color:T.green},
-    {n:"4",icon:"📈",title:L.hero_step4_title,desc:L.hero_step4_desc,tab:"strategy",color:T.blue},
-  ];
-  return<div className="hero-grad fi hero-pad" style={{padding:"60px 28px 60px",maxWidth:1380,margin:"0 auto"}}>
+  const isEs=lang==="es";
+  const TOP=[{t:"NVDA",r:"142%"},{t:"AAPL",r:"21%"},{t:"COST",r:"38%"},{t:"AMZN",r:"81%"},{t:"META",r:"194%"},{t:"MSFT",r:"28%"}];
 
-    {/* ── Main headline ── */}
-    <div style={{textAlign:"center",marginBottom:52}}>
-      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"6px 16px",marginBottom:22}}>
-        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>{L.hero_badge}</span>
+  return<div className="hero-grad fi" style={{maxWidth:1380,margin:"0 auto"}}>
+
+    {/* ── HERO PRINCIPAL ── */}
+    <div className="hero-pad" style={{padding:"56px 28px 48px",textAlign:"center"}}>
+
+      {/* Badge social proof */}
+      <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
+        <span style={{fontSize:12,color:T.green,fontWeight:500}}>
+          ★ {isEs?"Más de 500 inversores en LATAM ya usan Compounder Analyst":"Trusted by 500+ investors across Latin America"}
+        </span>
       </div>
-      <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(36,5,52),color:T.text,lineHeight:1.12,marginBottom:18,fontWeight:700}}>
-        {L.hero_h1a} <span style={{color:T.gold}}>{L.hero_h1b}</span><br/>{L.hero_h1c}
+
+      {/* Headline */}
+      <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(34,5,50),color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
+        {isEs
+          ?<>Invierte como los mejores.<br/><span style={{color:T.gold}}>Sin necesitar ser experto.</span></>
+          :<>Invest like the best.<br/><span style={{color:T.gold}}>No expertise needed.</span></>}
       </h1>
-      <p style={{fontSize:16,color:T.muted,maxWidth:620,margin:"0 auto 10px",lineHeight:1.75}}>
-        {L.hero_sub}
+
+      <p style={{fontSize:17,color:T.muted,maxWidth:580,margin:"0 auto 8px",lineHeight:1.75}}>
+        {isEs
+          ?"Analiza cualquier acción con IA, descubre tu perfil de riesgo y arma tu portafolio — todo en español, en menos de 5 minutos."
+          :"Analyze any stock with AI, discover your risk profile, and build your portfolio — all in Spanish, in under 5 minutes."}
       </p>
-      <p style={{fontSize:12,color:`${T.muted}99`,maxWidth:480,margin:"0 auto 32px"}}>{L.hero_social}</p>
-      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("compound")}
-          style={{fontSize:15,padding:"15px 34px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
-          {L.hero_cta1}
+      <p style={{fontSize:13,color:`${T.muted}88`,marginBottom:28}}>
+        {isEs
+          ?"Para inversores en Colombia, México, Argentina, Chile y toda LATAM."
+          :"For investors across Colombia, Mexico, Argentina, Chile and all of LATAM."}
+      </p>
+
+      {/* CTA buttons */}
+      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12}}>
+        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("score")}
+          style={{fontSize:16,padding:"15px 36px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
+          {isEs?"🎯 Analizar mi primera acción gratis":"🎯 Analyze my first stock — free"}
         </button>
-        <button className="btn btn-outline" onClick={()=>onStart("score")}
+        <button className="btn btn-outline" onClick={()=>onStart("profile")}
           style={{fontSize:14,padding:"15px 26px",borderRadius:12}}>
-          {L.hero_cta2}
+          {isEs?"🧬 Descubrir mi perfil de inversor":"🧬 Discover my investor profile"}
         </button>
       </div>
+
+      {/* Free tier info */}
+      <p style={{fontSize:12,color:`${T.muted}77`,marginBottom:0}}>
+        {isEs
+          ?"3 análisis gratis · Portafolio hasta 5 acciones · Sin tarjeta de crédito"
+          :"3 free analyses · Portfolio up to 5 stocks · No credit card"}
+      </p>
     </div>
 
-    {/* ── User journey — 4 steps ── */}
-    <div style={{marginBottom:52}}>
-      <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:24}}>{L.hero_steps_title}</div>
-      <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0,position:"relative"}}>
-        {/* Connector line */}
-        <div className="step-connector" style={{position:"absolute",top:32,left:"12.5%",right:"12.5%",height:1,background:`linear-gradient(90deg,${T.gold}44,${T.purple}44,${T.green}44,${T.blue}44)`,zIndex:0}}/>
-        {STEPS.map(({n,icon,title,desc,tab,color},i)=>(
-          <div key={n} onClick={()=>onStart(tab)} style={{position:"relative",zIndex:1,cursor:"pointer",padding:"0 12px",textAlign:"center"}}
-            onMouseEnter={e=>e.currentTarget.querySelector(".step-card").style.borderColor=color}
-            onMouseLeave={e=>e.currentTarget.querySelector(".step-card").style.borderColor=`${color}33`}>
-            {/* Circle */}
-            <div style={{width:64,height:64,borderRadius:"50%",background:T.card,border:`2px solid ${color}`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:26,boxShadow:`0 0 20px ${color}22`}}>
-              {icon}
-            </div>
-            <div className="step-card" style={{background:T.card,border:`1px solid ${color}33`,borderRadius:12,padding:"14px 12px",transition:"border-color 0.2s"}}>
-              <div style={{fontSize:9,color:color,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6,fontWeight:600}}>Step {n}</div>
-              <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6,lineHeight:1.3}}>{title}</div>
-              <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{desc}</div>
-            </div>
+    {/* ── 3 PASOS DUOLINGO STYLE ── */}
+    <div style={{padding:"0 28px 48px",maxWidth:960,margin:"0 auto"}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:20}}>
+        {isEs?"Cómo funciona — 3 pasos":"How it works — 3 steps"}
+      </div>
+      <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+        {[
+          {
+            step:isEs?"Paso 1 — Gratis":"Step 1 — Free",
+            color:T.gold,
+            icon:"🎯",
+            title:isEs?"Analiza una acción":"Analyze a stock",
+            desc:isEs?"Escribe NVDA, Apple o Costco. La IA hace el análisis Buffett/Munger en 30 segundos con score de calidad y moat.":"Type NVDA, Apple or Costco. AI does a Buffett/Munger quality analysis in 30 seconds.",
+            tab:"score",
+            cta:isEs?"Analizar ahora →":"Analyze now →",
+          },
+          {
+            step:isEs?"Paso 2 — Gratis":"Step 2 — Free",
+            color:T.blue,
+            icon:"🧬",
+            title:isEs?"Descubre tu ADN inversor":"Discover your investor DNA",
+            desc:isEs?"8 preguntas. La IA identifica si eres Conservador, Moderado o Agresivo y construye un portafolio personalizado.":"8 questions. AI identifies your risk profile and builds a personalized portfolio.",
+            tab:"profile",
+            cta:isEs?"Empezar quiz →":"Start quiz →",
+          },
+          {
+            step:isEs?"Paso 3 — Premium":"Step 3 — Premium",
+            color:T.green,
+            icon:"📈",
+            title:isEs?"Sigue tu estrategia":"Track your strategy",
+            desc:isEs?"Carga hasta 5 acciones gratis. Ve tu P&G en tiempo real, análisis IA de tu portafolio y plan vs realidad.":"Load up to 5 stocks free. See live P&L, AI portfolio analysis and plan vs reality.",
+            tab:"portfolio",
+            cta:isEs?"Ver portafolio →":"View portfolio →",
+          },
+        ].map(({step,color,icon,title,desc,tab,cta})=>(
+          <div key={tab} onClick={()=>onStart(tab)}
+            style={{cursor:"pointer",background:T.card,border:`1px solid ${color}33`,borderRadius:14,padding:"22px 20px",textAlign:"center",transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=color;e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow=`0 8px 24px ${color}18`;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=`${color}33`;e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
+            <div style={{width:48,height:48,background:`${color}18`,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22}}>{icon}</div>
+            <div style={{fontSize:10,color,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>{step}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.text,fontWeight:700,marginBottom:8}}>{title}</div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.7,marginBottom:14}}>{desc}</div>
+            <div style={{fontSize:12,color,fontWeight:600}}>{cta}</div>
           </div>
         ))}
       </div>
     </div>
 
-    {/* ── Stats strip ── */}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:700,margin:"0 auto 44px"}}>
-      {[
-        {n:"100% Free",l:lang==="es"?"Calculadora & Planificador":"Compound Calculator & Planner"},
-        {n:"AI-Powered",l:lang==="es"?"Análisis de Acciones":"Stock Quality Analyzer"},
-        {n:"Live Data",l:"Finnhub · Wall St. Consensus"},
-      ].map(({n,l})=>(
-        <div key={l} style={{textAlign:"center",padding:"16px",background:T.card,borderRadius:12,border:`1px solid ${T.border}`}}>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:4}}>{n}</div>
-          <div style={{fontSize:11,color:T.muted}}>{l}</div>
-        </div>
-      ))}
+    {/* ── STATS STRIP ── */}
+    <div style={{borderTop:`1px solid ${T.border}22`,borderBottom:`1px solid ${T.border}22`,background:`${T.accent}88`,padding:"20px 28px",marginBottom:0}}>
+      <div style={{maxWidth:800,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,textAlign:"center"}}>
+        {[
+          {n:"500+",l:isEs?"inversores activos":"active investors"},
+          {n:"30s",l:isEs?"por análisis":"per analysis"},
+          {n:"8",l:isEs?"monedas LATAM":"LATAM currencies"},
+          {n:"100%",l:isEs?"en español":"in Spanish"},
+        ].map(({n,l})=>(
+          <div key={l}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.gold,fontWeight:700}}>{n}</div>
+            <div style={{fontSize:11,color:T.muted,marginTop:2}}>{l}</div>
+          </div>
+        ))}
+      </div>
     </div>
 
-    {/* ── Top Compounders ── */}
-    <div>
-      <div style={{fontSize:11,color:T.muted,textAlign:"center",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:12}}>{L.hero_top_label}</div>
+    {/* ── TOP COMPOUNDERS ── */}
+    <div style={{padding:"28px 28px 32px",textAlign:"center"}}>
+      <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:14}}>
+        {isEs?"Top Compounders — Retorno último año":"Top Compounders — 1Y Return"} · {isEs?"click para analizar":"click to analyze"}
+      </div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
         {TOP.map(({t,r})=>(
           <div key={t} onClick={()=>onStart("score",t)}
-            style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 16px",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}
+            style={{cursor:"pointer",background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 18px",display:"flex",alignItems:"center",gap:8,transition:"all 0.2s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.transform="translateY(-2px)";}}
             onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="translateY(0)";}}>
             <Mn sz={13} c={T.text} s={{fontWeight:700}}>{t}</Mn>
@@ -927,7 +977,7 @@ function Hero({onStart,lang="en"}){
       </div>
     </div>
 
-    <div style={{maxWidth:800,margin:"40px auto 0"}}><AdBanner size="leaderboard"/></div>
+    <div style={{maxWidth:800,margin:"0 auto",padding:"0 28px 32px"}}><AdBanner size="leaderboard"/></div>
   </div>;
 }
 
@@ -3221,7 +3271,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     cloudSave("user_data","compoundr_portfolio",pos,user?.id).catch(()=>{});
   };
 
-  const FREE_POSITION_LIMIT=3;
+  const FREE_POSITION_LIMIT=5;
   const [showPortfolioPaywall,setShowPortfolioPaywall]=useState(false);
 
   const addPosition=()=>{
@@ -3317,7 +3367,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   };
 
   // ── FIX 2: Group positions by ticker — avg cost basis ──
-  const FREE_PORTFOLIO_LIMIT=3;
+  const FREE_PORTFOLIO_LIMIT=5;
   const grouped=Object.values(
     positions.reduce((acc,p)=>{
       if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCostBasis:0,entries:[]};}
