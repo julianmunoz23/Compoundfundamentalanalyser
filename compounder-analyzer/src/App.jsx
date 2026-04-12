@@ -862,8 +862,8 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
         {/* Privacy note */}
         <div style={{fontSize:10,color:T.muted,textAlign:"center",lineHeight:1.6,marginTop:10}}>
           {isEs
-            ?"Al registrarte aceptas nuestros Términos de Uso. Tus datos están protegidos y nunca los vendemos."
-            :"By signing up you agree to our Terms. Your data is protected and never sold."}
+            ?<>Al registrarte aceptas nuestros <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowTerms&&setShowTerms(true)}>Términos de Uso</span> y <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPrivacy&&setShowPrivacy(true)}>Política de Privacidad</span>. Tus datos están protegidos y nunca los vendemos.</>
+            :<>By signing up you agree to our <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}>Terms of Use</span> and <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}>Privacy Policy</span>. Your data is protected and never sold.</>}
         </div>
       </div>
     </div>
@@ -4139,6 +4139,201 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
   </div>;
 }
 
+// ── LEGAL PAGES ──────────────────────────────────────────────────────────────
+function PrivacyPolicy({onClose,lang="en"}){
+  const isEs=lang==="es";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:3000,overflowY:"auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:760,margin:"0 auto",background:T.card,borderRadius:16,padding:"40px 40px",border:`1px solid ${T.border}`,position:"relative"}}>
+        <button onClick={onClose} style={{position:"sticky",top:0,float:"right",background:T.accent,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",color:T.muted,fontSize:13,marginBottom:16}}>✕ Cerrar</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Política de Privacidad</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
+        {[
+          {t:"1. Responsable del Tratamiento",b:`Compounder Analyst (en adelante "la Plataforma") es responsable del tratamiento de los datos personales recopilados a través de compoundfundamentalanalyser.vercel.app y sus dominios asociados.
+
+Esta política cumple con la Ley 1581 de 2012 y el Decreto 1377 de 2013 (Colombia), la LFPDPPP (México), la Ley 25.326 (Argentina), la Ley 19.628 (Chile) y la LGPD (Brasil).`},
+          {t:"2. Datos que Recopilamos",b:`Recopilamos los siguientes datos personales:
+
+• Datos de identificación: correo electrónico, nombre de usuario.
+• Datos de uso: tickers analizados, posiciones de portafolio ingresadas, perfil de riesgo seleccionado.
+• Datos técnicos: dirección IP, tipo de navegador, sistema operativo, páginas visitadas, tiempo de sesión.
+• Datos de pago: procesados exclusivamente por Stripe Inc. No almacenamos datos de tarjetas de crédito.
+
+No recopilamos datos sensibles como origen racial, creencias religiosas, datos biométricos ni información de salud.`},
+          {t:"3. Finalidad del Tratamiento",b:`Los datos personales se utilizan para:
+
+• Crear y gestionar tu cuenta de usuario.
+• Proveer los servicios de análisis de inversiones, calculadora y seguimiento de portafolio.
+• Personalizar tu experiencia según tu perfil de riesgo e historial de uso.
+• Enviar comunicaciones transaccionales (confirmación de cuenta, recibos de pago).
+• Mejorar la plataforma mediante análisis de uso agregado y anónimo.
+• Cumplir con obligaciones legales y prevenir fraudes.
+
+No utilizamos tus datos para decisiones automatizadas que produzcan efectos legales significativos.`},
+          {t:"4. Base Legal del Tratamiento",b:`El tratamiento de tus datos se basa en:
+
+• Tu consentimiento expreso al registrarte y aceptar esta política.
+• La ejecución del contrato de prestación de servicios.
+• El interés legítimo de la Plataforma para mejorar sus servicios.
+• El cumplimiento de obligaciones legales aplicables.`},
+          {t:"5. Tus Derechos (ARCO)",b:`De conformidad con la normativa aplicable, tienes derecho a:
+
+• Acceso: Conocer qué datos personales tenemos sobre ti.
+• Rectificación: Corregir datos inexactos o incompletos.
+• Cancelación/Supresión: Solicitar la eliminación de tus datos.
+• Oposición: Oponerte al tratamiento de tus datos para fines específicos.
+• Portabilidad: Recibir tus datos en formato estructurado.
+• Revocación del consentimiento: En cualquier momento, sin efecto retroactivo.
+
+Para ejercer estos derechos escríbenos a: hola@compounderanalyst.com
+Responderemos en un plazo máximo de 15 días hábiles.`},
+          {t:"6. Compartir Datos con Terceros",b:`Compartimos datos únicamente con:
+
+• Supabase Inc. (base de datos y autenticación) — almacenamiento seguro en servidores con cifrado AES-256.
+• Stripe Inc. (procesamiento de pagos) — cumple con PCI-DSS nivel 1.
+• Anthropic PBC (análisis de IA) — solo se envían los datos necesarios para el análisis solicitado.
+• Proveedores de datos de mercado (datos agregados de mercado, no datos personales).
+
+No vendemos, alquilamos ni cedemos tus datos personales a terceros con fines comerciales.`},
+          {t:"7. Transferencias Internacionales",b:`Algunos de nuestros proveedores procesan datos fuera de tu país de residencia. En todos los casos exigimos garantías contractuales adecuadas (cláusulas contractuales tipo o certificaciones equivalentes) para proteger tus datos conforme a los estándares de tu país.`},
+          {t:"8. Retención de Datos",b:`Conservamos tus datos mientras mantengas una cuenta activa y durante los períodos legalmente requeridos:
+
+• Datos de cuenta: mientras la cuenta esté activa + 2 años tras su eliminación.
+• Datos de transacciones: 10 años (obligación fiscal/contable).
+• Datos de uso y analítica: máximo 24 meses en forma agregada.
+
+Puedes solicitar la eliminación anticipada de tu cuenta en cualquier momento.`},
+          {t:"9. Seguridad",b:`Implementamos medidas técnicas y organizativas adecuadas:
+
+• Cifrado en tránsito (TLS 1.3) y en reposo (AES-256).
+• Autenticación segura gestionada por Supabase Auth.
+• Acceso restringido a datos personales por parte del equipo.
+• Revisiones periódicas de seguridad.
+
+En caso de brecha de seguridad que afecte tus datos, te notificaremos dentro de las 72 horas siguientes a su detección.`},
+          {t:"10. Cookies y Tecnologías Similares",b:`Utilizamos:
+
+• Cookies esenciales: para mantener tu sesión activa (no requieren consentimiento).
+• Almacenamiento local (localStorage): para guardar preferencias de idioma, moneda y datos de portafolio de usuarios no registrados.
+• Analytics (opcional): Google Analytics para análisis de uso agregado y anónimo.
+
+Puedes configurar tu navegador para rechazar cookies, aunque esto puede afectar la funcionalidad.`},
+          {t:"11. Menores de Edad",b:`La Plataforma no está dirigida a menores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos que hemos recopilado datos de un menor, los eliminaremos inmediatamente.`},
+          {t:"12. Cambios a esta Política",b:`Podemos actualizar esta política periódicamente. Te notificaremos por correo electrónico y mediante aviso en la Plataforma con al menos 30 días de anticipación ante cambios sustanciales. El uso continuado de la Plataforma tras la notificación implica aceptación.`},
+          {t:"13. Contacto y Autoridad de Control",b:`Para consultas sobre privacidad:
+📧 hola@compounderanalyst.com
+
+Tienes derecho a presentar reclamaciones ante la autoridad de protección de datos de tu país:
+• Colombia: Superintendencia de Industria y Comercio (SIC)
+• México: INAI
+• Argentina: AAIP
+• Chile: Consejo para la Transparencia
+• Brasil: ANPD`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{marginTop:32,padding:"16px 20px",background:T.accent,borderRadius:10,border:`1px solid ${T.border}`,fontSize:12,color:T.muted,lineHeight:1.7}}>
+          ⚠️ Esta política fue elaborada para cumplir con las principales normativas de protección de datos de América Latina. Para asesoría legal específica en tu jurisdicción, consulta un abogado especializado.
+        </div>
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsOfService({onClose,lang="en"}){
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:3000,overflowY:"auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:760,margin:"0 auto",background:T.card,borderRadius:16,padding:"40px 40px",border:`1px solid ${T.border}`,position:"relative"}}>
+        <button onClick={onClose} style={{position:"sticky",top:0,float:"right",background:T.accent,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",color:T.muted,fontSize:13,marginBottom:16}}>✕ Cerrar</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Términos de Uso</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
+        {[
+          {t:"1. Aceptación de los Términos",b:`Al acceder y usar Compounder Analyst (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.
+
+El uso de la Plataforma está disponible para personas mayores de 18 años con capacidad legal para celebrar contratos.`},
+          {t:"2. Descripción del Servicio",b:`Compounder Analyst es una plataforma educativa de análisis de inversiones que ofrece:
+
+• Calculadora de interés compuesto.
+• Análisis de acciones mediante inteligencia artificial (framework Buffett/Munger).
+• Quiz de perfil de riesgo de inversor.
+• Seguimiento de portafolio con precios de mercado.
+• Herramientas de planificación DCA y rebalanceo.
+• Dashboard de ciclos de mercado.
+
+El servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
+          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST ES EXCLUSIVAMENTE EDUCATIVO E INFORMATIVO.
+
+• No somos una firma de asesoría de inversiones registrada.
+• Los análisis generados por IA son estimaciones educativas, NO recomendaciones de inversión.
+• Los scores de calidad, análisis de moat y proyecciones DCF son herramientas de aprendizaje.
+• Los consensos de analistas provienen de fuentes públicas y pueden no estar actualizados.
+• Las rentabilidades pasadas no garantizan rentabilidades futuras.
+
+Siempre consulta con un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la pérdida total del capital invertido.`},
+          {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
+
+• Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
+• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
+• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
+
+Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
+          {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
+• No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.
+• Para solicitar un reembolso: hola@compounderanalyst.com
+• Los reembolsos se procesan en 5-10 días hábiles.`},
+          {t:"6. Cuenta de Usuario",b:`• Eres responsable de mantener la confidencialidad de tu contraseña.
+• No puedes compartir, vender o transferir tu cuenta.
+• Debes notificarnos inmediatamente de cualquier uso no autorizado.
+• Nos reservamos el derecho de suspender cuentas que violen estos términos.`},
+          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Compounder Analyst.
+• Se te otorga una licencia limitada, no exclusiva y no transferible para uso personal.
+• No puedes copiar, distribuir, modificar o crear obras derivadas sin autorización escrita.
+• Los datos de mercado y análisis son para uso personal exclusivamente.`},
+          {t:"8. Limitación de Responsabilidad",b:`EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY APLICABLE:
+
+• No nos responsabilizamos por pérdidas de inversión derivadas del uso de la Plataforma.
+• No garantizamos la exactitud, completitud o actualidad de los datos de mercado.
+• No somos responsables por interrupciones del servicio, errores de terceros (APIs de datos) o pérdida de datos.
+• Nuestra responsabilidad máxima se limita al monto pagado por el usuario en los últimos 3 meses.`},
+          {t:"9. Conducta del Usuario",b:`Está prohibido:
+
+• Usar la Plataforma para fines ilegales o no autorizados.
+• Intentar acceder a cuentas de otros usuarios.
+• Realizar ingeniería inversa del software.
+• Usar bots o scraping automatizado.
+• Compartir tu cuenta con terceros.
+• Publicar contenido falso o engañoso.`},
+          {t:"10. Modificaciones del Servicio",b:`Nos reservamos el derecho de:
+
+• Modificar o discontinuar funciones con 30 días de aviso.
+• Cambiar los precios de suscripción con 30 días de aviso.
+• Actualizar estos Términos con notificación por email.
+
+El uso continuado tras los cambios implica aceptación.`},
+          {t:"11. Ley Aplicable y Jurisdicción",b:`Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa se someterá a los tribunales competentes de Bogotá, Colombia, sin perjuicio de los derechos que la normativa local de tu país de residencia te pueda otorgar como consumidor.`},
+          {t:"12. Contacto",b:`Para cualquier consulta sobre estos Términos:
+📧 hola@compounderanalyst.com
+🌐 compoundfundamentalanalyser.vercel.app`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"strategy",l:"📈 My Strategy"}];
 const FREE_LIMIT=3;
@@ -4198,6 +4393,8 @@ export default function App(){
   const [showPaywall,setShowPaywall]=useState(false);
   const [paywallContext,setPaywallContext]=useState("stock");
   const [adminMode,setAdminMode]=useState(isAdmin());
+  const [showPrivacy,setShowPrivacy]=useState(false);
+  const [showTerms,setShowTerms]=useState(false);
 
   useState(()=>{
     const handler=(e)=>{
@@ -4244,6 +4441,8 @@ export default function App(){
   return<ErrorBoundary>
   <div style={{minHeight:"100vh",background:T.bg}} onClick={()=>showCurrMenu&&setShowCurrMenu(false)}>
     <style>{css}</style>
+    {showPrivacy&&<PrivacyPolicy onClose={()=>setShowPrivacy(false)} lang={lang}/>}
+    {showTerms&&<TermsOfService onClose={()=>setShowTerms(false)} lang={lang}/>}
     {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext} lang={lang}
       onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
     {showAuth&&<AuthModal lang={lang} initialMode={authMode}
@@ -4362,11 +4561,24 @@ export default function App(){
         {" "}· Buffett · Munger · {L.footer_disc}
       </div>
       <div style={{display:"flex",gap:16}}>
-        {["Privacy Policy","Terms of Use","Contact"].map(l=>(
-          <span key={l} style={{fontSize:9,color:T.muted,cursor:"pointer"}}
-            onMouseEnter={e=>e.target.style.color=T.gold}
-            onMouseLeave={e=>e.target.style.color=T.muted}>{l}</span>
-        ))}
+        <span style={{fontSize:9,color:T.muted,cursor:"pointer"}}
+          onClick={()=>setShowPrivacy(true)}
+          onMouseEnter={e=>e.target.style.color=T.gold}
+          onMouseLeave={e=>e.target.style.color=T.muted}>
+          {lang==="es"?"Política de Privacidad":"Privacy Policy"}
+        </span>
+        <span style={{fontSize:9,color:T.muted,cursor:"pointer"}}
+          onClick={()=>setShowTerms(true)}
+          onMouseEnter={e=>e.target.style.color=T.gold}
+          onMouseLeave={e=>e.target.style.color=T.muted}>
+          {lang==="es"?"Términos de Uso":"Terms of Use"}
+        </span>
+        <span style={{fontSize:9,color:T.muted,cursor:"pointer"}}
+          onClick={()=>window.open("mailto:hola@compounderanalyst.com")}
+          onMouseEnter={e=>e.target.style.color=T.gold}
+          onMouseLeave={e=>e.target.style.color=T.muted}>
+          {lang==="es"?"Contacto":"Contact"}
+        </span>
       </div>
     </div>
   </div>
