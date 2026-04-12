@@ -266,7 +266,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       icon:"🎯",
       title:"You've seen the potential. Now act on it.",
       sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
-      features:["Unlimited AI Stock Analyses","Live Wall St. Consensus (Finnhub)","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
+      features:["Unlimited AI Stock Analyses","Consenso Wall Street en Tiempo Real","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
       price:"$9.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🎯 Unlock Unlimited Analysis",
@@ -276,7 +276,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       icon:"📁",
       title:"Your portfolio deserves a real analysis.",
       sub:<>{lang==="es"?"El plan gratuito incluye":"Free plan supports"} <span style={{color:T.text,fontWeight:600}}>3 {lang==="es"?"posiciones":"stock positions"}</span>. Upgrade to track unlimited positions with live prices, AI rebalancing, DCA recommendations, and risk profile matching.</>,
-      features:["Unlimited Portfolio Positions","AI Portfolio Score & Assessment","Rebalance Plan (what to trim/add)","DCA Advisor — where to invest cash","Risk Profile Alignment Check","Live P&L with Finnhub prices"],
+      features:["Unlimited Portfolio Positions","AI Portfolio Score & Assessment","Rebalance Plan (what to trim/add)","DCA Advisor — where to invest cash","Risk Profile Alignment Check","P&L en tiempo real con precios live"],
       price:"$9.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"📁 Unlock My Full Portfolio",
@@ -395,7 +395,22 @@ async function callAI(prompt){
 
 // ── FINNHUB HELPER — Real-time market data ────────────────────────────────────
 const FH="https://finnhub.io/api/v1";
+
+// Rate limiter — max 25 calls per 10 seconds to stay under free tier limit
+const _fhQueue={calls:[],maxPerWindow:25,windowMs:10000};
+function _fhThrottle(){
+  const now=Date.now();
+  _fhQueue.calls=_fhQueue.calls.filter(t=>now-t<_fhQueue.windowMs);
+  if(_fhQueue.calls.length>=_fhQueue.maxPerWindow){
+    const wait=_fhQueue.windowMs-( now-_fhQueue.calls[0]);
+    return new Promise(r=>setTimeout(r,wait+100));
+  }
+  _fhQueue.calls.push(now);
+  return Promise.resolve();
+}
+
 async function finnhubGet(path,ticker){
+  await _fhThrottle();
   const key=import.meta.env.VITE_FINNHUB_KEY;
   const res=await fetch(`${FH}${path}?symbol=${ticker}&token=${key}`);
   if(!res.ok)throw new Error(`Finnhub ${res.status}`);
@@ -404,13 +419,18 @@ async function finnhubGet(path,ticker){
 
 async function callFinnhub(ticker){
   try{
-    const [rec,pt,quote,epsEst,revEst]=await Promise.allSettled([
-      finnhubGet("/stock/recommendation",ticker),
-      finnhubGet("/stock/price-target",ticker),
-      finnhubGet("/quote",ticker),
-      finnhubGet("/stock/eps-estimate",ticker),
-      finnhubGet("/stock/revenue-estimate",ticker),
-    ]);
+    // Sequential calls to respect rate limits — small delay between each
+    const delay=ms=>new Promise(r=>setTimeout(r,ms));
+    const safe=async(fn)=>{try{return{status:"fulfilled",value:await fn()};}catch(e){return{status:"rejected",reason:e};}};
+    const rec=await safe(()=>finnhubGet("/stock/recommendation",ticker));
+    await delay(200);
+    const pt=await safe(()=>finnhubGet("/stock/price-target",ticker));
+    await delay(200);
+    const quote=await safe(()=>finnhubGet("/quote",ticker));
+    await delay(200);
+    const epsEst=await safe(()=>finnhubGet("/stock/eps-estimate",ticker));
+    await delay(200);
+    const revEst=await safe(()=>finnhubGet("/stock/revenue-estimate",ticker));
 
     // Recommendations — most recent period
     const recData=rec.status==="fulfilled"&&rec.value?.length?rec.value[0]:null;
@@ -454,7 +474,7 @@ async function callFinnhub(ticker){
       epsGrowthNext:epsGrowth?`+${epsGrowth}%`:null,
       revGrowthNext:revGrowth?`+${revGrowth}%`:null,
       period:recData?.period||null,
-      source:"Finnhub.io — Live data",
+      source:"Wall Street Consensus — Live Data",
     };
   }catch(e){
     console.warn("Finnhub error:",e.message);
@@ -2102,7 +2122,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
       {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          <span style={{fontSize:10,color:T.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>🟢 LIVE — Finnhub.io Real-Time Data</span>
+          <span style={{fontSize:10,color:T.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>🟢 LIVE — Datos en Tiempo Real · Wall Street</span>
           {fh.period&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20,alignItems:"center"}}>
@@ -2144,12 +2164,12 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
                 <Mn sz={15} c={c} s={{fontWeight:600}}>{v}</Mn>
               </div>)}
             </div>
-            <div style={{fontSize:10,color:T.muted}}>Source: Finnhub.io · Live data updated in real-time · {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
+            <div style={{fontSize:10,color:T.muted}}>Datos en tiempo real · Consenso Wall Street · {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
           </div>
         </div>
       </div>}
       {!fh&&info&&<div style={{padding:"10px 14px",background:`${T.muted}10`,border:`1px solid ${T.border}`,borderRadius:8,fontSize:11,color:T.muted}}>
-        ⚠️ Live Finnhub data not available for {company} — check that <code>VITE_FINNHUB_KEY</code> is set in Vercel environment variables.
+        ⚠️ Datos en tiempo real no disponibles para {company} — verifica la configuración en Vercel.
       </div>}
 
       <div style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
@@ -3294,21 +3314,21 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     setPositions(updated);save(updated);
   };
 
-  // Fetch live prices from Finnhub for all tickers
+  // Fetch live prices from Finnhub — sequential with delay to avoid rate limits
   const fetchPrices=async()=>{
     if(!positions.length)return;
     setLoadingPrices(true);
     const key=import.meta.env.VITE_FINNHUB_KEY;
     const results={};
-    await Promise.allSettled(
-      [...new Set(positions.map(p=>p.ticker))].map(async ticker=>{
-        try{
-          const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
-          const d=await res.json();
-          if(d.c)results[ticker]={price:d.c,change:d.d,changePct:d.dp,high:d.h,low:d.l};
-        }catch(e){}
-      })
-    );
+    const tickers=[...new Set(positions.map(p=>p.ticker))];
+    for(const ticker of tickers){
+      try{
+        await new Promise(r=>setTimeout(r,250)); // 250ms between calls
+        const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
+        const d=await res.json();
+        if(d.c)results[ticker]={price:d.c,change:d.d,changePct:d.dp,high:d.h,low:d.l};
+      }catch(e){}
+    }
     setPrices(results);setLoadingPrices(false);
   };
 
@@ -3427,7 +3447,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
       <div>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold}}>📁 {lang==="es"?"Mi Portafolio":"My Portfolio"}</div>
-        <div style={{fontSize:12,color:T.muted,marginTop:3}}>{lang==="es"?"Sigue tus posiciones · Precios en vivo · Análisis IA":"Track your positions · Live prices via Finnhub · AI analysis"}</div>
+        <div style={{fontSize:12,color:T.muted,marginTop:3}}>{lang==="es"?"Sigue tus posiciones · Precios en vivo · Análisis IA":"Track your positions · Precios en vivo · Análisis IA"}</div>
       </div>
       {/* CTA: build a portfolio from risk profile */}
       {!savedProfile&&<button onClick={()=>onGoToProfile&&onGoToProfile()}
@@ -3807,13 +3827,14 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
     setLoadingPrices(true);
     const key=import.meta.env.VITE_FINNHUB_KEY;
     const results={};
-    await Promise.allSettled(tickers.map(async ticker=>{
+    for(const ticker of tickers){
       try{
+        await new Promise(r=>setTimeout(r,250));
         const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
         const d=await res.json();
         if(d.c)results[ticker]={price:d.c,changePct:d.dp};
       }catch(e){}
-    }));
+    }
     setPrices(results);setLoadingPrices(false);
   };
 
