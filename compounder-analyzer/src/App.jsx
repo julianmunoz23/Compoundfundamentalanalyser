@@ -4561,24 +4561,24 @@ export default function App(){
         {" "}· Buffett · Munger · {L.footer_disc}
       </div>
       <div style={{display:"flex",gap:16}}>
-        <span style={{fontSize:9,color:T.muted,cursor:"pointer"}}
-          onClick={()=>setShowPrivacy(true)}
+        <button onClick={(e)=>{e.stopPropagation();setShowPrivacy(true);}}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
           onMouseEnter={e=>e.target.style.color=T.gold}
           onMouseLeave={e=>e.target.style.color=T.muted}>
           {lang==="es"?"Política de Privacidad":"Privacy Policy"}
-        </span>
-        <span style={{fontSize:9,color:T.muted,cursor:"pointer"}}
-          onClick={()=>setShowTerms(true)}
+        </button>
+        <button onClick={(e)=>{e.stopPropagation();setShowTerms(true);}}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
           onMouseEnter={e=>e.target.style.color=T.gold}
           onMouseLeave={e=>e.target.style.color=T.muted}>
           {lang==="es"?"Términos de Uso":"Terms of Use"}
-        </span>
-        <span style={{fontSize:9,color:T.muted,cursor:"pointer"}}
-          onClick={()=>window.open("mailto:hola@compounderanalyst.com")}
+        </button>
+        <button onClick={(e)=>{e.stopPropagation();window.open("mailto:hola@compounderanalyst.com");}}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
           onMouseEnter={e=>e.target.style.color=T.gold}
           onMouseLeave={e=>e.target.style.color=T.muted}>
           {lang==="es"?"Contacto":"Contact"}
-        </span>
+        </button>
       </div>
     </div>
   </div>
