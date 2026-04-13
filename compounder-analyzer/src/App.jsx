@@ -396,7 +396,7 @@ function ScoreRing({score,size=80,lang="en"}){
 }
 
 // ── AI HELPER ─────────────────────────────────────────────────────────────────
-async async function callAI(prompt,retries=3){
+async function callAI(prompt,retries=3){
   for(let attempt=0;attempt<retries;attempt++){
     try{
       const res=await fetch("https://api.anthropic.com/v1/messages",{
