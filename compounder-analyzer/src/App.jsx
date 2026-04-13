@@ -998,7 +998,7 @@ function Mn({sz=14,c,s={},children}){
   return<span style={{fontSize:sz,color:c,...s}}>{children}</span>;
 }
 function Card({children,s={},onClick=null}){
-  return<div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:20,...s}}>{children}</div>;
+  return<div onClick={onClick} style={{borderRadius:14,padding:20,...s}}>{children}</div>;
 }
 
 // ── SCORING HELPERS ────────────────────────────────────────────────────────────
@@ -1011,12 +1011,12 @@ const sm=(c,v)=>{
 };
 function grade(score,lang="en"){
   const isEs=lang==="es";
-  if(score>=85)return{l:isEs?"Elite Compounder":"Elite Compounder",c:T.gold,la:"A+"};
-  if(score>=75)return{l:isEs?"Alta Calidad":"High Quality",c:T.green,la:"A"};
-  if(score>=60)return{l:isEs?"Calidad Decente":"Decent Quality",c:T.blue,la:"B+"};
+  if(score>=85)return{l:isEs?"Elite Compounder":"Elite Compounder",c:"#c9a84c",la:"A+"};
+  if(score>=75)return{l:isEs?"Alta Calidad":"High Quality",c:"#2ecc71",la:"A"};
+  if(score>=60)return{l:isEs?"Calidad Decente":"Decent Quality",c:"#4a9eff",la:"B+"};
   if(score>=45)return{l:isEs?"Calidad Mixta":"Mixed Quality",c:"#f59e0b",la:"B"};
-  if(score>=30)return{l:isEs?"Bajo Potencial":"Low Potential",c:T.red,la:"C"};
-  return{l:isEs?"Evitar":"Avoid",c:T.red,la:"D"};
+  if(score>=30)return{l:isEs?"Bajo Potencial":"Low Potential",c:"#e74c3c",la:"C"};
+  return{l:isEs?"Evitar":"Avoid",c:"#e74c3c",la:"D"};
 }
 
 
