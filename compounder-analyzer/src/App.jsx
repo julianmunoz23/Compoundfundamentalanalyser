@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from "react";
+import { AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ── SUPABASE CLIENT ──────────────────────────────────────────────────────────
@@ -220,7 +221,7 @@ function setCurrencyGlobal(curr,rate=1){_currency={..._currency,...curr};_exRate
 // Fetch live exchange rates from frankfurter.app (European Central Bank — free, no key)
 async function fetchExchangeRates(){
   try{
-    const res=await fetch("https://api.frankfurter.app/latest?from=USD&to=COP,MXN,ARS,PEN,CLP,BRL,EUR");
+    const res=await fetch("https://open.er-api.com/v6/latest/USD");
     const data=await res.json();
     if(data?.rates){
       Object.keys(CURRENCIES).forEach(code=>{
@@ -991,6 +992,34 @@ function Hero({onStart,lang="en"}){
 }
 
 function clamp(min,mid,max){return`clamp(${min}px,${mid}vw,${max}px)`;}
+
+// ── UI PRIMITIVES ─────────────────────────────────────────────────────────────
+function Mn({sz=14,c,s={},children}){
+  return<span style={{fontSize:sz,color:c,...s}}>{children}</span>;
+}
+function Card({children,s={},onClick=null}){
+  return<div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:20,...s}}>{children}</div>;
+}
+
+// ── SCORING HELPERS ────────────────────────────────────────────────────────────
+const sm=(c,v)=>{
+  if(v===null||v===undefined||v==="")return"empty";
+  const n=parseFloat(v);
+  if(isNaN(n))return"empty";
+  const pass=c.invert?n<=c.threshold:n>=c.threshold;
+  return pass?"pass":"fail";
+};
+function grade(score,lang="en"){
+  const isEs=lang==="es";
+  if(score>=85)return{l:isEs?"Elite Compounder":"Elite Compounder",c:T.gold,la:"A+"};
+  if(score>=75)return{l:isEs?"Alta Calidad":"High Quality",c:T.green,la:"A"};
+  if(score>=60)return{l:isEs?"Calidad Decente":"Decent Quality",c:T.blue,la:"B+"};
+  if(score>=45)return{l:isEs?"Calidad Mixta":"Mixed Quality",c:"#f59e0b",la:"B"};
+  if(score>=30)return{l:isEs?"Bajo Potencial":"Low Potential",c:T.red,la:"C"};
+  return{l:isEs?"Evitar":"Avoid",c:T.red,la:"D"};
+}
+
+
 
 // ── COMPOUND CALCULATOR ────────────────────────────────────────────────────────
 // FIX 1: Monthly compounding formula (matches industry standard)
@@ -4327,6 +4356,11 @@ const REB_FREE_LIMIT=2;
 function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_reb_count")||"0");}catch{return 0;}}
 function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("inversoria_reb_count",String(n));return n;}catch{return 999;}}
 function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
+
+// ── UTILITY COMPONENTS ───────────────────────────────────────────────────────
+const Mn=({sz=14,c,s={},children})=><span style={{fontSize:sz,color:c,...s}}>{children}</span>;
+const Card=({children,s={}})=><div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:16,...s}}>{children}</div>;
+const Lbl=({children,s={}})=><div style={{fontSize:11,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4,...s}}>{children}</div>;
 
 // ── DEFAULT STATE FACTORIES ──────────────────────────────────────────────────
 const defM=()=>({roic:null,grossMargin:null,opMargin:null,fcfMarginPct:null,debtEbitda:null,interestCover:null,revenueGrowth:null,epsGrowth:null,peRatio:null,pbRatio:null,psRatio:null,evEbitda:null,currentRatio:null,dividendYield:null});
