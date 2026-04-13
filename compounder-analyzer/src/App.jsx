@@ -58,12 +58,19 @@ class ErrorBoundary extends React.Component{
 }
 
 
-const T = {
+const DARK_THEME = {
   bg:"#0a0c10",surface:"#10141c",card:"#141820",border:"#1e2534",
   gold:"#c9a84c",goldLight:"#e8c97a",goldDim:"#7a6330",
   green:"#2ecc71",red:"#e74c3c",blue:"#4a9eff",purple:"#a855f7",
   text:"#e8eaf0",muted:"#6b7694",accent:"#1a2235",
 };
+const LIGHT_THEME = {
+  bg:"#f9f8f5",surface:"#f2f0ea",card:"#ffffff",border:"#e0dbd0",
+  gold:"#9a6f20",goldLight:"#c9a84c",goldDim:"#c9a84c",
+  green:"#16a34a",red:"#dc2626",blue:"#1d4ed8",purple:"#7c3aed",
+  text:"#1a1814",muted:"#6b6860",accent:"#f4f2ec",
+};
+// T is defined dynamically inside App based on darkMode state
 
 const css=`
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400&family=DM+Sans:wght@400;500;600&display=swap&font-display=swap');
@@ -280,7 +287,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       title:"You've seen the potential. Now act on it.",
       sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
       features:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Consenso Wall Street en Tiempo Real","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
-      price:"$9.99/mo",
+      price:"$7.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🎯 Unlock Unlimited Analysis",
       proof:"Join investors already using Inversoria",
@@ -290,7 +297,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       title:"Your portfolio deserves a real analysis.",
       sub:<>{lang==="es"?"El plan gratuito incluye":"Free plan supports"} <span style={{color:T.text,fontWeight:600}}>3 {lang==="es"?"posiciones":"stock positions"}</span>. Upgrade to track unlimited positions with live prices, AI rebalancing, DCA recommendations, and risk profile matching.</>,
       features:["Unlimited Portfolio Positions","AI Portfolio Score & Assessment","Rebalance Plan (what to trim/add)","DCA Advisor — where to invest cash","Risk Profile Alignment Check","P&L en tiempo real con precios live"],
-      price:"$9.99/mo",
+      price:"$7.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"📁 Unlock My Full Portfolio",
       proof:"See exactly where your money should go",
@@ -300,7 +307,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       title:"Your investor DNA is ready. Now build the portfolio.",
       sub:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is always free</span>. Subscribe to get a personalized AI portfolio of stocks and ETFs — built specifically for your profile, goals, and investment amount.</>,
       features:["AI-Curated Stock Portfolio","ETF Recommendations","Asset Allocation Breakdown","Expected Return Modeling","Quarterly Rebalance Guide","Broker Recommendations"],
-      price:"$19.99/mo",
+      price:"$12.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🚀 Build My AI Portfolio",
       proof:"The portfolio Buffett would build for your risk profile",
@@ -334,63 +341,15 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
           </div>
           <div style={{fontSize:11,color:T.green,marginBottom:12}}>🎁 {c.trial}</div>
           <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,width:"100%"}}
-            onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hola@inversoria.lat for early access.");}}>
-            {c.cta}
-        </button>
-        </div>
-        <button onClick={onClose} style={{fontSize:11,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline",marginTop:4}}>
-          Maybe later
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── CRITERIA ──────────────────────────────────────────────────────────────────
-const CL=(en,es)=>({en,es}); // bilingual label helper
-const CRITERIA={
-  growth:[
-    {key:"revenueCAGR",label:"Revenue CAGR",unit:"%",threshold:15,max:50,weight:20},
-    {key:"fcfGrowth",label:"FCF Growth Rate (CAGR)",unit:"%",threshold:15,max:100,weight:10},
-    {key:"tamGrowth",label:"TAM Growth",unit:"%",threshold:10,max:30,weight:5},
-  ],
-  profitability:[
-    {key:"roic",label:"ROIC",unit:"%",threshold:20,max:60,weight:20},
-    {key:"grossMargin",label:"Gross Margin",unit:"%",threshold:40,max:90,weight:8},
-    {key:"opMargin",label:"Operating Margin",unit:"%",threshold:18,max:50,weight:7},
-  ],
-  cashflow:[{key:"fcfMarginPct",label:"FCF Margin",unit:"%",threshold:15,max:60,weight:20}],
-  balance:[
-    {key:"debtEbitda",label:"Debt/EBITDA",unit:"x",threshold:2,max:5,invert:true,weight:8},
-    {key:"interestCover",label:"Interest Coverage",unit:"x",threshold:6,max:20,weight:2},
-  ],
-};
-const MOAT_KEYS=["Economies of Scale","Switching Costs","Network Effects","Brand Dominance","Proprietary Technology","Market Leadership"];
-const MOAT_ES={"Economies of Scale":"Economías de Escala","Switching Costs":"Costos de Cambio","Network Effects":"Efectos de Red","Brand Dominance":"Dominio de Marca","Proprietary Technology":"Tecnología Propia","Market Leadership":"Liderazgo de Mercado"};
-const moatLabel=(k,lang)=>lang==="es"?(MOAT_ES[k]||k):k;
-const SECTORS=["Technology","Healthcare","Consumer","Finance","Industrials","Energy","Other"];
-const defM=()=>({revenueCAGR:20,fcfGrowth:25,tamGrowth:12,roic:25,grossMargin:55,opMargin:22,fcfMarginPct:20,debtEbitda:1.2,interestCover:10});
-const defMoat=()=>Object.fromEntries(MOAT_KEYS.map(k=>[k,3]));
-function sm(c,v){if(c.invert){if(v<=c.threshold)return 100;if(v>=c.max)return 0;return Math.round((1-(v-c.threshold)/(c.max-c.threshold))*100);}if(v>=c.threshold*1.5)return 100;if(v>=c.threshold)return Math.round(60+((v-c.threshold)/(c.threshold*0.5))*40);return Math.round((v/c.threshold)*60);}
-function calcScore(m,moat){let tw=0,ts=0;Object.values(CRITERIA).flat().forEach(c=>{const s=sm(c,m[c.key]||0);ts+=s*c.weight;tw+=c.weight;});const moatAvg=Object.values(moat).reduce((a,v)=>a+v,0)/(MOAT_KEYS.length*5)*100;ts+=moatAvg*10;tw+=10;return Math.round(ts/tw);}
-function grade(s,lang="en"){
-  const isEs=lang==="es";
-  if(s>=85)return{l:"A+",c:T.green,label:isEs?"Elite Compounder":"Elite Compounder"};
-  if(s>=75)return{l:"A",c:T.green,label:isEs?"Alta Calidad":"High Quality"};
-  if(s>=65)return{l:"B+",c:T.gold,label:isEs?"Buen Negocio":"Good Business"};
-  if(s>=55)return{l:"B",c:T.gold,label:isEs?"Prometedor":"Promising"};
-  if(s>=45)return{l:"C",c:"#f39c12",label:isEs?"Necesita Mejorar":"Needs Improvement"};
-  return{l:"D",c:T.red,label:isEs?"Evitar":"Avoid"};
-}
-
-// ── SHARED ────────────────────────────────────────────────────────────────────
-const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
-const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,fontWeight:500,marginBottom:5,...s}}>{children}</div>;
-const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
-
-function ScoreRing({score,size=80,lang="en"}){
-  const g=grade(score,lang);const r=size*0.38,cx=size/2,cy=size/2;
-  const arc=v=>{const a=-135+(v/100)*270,rd=x=>x*Math.PI/180;return`M ${cx+r*Math.cos(rd(-135))} ${cy+r*Math.sin(rd(-135))} A ${r} ${r} 0 ${a>45?1:0} 1 ${cx+r*Math.cos(rd(a))} ${cy+r*Math.sin(rd(a))}`;};
+            onClick={()=>{
+              if(onSignUp)onSignUp();
+              else{
+                const msg=lang==="es"
+                  ?"🚀 Los pagos estarán disponibles muy pronto. Mientras tanto escríbenos a hola@inversoria.lat y te damos acceso anticipado."
+                  :"🚀 Payments coming very soon. Email hola@inversoria.lat for early access.";
+                alert(msg);
+              }
+            }} ${cy+r*Math.sin(rd(-135))} A ${r} ${r} 0 ${a>45?1:0} 1 ${cx+r*Math.cos(rd(a))} ${cy+r*Math.sin(rd(a))}`;};
   return<svg width={size} height={size*0.78} viewBox={`0 0 ${size} ${size*0.78}`}>
     <path d={arc(100)} fill="none" stroke={T.border} strokeWidth={size*0.065} strokeLinecap="round"/>
     <path d={arc(score)} fill="none" stroke={g.c} strokeWidth={size*0.065} strokeLinecap="round" style={{filter:`drop-shadow(0 0 ${size*0.06}px ${g.c}88)`}}/>
@@ -1063,7 +1022,7 @@ function CompoundTab({onGoToTab,lang="en"}){
   const sStepGoal=Math.round(50000*_exRate);
   const [draft,setDraft]=useState({initial:Math.round(10000*_exRate),rate:10,rateType:"annual",contrib:Math.round(500*_exRate),contribFreq:"monthly",years:10});
   const [cfg,setCfg]=useState({initial:Math.round(10000*_exRate),rate:10,rateType:"annual",contrib:Math.round(500*_exRate),contribFreq:"monthly",years:10});
-  const [showTable,setShowTable]=useState(true);
+  const [showTable,setShowTable]=useState(false);
   const setD=(k,v)=>setDraft(p=>({...p,[k]:v}));
 
   const effectiveAnnualRate=cfg.rateType==="monthly"?((Math.pow(1+cfg.rate/100,12)-1)*100):cfg.rate;
@@ -2060,7 +2019,7 @@ Respond ONLY with valid JSON, no markdown:
   );
 }
 
-function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile,lang="en"}){
+function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile,lang="en",onShowAuth=null}){
   const LS=LANG[lang]||LANG.en;
   const [loading,setLoading]=useState(false);
   const [info,setInfo]=useState(null);
@@ -4279,8 +4238,8 @@ Siempre consulta con un asesor financiero certificado antes de tomar decisiones 
           {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
 
 • Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
-• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
-• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
+• Plan Basic ($7.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
+• Plan Premium ($12.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
 
 Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
           {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
@@ -4353,6 +4312,10 @@ function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localSt
 function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
 
 export default function App(){
+  const [darkMode,setDarkMode]=useState(()=>{
+    try{const t=localStorage.getItem("inversoria_theme");return t?t==="dark":false;}catch{return false;}
+  });
+  const T=darkMode?DARK_THEME:LIGHT_THEME;
   const [tab,setTab]=useState(null);
   const [user,setUser]=useState(null);          // Supabase user object
   const [userPlan,setUserPlan]=useState("free"); // free | basic | premium
@@ -4552,7 +4515,28 @@ export default function App(){
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
-      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>}
+      {tab==="strategy"&&(
+      plan==="premium"||plan==="basic"||isAdmin()
+        ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
+        :<div style={{maxWidth:600,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
+          <div style={{fontSize:48,marginBottom:16}}>📈</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.text,marginBottom:12,fontWeight:700}}>
+            {lang==="es"?"Mi Estrategia — Premium":"My Strategy — Premium"}
+          </div>
+          <div style={{fontSize:15,color:T.muted,marginBottom:28,lineHeight:1.7}}>
+            {lang==="es"
+              ?"Define tu plan de inversión y compara con la realidad. Ve exactamente si estás cumpliendo tus metas financieras."
+              :"Define your investment plan and compare with reality. See exactly if you're meeting your financial goals."}
+          </div>
+          <button className="btn btn-gold" onClick={()=>setShowPaywall(true)}
+            style={{fontSize:15,padding:"14px 36px",borderRadius:12}}>
+            {lang==="es"?"🚀 Ver planes Premium":"🚀 See Premium plans"}
+          </button>
+          <div style={{marginTop:12,fontSize:12,color:T.muted}}>
+            {lang==="es"?"Desde $7.99/mes · Cancela cuando quieras":"From $7.99/mo · Cancel anytime"}
+          </div>
+        </div>
+    )}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
