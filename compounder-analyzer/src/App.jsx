@@ -349,7 +349,23 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
                   :"🚀 Payments coming very soon. Email hola@inversoria.lat for early access.";
                 alert(msg);
               }
-            }} ${cy+r*Math.sin(rd(-135))} A ${r} ${r} 0 ${a>45?1:0} 1 ${cx+r*Math.cos(rd(a))} ${cy+r*Math.sin(rd(a))}`;};
+            }}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScoreRing({score,size=80,lang="en"}){
+  const g=grade(score,lang);
+  const cx=size/2,cy=size*0.5,r=size*0.38;
+  const rd=deg=>deg*Math.PI/180;
+  const arc=a=>{
+    const x1=cx+r*Math.cos(rd(-135)),y1=cy+r*Math.sin(rd(-135));
+    const deg=(-135)+(a/100)*270;
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${a>63?1:0} 1 ${cx+r*Math.cos(rd(deg))} ${cy+r*Math.sin(rd(deg))}`;
+  };
   return<svg width={size} height={size*0.78} viewBox={`0 0 ${size} ${size*0.78}`}>
     <path d={arc(100)} fill="none" stroke={T.border} strokeWidth={size*0.065} strokeLinecap="round"/>
     <path d={arc(score)} fill="none" stroke={g.c} strokeWidth={size*0.065} strokeLinecap="round" style={{filter:`drop-shadow(0 0 ${size*0.06}px ${g.c}88)`}}/>
