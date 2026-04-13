@@ -993,32 +993,6 @@ function Hero({onStart,lang="en"}){
 
 function clamp(min,mid,max){return`clamp(${min}px,${mid}vw,${max}px)`;}
 
-// ── UI PRIMITIVES ─────────────────────────────────────────────────────────────
-function Mn({sz=14,c,s={},children}){
-  return<span style={{fontSize:sz,color:c,...s}}>{children}</span>;
-}
-function Card({children,s={},onClick=null}){
-  return<div onClick={onClick} style={{borderRadius:14,padding:20,...s}}>{children}</div>;
-}
-
-// ── SCORING HELPERS ────────────────────────────────────────────────────────────
-const sm=(c,v)=>{
-  if(v===null||v===undefined||v==="")return"empty";
-  const n=parseFloat(v);
-  if(isNaN(n))return"empty";
-  const pass=c.invert?n<=c.threshold:n>=c.threshold;
-  return pass?"pass":"fail";
-};
-function grade(score,lang="en"){
-  const isEs=lang==="es";
-  if(score>=85)return{l:isEs?"Elite Compounder":"Elite Compounder",c:"#c9a84c",la:"A+"};
-  if(score>=75)return{l:isEs?"Alta Calidad":"High Quality",c:"#2ecc71",la:"A"};
-  if(score>=60)return{l:isEs?"Calidad Decente":"Decent Quality",c:"#4a9eff",la:"B+"};
-  if(score>=45)return{l:isEs?"Calidad Mixta":"Mixed Quality",c:"#f59e0b",la:"B"};
-  if(score>=30)return{l:isEs?"Bajo Potencial":"Low Potential",c:"#e74c3c",la:"C"};
-  return{l:isEs?"Evitar":"Avoid",c:"#e74c3c",la:"D"};
-}
-
 
 
 // ── COMPOUND CALCULATOR ────────────────────────────────────────────────────────
@@ -4360,6 +4334,8 @@ function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
 // ── UTILITY COMPONENTS ───────────────────────────────────────────────────────
 const Mn=({sz=14,c,s={},children})=><span style={{fontSize:sz,color:c,...s}}>{children}</span>;
 const Card=({children,s={}})=><div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:16,...s}}>{children}</div>;
+const sm=(c,v)=>{if(v===null||v===undefined||v==="")return"empty";const n=parseFloat(v);if(isNaN(n))return"empty";return(c.invert?n<=c.threshold:n>=c.threshold)?"pass":"fail";};
+function grade(score,lang="en"){const isEs=lang==="es";if(score>=85)return{l:isEs?"Elite Compounder":"Elite Compounder",c:T.gold,la:"A+"};if(score>=75)return{l:isEs?"Alta Calidad":"High Quality",c:T.green,la:"A"};if(score>=60)return{l:isEs?"Calidad Decente":"Decent Quality",c:T.blue,la:"B+"};if(score>=45)return{l:isEs?"Calidad Mixta":"Mixed Quality",c:"#f59e0b",la:"B"};if(score>=30)return{l:isEs?"Bajo Potencial":"Low Potential",c:T.red,la:"C"};return{l:isEs?"Evitar":"Avoid",c:T.red,la:"D"};}
 const Lbl=({children,s={}})=><div style={{fontSize:11,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4,...s}}>{children}</div>;
 
 // ── DEFAULT STATE FACTORIES ──────────────────────────────────────────────────
