@@ -283,7 +283,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       price:"$9.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🎯 Unlock Unlimited Analysis",
-      proof:"Join investors already using Compounder Analyst",
+      proof:"Join investors already using Inversoria",
     },
     portfolio:{
       icon:"📁",
@@ -334,7 +334,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
           </div>
           <div style={{fontSize:11,color:T.green,marginBottom:12}}>🎁 {c.trial}</div>
           <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,width:"100%"}}
-            onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hello@compounderanalyst.com for early access.");}}>
+            onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hola@inversoria.lat for early access.");}}>
             {c.cta}
         </button>
         </div>
@@ -536,8 +536,8 @@ async function resolveTicker(input){
 // ── LANGUAGE SYSTEM ──────────────────────────────────────────────────────────
 const LANG = {
   en: {
-    nav_brand: "Compounder Analyst",
-    nav_sub: "Buffett · Munger · High-Growth Framework",
+    nav_brand: "Inversoria",
+    nav_sub: "Invierte con inteligencia · Para LATAM",
     nav_free: (n) => n > 0 ? `${n} free analyses left` : "Free plan",
     nav_premium: "🚀 Go Premium",
     tab_compound: "💰 Calculator",
@@ -568,8 +568,8 @@ const LANG = {
     footer_disc: "Solo educativo — no es asesoría financiera.",
   },
   es: {
-    nav_brand: "Compounder Analyst",
-    nav_sub: "Buffett · Munger · Marco de Alto Crecimiento",
+    nav_brand: "Inversoria",
+    nav_sub: "Invierte con inteligencia · Para LATAM",
     nav_free: (n) => n > 0 ? `${n} análisis gratis restantes` : "Plan gratuito",
     nav_premium: "🚀 Ir Premium",
     tab_compound: "💰 Calculadora",
@@ -802,7 +802,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
         {/* Logo */}
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{fontSize:32,marginBottom:8}}>📈</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.gold,fontWeight:700}}>Compounder Analyst</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.gold,fontWeight:700}}>Inversoria</div>
           <div style={{fontSize:12,color:T.muted,marginTop:4}}>
             {mode==="signup"?(isEs?"Crea tu cuenta gratis":"Create your free account")
              :mode==="login"?(isEs?"Bienvenido de vuelta":"Welcome back")
@@ -884,7 +884,7 @@ function Hero({onStart,lang="en"}){
       {/* Badge social proof */}
       <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:T.green,fontWeight:500}}>
-          ★ {isEs?"Más de 500 inversores en LATAM ya usan Compounder Analyst":"Trusted by 500+ investors across Latin America"}
+          ★ {isEs?"Más de 500 inversores en LATAM ya usan Inversoria":"Trusted by 500+ investors across Latin America"}
         </span>
       </div>
 
@@ -2677,8 +2677,8 @@ Respond ONLY with valid JSON, no markdown:
       // Save profile to localStorage so Portfolio Tracker can use it
       try{
         const rp={label:pLabel(profile,"en"),desc:pDesc(profile,"en"),icon:profile.icon,color:profile.color};
-        localStorage.setItem("compoundr_risk_profile",JSON.stringify(rp));
-        cloudSave("user_data","compoundr_risk_profile",rp,user?.id).catch(()=>{});
+        localStorage.setItem("inversoria_risk_profile",JSON.stringify(rp));
+        cloudSave("user_data","inversoria_risk_profile",rp,user?.id).catch(()=>{});
       }catch(e){}
       setPortfolio(p);onAnalysis();setStep("portfolio");
     }catch(e){setErr(`Error: ${e.message||"Could not generate portfolio."}`);}
@@ -2985,7 +2985,7 @@ Respond ONLY with valid JSON, no markdown:
               amount,portfolio,
               createdAt:new Date().toISOString(),
               executedAt:new Date().toISOString(),
-            };localStorage.setItem("compoundr_strategy",JSON.stringify(stratData));cloudSave("user_data","compoundr_strategy",stratData,user?.id).catch(()=>{});
+            };localStorage.setItem("inversoria_strategy",JSON.stringify(stratData));cloudSave("user_data","inversoria_strategy",stratData,user?.id).catch(()=>{});
           }catch(e){}
           onGoToStrategy&&onGoToStrategy();
         }} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
@@ -3262,7 +3262,7 @@ function PieChart({data,stockCount,size=220}){
 function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
-  const savedProfile=(()=>{try{const p=localStorage.getItem("compoundr_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
+  const savedProfile=(()=>{try{const p=localStorage.getItem("inversoria_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
   const [positions,setPositions]=useState([]);
   const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:""});
   const [prices,setPrices]=useState({});
@@ -3331,10 +3331,10 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   useEffect(()=>{
     const load=async()=>{
       try{
-        const saved=await cloudLoad("user_data","compoundr_portfolio",user?.id);
+        const saved=await cloudLoad("user_data","inversoria_portfolio",user?.id);
         if(saved&&Array.isArray(saved))setPositions(saved);
         else{
-          const local=localStorage.getItem("compoundr_portfolio");
+          const local=localStorage.getItem("inversoria_portfolio");
           if(local)setPositions(JSON.parse(local));
         }
       }catch(e){}
@@ -3343,8 +3343,8 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   },[user?.id]);
 
   const save=(pos)=>{
-    try{localStorage.setItem("compoundr_portfolio",JSON.stringify(pos));}catch(e){}
-    cloudSave("user_data","compoundr_portfolio",pos,user?.id).catch(()=>{});
+    try{localStorage.setItem("inversoria_portfolio",JSON.stringify(pos));}catch(e){}
+    cloudSave("user_data","inversoria_portfolio",pos,user?.id).catch(()=>{});
   };
 
   const FREE_POSITION_LIMIT=5;
@@ -3870,9 +3870,9 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
   // Load saved data
   useState(()=>{
     try{
-      const s=localStorage.getItem("compoundr_strategy");
+      const s=localStorage.getItem("inversoria_strategy");
       if(s)setStrategy(JSON.parse(s));
-      const p=localStorage.getItem("compoundr_portfolio");
+      const p=localStorage.getItem("inversoria_portfolio");
       if(p)setPositions(JSON.parse(p));
     }catch(e){}
   });
@@ -3896,7 +3896,7 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
 
   const clearStrategy=()=>{
     if(window.confirm("Clear your saved strategy?")){
-      try{localStorage.removeItem("compoundr_strategy");}catch(e){}
+      try{localStorage.removeItem("inversoria_strategy");}catch(e){}
       setStrategy(null);
     }
   };
@@ -4149,7 +4149,7 @@ function PrivacyPolicy({onClose,lang="en"}){
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Política de Privacidad</div>
         <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
         {[
-          {t:"1. Responsable del Tratamiento",b:`Compounder Analyst (en adelante "la Plataforma") es responsable del tratamiento de los datos personales recopilados a través de compoundfundamentalanalyser.vercel.app y sus dominios asociados.
+          {t:"1. Responsable del Tratamiento",b:`Inversoria (en adelante "la Plataforma") es responsable del tratamiento de los datos personales recopilados a través de inversoria.lat y sus dominios asociados.
 
 Esta política cumple con la Ley 1581 de 2012 y el Decreto 1377 de 2013 (Colombia), la LFPDPPP (México), la Ley 25.326 (Argentina), la Ley 19.628 (Chile) y la LGPD (Brasil).`},
           {t:"2. Datos que Recopilamos",b:`Recopilamos los siguientes datos personales:
@@ -4185,7 +4185,7 @@ No utilizamos tus datos para decisiones automatizadas que produzcan efectos lega
 • Portabilidad: Recibir tus datos en formato estructurado.
 • Revocación del consentimiento: En cualquier momento, sin efecto retroactivo.
 
-Para ejercer estos derechos escríbenos a: hola@compounderanalyst.com
+Para ejercer estos derechos escríbenos a: hola@inversoria.lat
 Responderemos en un plazo máximo de 15 días hábiles.`},
           {t:"6. Compartir Datos con Terceros",b:`Compartimos datos únicamente con:
 
@@ -4221,7 +4221,7 @@ Puedes configurar tu navegador para rechazar cookies, aunque esto puede afectar 
           {t:"11. Menores de Edad",b:`La Plataforma no está dirigida a menores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos que hemos recopilado datos de un menor, los eliminaremos inmediatamente.`},
           {t:"12. Cambios a esta Política",b:`Podemos actualizar esta política periódicamente. Te notificaremos por correo electrónico y mediante aviso en la Plataforma con al menos 30 días de anticipación ante cambios sustanciales. El uso continuado de la Plataforma tras la notificación implica aceptación.`},
           {t:"13. Contacto y Autoridad de Control",b:`Para consultas sobre privacidad:
-📧 hola@compounderanalyst.com
+📧 hola@inversoria.lat
 
 Tienes derecho a presentar reclamaciones ante la autoridad de protección de datos de tu país:
 • Colombia: Superintendencia de Industria y Comercio (SIC)
@@ -4254,10 +4254,10 @@ function TermsOfService({onClose,lang="en"}){
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Términos de Uso</div>
         <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
         {[
-          {t:"1. Aceptación de los Términos",b:`Al acceder y usar Compounder Analyst (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.
+          {t:"1. Aceptación de los Términos",b:`Al acceder y usar Inversoria (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.
 
 El uso de la Plataforma está disponible para personas mayores de 18 años con capacidad legal para celebrar contratos.`},
-          {t:"2. Descripción del Servicio",b:`Compounder Analyst es una plataforma educativa de análisis de inversiones que ofrece:
+          {t:"2. Descripción del Servicio",b:`Inversoria es una plataforma educativa de análisis de inversiones que ofrece:
 
 • Calculadora de interés compuesto.
 • Análisis de acciones mediante inteligencia artificial (framework Buffett/Munger).
@@ -4285,13 +4285,13 @@ Siempre consulta con un asesor financiero certificado antes de tomar decisiones 
 Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
           {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
 • No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.
-• Para solicitar un reembolso: hola@compounderanalyst.com
+• Para solicitar un reembolso: hola@inversoria.lat
 • Los reembolsos se procesan en 5-10 días hábiles.`},
           {t:"6. Cuenta de Usuario",b:`• Eres responsable de mantener la confidencialidad de tu contraseña.
 • No puedes compartir, vender o transferir tu cuenta.
 • Debes notificarnos inmediatamente de cualquier uso no autorizado.
 • Nos reservamos el derecho de suspender cuentas que violen estos términos.`},
-          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Compounder Analyst.
+          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Inversoria.
 • Se te otorga una licencia limitada, no exclusiva y no transferible para uso personal.
 • No puedes copiar, distribuir, modificar o crear obras derivadas sin autorización escrita.
 • Los datos de mercado y análisis son para uso personal exclusivamente.`},
@@ -4318,8 +4318,8 @@ Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se 
 El uso continuado tras los cambios implica aceptación.`},
           {t:"11. Ley Aplicable y Jurisdicción",b:`Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa se someterá a los tribunales competentes de Bogotá, Colombia, sin perjuicio de los derechos que la normativa local de tu país de residencia te pueda otorgar como consumidor.`},
           {t:"12. Contacto",b:`Para cualquier consulta sobre estos Términos:
-📧 hola@compounderanalyst.com
-🌐 compoundfundamentalanalyser.vercel.app`},
+📧 hola@inversoria.lat
+🌐 inversoria.lat`},
         ].map(({t,b})=>(
           <div key={t} style={{marginBottom:28}}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
@@ -4338,18 +4338,18 @@ El uso continuado tras los cambios implica aceptación.`},
 const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"strategy",l:"📈 My Strategy"}];
 const FREE_LIMIT=3;
 
-function isAdmin(){try{return localStorage.getItem("compoundr_admin")==="true";}catch{return false;}}
-function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_count")||"0");}catch{return 0;}}
-function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("compoundr_count",String(n));return n;}catch{return 999;}}
+function isAdmin(){try{return localStorage.getItem("inversoria_admin")==="true";}catch{return false;}}
+function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_count")||"0");}catch{return 0;}}
+function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("inversoria_count",String(n));return n;}catch{return 999;}}
 // DCA usage counter — 2 free uses
 const DCA_FREE_LIMIT=2;
-function getDCACount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_dca_count")||"0");}catch{return 0;}}
-function incDCACount(){try{if(isAdmin())return 0;const n=getDCACount()+1;localStorage.setItem("compoundr_dca_count",String(n));return n;}catch{return 999;}}
+function getDCACount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_dca_count")||"0");}catch{return 0;}}
+function incDCACount(){try{if(isAdmin())return 0;const n=getDCACount()+1;localStorage.setItem("inversoria_dca_count",String(n));return n;}catch{return 999;}}
 function canUseDCAFree(){return isAdmin()||getDCACount()<DCA_FREE_LIMIT;}
 // Rebalance usage counter — 2 free uses
 const REB_FREE_LIMIT=2;
-function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("compoundr_reb_count")||"0");}catch{return 0;}}
-function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("compoundr_reb_count",String(n));return n;}catch{return 999;}}
+function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_reb_count")||"0");}catch{return 0;}}
+function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("inversoria_reb_count",String(n));return n;}catch{return 999;}}
 function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
 
 export default function App(){
@@ -4398,8 +4398,8 @@ export default function App(){
 
   useState(()=>{
     const handler=(e)=>{
-      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){localStorage.setItem("compoundr_admin","true");setAdminMode(true);alert("✅ Admin mode ON — unlimited access");}
-      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){localStorage.removeItem("compoundr_admin");setAdminMode(false);alert("🔒 Admin mode OFF");}
+      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){localStorage.setItem("inversoria_admin","true");setAdminMode(true);alert("✅ Admin mode ON — unlimited access");}
+      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){localStorage.removeItem("inversoria_admin");setAdminMode(false);alert("🔒 Admin mode OFF");}
     };
     window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
   });
@@ -4557,7 +4557,7 @@ export default function App(){
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
       <div style={{fontSize:9,color:T.muted}}>
-        <span style={{color:T.goldDim,fontFamily:"'Playfair Display',serif"}}>Compounder Analyst</span>
+        <span style={{color:T.goldDim,fontFamily:"'Playfair Display',serif"}}>Inversoria</span>
         {" "}· Buffett · Munger · {L.footer_disc}
       </div>
       <div style={{display:"flex",gap:16}}>
@@ -4573,7 +4573,7 @@ export default function App(){
           onMouseLeave={e=>e.target.style.color=T.muted}>
           {lang==="es"?"Términos de Uso":"Terms of Use"}
         </button>
-        <button onClick={(e)=>{e.stopPropagation();window.open("mailto:hola@compounderanalyst.com");}}
+        <button onClick={(e)=>{e.stopPropagation();window.open("mailto:hola@inversoria.lat");}}
           style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
           onMouseEnter={e=>e.target.style.color=T.gold}
           onMouseLeave={e=>e.target.style.color=T.muted}>
