@@ -70,7 +70,7 @@ const LIGHT_THEME = {
   green:"#16a34a",red:"#dc2626",blue:"#1d4ed8",purple:"#7c3aed",
   text:"#1a1814",muted:"#6b6860",accent:"#f4f2ec",
 };
-// T is defined dynamically inside App based on darkMode state
+const T = DARK_THEME;
 
 const css=`
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400&family=DM+Sans:wght@400;500;600&display=swap&font-display=swap');
@@ -4332,7 +4332,6 @@ export default function App(){
   const [darkMode,setDarkMode]=useState(()=>{
     try{const t=localStorage.getItem("inversoria_theme");return t?t==="dark":false;}catch{return false;}
   });
-  const T=darkMode?DARK_THEME:LIGHT_THEME;
   const [tab,setTab]=useState(null);
   const [user,setUser]=useState(null);          // Supabase user object
   const [userPlan,setUserPlan]=useState("free"); // free | basic | premium
