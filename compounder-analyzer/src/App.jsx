@@ -345,12 +345,13 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
               if(onSignUp)onSignUp();
               else{
                 const msg=lang==="es"
-                  ?"🚀 Los pagos estarán disponibles muy pronto. Mientras tanto escríbenos a hola@inversoria.lat y te damos acceso anticipado."
+                  ?"🚀 Los pagos estarán disponibles muy pronto. Escríbenos a hola@inversoria.lat para acceso anticipado."
                   :"🚀 Payments coming very soon. Email hola@inversoria.lat for early access.";
                 alert(msg);
               }
-            }}
-          </div>
+            }}>
+            {lang==="es"?"🚀 Quiero este plan":"🚀 Get this plan"}
+          </button>
         </div>
       </div>
     </div>
