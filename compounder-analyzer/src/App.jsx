@@ -884,45 +884,45 @@ function Hero({onStart,lang="en"}){
       {/* Badge social proof */}
       <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:T.green,fontWeight:500}}>
-          ★ {isEs?"Más de 500 inversores en LATAM ya usan Inversoria":"Trusted by 500+ investors across Latin America"}
+          ★ {isEs?"Ya somos más de 500 inversores en LATAM — únete gratis":"Trusted by 500+ investors across Latin America"}
         </span>
       </div>
 
       {/* Headline */}
       <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(34,5,50),color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
         {isEs
-          ?<>Invierte como los mejores.<br/><span style={{color:T.gold}}>Sin necesitar ser experto.</span></>
-          :<>Invest like the best.<br/><span style={{color:T.gold}}>No expertise needed.</span></>}
+          ?<>¿Vale la pena<br/><span style={{color:T.gold}}>esta acción?</span></>
+          :<>Is this stock<br/><span style={{color:T.gold}}>worth buying?</span></>}
       </h1>
 
-      <p style={{fontSize:17,color:T.muted,maxWidth:580,margin:"0 auto 8px",lineHeight:1.75}}>
+      <p style={{fontSize:19,color:T.muted,maxWidth:560,margin:"0 auto 10px",lineHeight:1.75,fontWeight:400}}>
         {isEs
-          ?"Analiza cualquier acción con IA, descubre tu perfil de riesgo y arma tu portafolio — todo en español, en menos de 5 minutos."
-          :"Analyze any stock with AI, discover your risk profile, and build your portfolio — all in Spanish, in under 5 minutes."}
+          ?"La IA analiza cualquier acción en 30 segundos y te dice si es buena o mala inversión — en español, sin experiencia previa."
+          :"AI analyzes any stock in 30 seconds and tells you if it's a good or bad investment — in Spanish, no experience needed."}
       </p>
       <p style={{fontSize:13,color:`${T.muted}88`,marginBottom:28}}>
         {isEs
-          ?"Para inversores en Colombia, México, Argentina, Chile y toda LATAM."
-          :"For investors across Colombia, Mexico, Argentina, Chile and all of LATAM."}
+          ?"Tu analista de inversiones personal · Colombia · México · Argentina · Chile · Todo LATAM"
+          :"Your personal investment analyst · All of Latin America"}
       </p>
 
       {/* CTA buttons */}
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
         <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("score")}
           style={{fontSize:16,padding:"15px 36px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
-          {isEs?"🎯 Analizar mi primera acción gratis":"🎯 Analyze my first stock — free"}
+          {isEs?"🎯 Analizar una acción gratis":"🎯 Analyze a stock — free"}
         </button>
         <button className="btn btn-outline" onClick={()=>onStart("profile")}
           style={{fontSize:14,padding:"15px 26px",borderRadius:12}}>
-          {isEs?"🧬 Descubrir mi perfil de inversor":"🧬 Discover my investor profile"}
+          {isEs?"🧬 ¿Qué tipo de inversor soy?":"🧬 What type of investor am I?"}
         </button>
       </div>
 
       {/* Free tier info */}
       <p style={{fontSize:12,color:`${T.muted}77`,marginBottom:0}}>
         {isEs
-          ?"3 análisis gratis · Portafolio hasta 5 acciones · Sin tarjeta de crédito"
-          :"3 free analyses · Portfolio up to 5 stocks · No credit card"}
+          ?"3 análisis gratis · Sin registrarte · Sin tarjeta de crédito"
+          :"3 free analyses · No sign up required · No credit card"}
       </p>
     </div>
 
@@ -937,8 +937,8 @@ function Hero({onStart,lang="en"}){
             step:isEs?"Paso 1 — Gratis":"Step 1 — Free",
             color:T.gold,
             icon:"🎯",
-            title:isEs?"Analiza una acción":"Analyze a stock",
-            desc:isEs?"Escribe NVDA, Apple o Costco. La IA hace el análisis Buffett/Munger en 30 segundos con score de calidad y moat.":"Type NVDA, Apple or Costco. AI does a Buffett/Munger quality analysis in 30 seconds.",
+            title:isEs?"¿Vale la pena esta acción?":"Is this stock worth it?",
+            desc:isEs?"Escribe el nombre o ticker de cualquier acción. En 30 segundos recibes un score de calidad y una recomendación clara — comprar, esperar o evitar.":"Type any stock name or ticker. In 30 seconds you get a quality score and a clear recommendation — buy, wait, or avoid.",
             tab:"score",
             cta:isEs?"Analizar ahora →":"Analyze now →",
           },
@@ -946,19 +946,19 @@ function Hero({onStart,lang="en"}){
             step:isEs?"Paso 2 — Gratis":"Step 2 — Free",
             color:T.blue,
             icon:"🧬",
-            title:isEs?"Descubre tu ADN inversor":"Discover your investor DNA",
-            desc:isEs?"8 preguntas. La IA identifica si eres Conservador, Moderado o Agresivo y construye un portafolio personalizado.":"8 questions. AI identifies your risk profile and builds a personalized portfolio.",
+            title:isEs?"¿Qué tipo de inversor eres?":"What type of investor are you?",
+            desc:isEs?"8 preguntas rápidas. La IA descubre tu perfil de riesgo y te dice exactamente qué tipo de acciones se adaptan a ti.":"8 quick questions. AI discovers your risk profile and tells you exactly what type of stocks suit you.",
             tab:"profile",
-            cta:isEs?"Empezar quiz →":"Start quiz →",
+            cta:isEs?"Hacer el test →":"Take the test →",
           },
           {
-            step:isEs?"Paso 3 — Premium":"Step 3 — Premium",
+            step:isEs?"Paso 3 — Gratis hasta 5":"Step 3 — Free up to 5",
             color:T.green,
-            icon:"📈",
-            title:isEs?"Sigue tu estrategia":"Track your strategy",
-            desc:isEs?"Carga hasta 5 acciones gratis. Ve tu P&G en tiempo real, análisis IA de tu portafolio y plan vs realidad.":"Load up to 5 stocks free. See live P&L, AI portfolio analysis and plan vs reality.",
+            icon:"📁",
+            title:isEs?"Sigue tu dinero en tiempo real":"Track your money in real time",
+            desc:isEs?"Agrega tus acciones y ve cuánto ganaste o perdiste hoy. La IA analiza tu portafolio completo y te dice cómo mejorarlo.":"Add your stocks and see how much you gained or lost today. AI analyzes your full portfolio and tells you how to improve it.",
             tab:"portfolio",
-            cta:isEs?"Ver portafolio →":"View portfolio →",
+            cta:isEs?"Armar portafolio →":"Build portfolio →",
           },
         ].map(({step,color,icon,title,desc,tab,cta})=>(
           <div key={tab} onClick={()=>onStart(tab)}
@@ -979,9 +979,9 @@ function Hero({onStart,lang="en"}){
     <div style={{borderTop:`1px solid ${T.border}22`,borderBottom:`1px solid ${T.border}22`,background:`${T.accent}88`,padding:"20px 28px",marginBottom:0}}>
       <div className="kpi-4" style={{maxWidth:800,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,textAlign:"center"}}>
         {[
-          {n:"500+",l:isEs?"inversores activos":"active investors"},
-          {n:"30s",l:isEs?"por análisis":"per analysis"},
-          {n:"8",l:isEs?"monedas LATAM":"LATAM currencies"},
+          {n:"500+",l:isEs?"inversores en LATAM":"investors in LATAM"},
+          {n:"30s",l:isEs?"por análisis de acción":"per stock analysis"},
+          {n:"8",l:isEs?"países y monedas":"countries & currencies"},
           {n:"100%",l:isEs?"en español":"in Spanish"},
         ].map(({n,l})=>(
           <div key={l}>
@@ -995,7 +995,7 @@ function Hero({onStart,lang="en"}){
     {/* ── TOP COMPOUNDERS ── */}
     <div style={{padding:"28px 28px 32px",textAlign:"center"}}>
       <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:14}}>
-        {isEs?"Top Compounders — Retorno último año":"Top Compounders — 1Y Return"} · {isEs?"click para analizar":"click to analyze"}
+        {isEs?"Acciones populares — toca para analizar":"Popular stocks — tap to analyze"}
       </div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
         {TOP.map(({t,r})=>(
