@@ -4328,6 +4328,11 @@ function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.ge
 function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("inversoria_reb_count",String(n));return n;}catch{return 999;}}
 function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
 
+// ── DEFAULT STATE FACTORIES ──────────────────────────────────────────────────
+const defM=()=>({roic:null,grossMargin:null,opMargin:null,fcfMarginPct:null,debtEbitda:null,interestCover:null,revenueGrowth:null,epsGrowth:null,peRatio:null,pbRatio:null,psRatio:null,evEbitda:null,currentRatio:null,dividendYield:null});
+const defMoat=()=>({"Economies of Scale":0,"Switching Costs":0,"Network Effects":0,"Cost Advantages":0,"Intangible Assets":0});
+const CL=(lang,isEs,enVal,esVal)=>isEs?esVal:enVal;
+
 export default function App(){
   const [darkMode,setDarkMode]=useState(()=>{
     try{const t=localStorage.getItem("inversoria_theme");return t?t==="dark":false;}catch{return false;}
@@ -4528,11 +4533,11 @@ export default function App(){
     {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
-      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
+      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onShowPaywall={()=>setShowPaywall(true)} onShowAuth={()=>{setAuthMode("signup");setShowAuth(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
       {tab==="strategy"&&(
-      plan==="premium"||plan==="basic"||isAdmin()
+      userPlan==="premium"||userPlan==="basic"||isAdmin()
         ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
         :<div style={{maxWidth:600,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
           <div style={{fontSize:48,marginBottom:16}}>📈</div>
