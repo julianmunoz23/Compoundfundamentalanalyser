@@ -396,10 +396,33 @@ function ScoreRing({score,size=80,lang="en"}){
 }
 
 // ── AI HELPER ─────────────────────────────────────────────────────────────────
-async function callAI(prompt){
-  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
-  const d=await res.json();if(d.error)throw new Error(d.error.message);
-  const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();return JSON.parse(txt);
+async async function callAI(prompt,retries=3){
+  for(let attempt=0;attempt<retries;attempt++){
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})
+      });
+      const d=await res.json();
+      // Retry on overload or rate limit — wait and try again silently
+      if(d.error?.type==="overloaded_error"||d.error?.type==="rate_limit_error"||res.status===529||res.status===429){
+        if(attempt<retries-1){
+          await new Promise(r=>setTimeout(r,(attempt+1)*2000));
+          continue;
+        }
+      }
+      if(d.error)throw new Error(d.error.message);
+      const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
+      return JSON.parse(txt);
+    }catch(e){
+      if(attempt<retries-1&&(e.message?.includes("overload")||e.message?.includes("rate"))){
+        await new Promise(r=>setTimeout(r,(attempt+1)*2000));
+        continue;
+      }
+      throw e;
+    }
+  }
 }
 
 // ── FINNHUB HELPER — Real-time market data ────────────────────────────────────
