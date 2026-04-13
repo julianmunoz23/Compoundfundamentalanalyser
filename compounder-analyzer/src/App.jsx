@@ -68,6 +68,30 @@ const LIGHT_THEME = {
 };
 const T = DARK_THEME;
 
+// ── SCORING CONSTANTS ─────────────────────────────────────────────────────────
+const CRITERIA={
+  growth:[
+    {key:"revenueCAGR",label:"Revenue CAGR",unit:"%",threshold:15,max:50,weight:20},
+    {key:"fcfGrowth",label:"FCF Growth",unit:"%",threshold:15,max:80,weight:20},
+    {key:"tamGrowth",label:"TAM Growth",unit:"%",threshold:10,max:50,weight:10},
+  ],
+  profitability:[
+    {key:"roic",label:"ROIC",unit:"%",threshold:20,max:60,weight:20},
+    {key:"grossMargin",label:"Gross Margin",unit:"%",threshold:40,max:90,weight:8},
+    {key:"opMargin",label:"Operating Margin",unit:"%",threshold:18,max:50,weight:7},
+  ],
+  cashflow:[{key:"fcfMarginPct",label:"FCF Margin",unit:"%",threshold:15,max:60,weight:20}],
+  balance:[
+    {key:"debtEbitda",label:"Debt/EBITDA",unit:"x",threshold:2,max:5,invert:true,weight:8},
+    {key:"interestCover",label:"Interest Coverage",unit:"x",threshold:6,max:20,weight:2},
+  ],
+};
+const MOAT_KEYS=["Economies of Scale","Switching Costs","Network Effects","Brand Dominance","Proprietary Technology","Market Leadership"];
+const MOAT_ES={"Economies of Scale":"Economías de Escala","Switching Costs":"Costos de Cambio","Network Effects":"Efectos de Red","Brand Dominance":"Dominio de Marca","Proprietary Technology":"Tecnología Propia","Market Leadership":"Liderazgo de Mercado"};
+const moatLabel=(k,lang)=>lang==="es"?(MOAT_ES[k]||k):k;
+const SECTORS=["Technology","Healthcare","Consumer Discretionary","Consumer Staples","Financials","Industrials","Energy","Materials","Real Estate","Utilities","Communication Services"];
+
+
 const css=`
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Mono:wght@400&family=DM+Sans:wght@400;500;600&display=swap&font-display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -4331,6 +4355,15 @@ const Mn=({sz=14,c,s={},children})=><span style={{fontSize:sz,color:c,...s}}>{ch
 const Card=({children,s={}})=><div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:16,...s}}>{children}</div>;
 const sm=(c,v)=>{if(v===null||v===undefined||v==="")return"empty";const n=parseFloat(v);if(isNaN(n))return"empty";return(c.invert?n<=c.threshold:n>=c.threshold)?"pass":"fail";};
 function grade(score,lang="en"){const isEs=lang==="es";if(score>=85)return{l:isEs?"Elite Compounder":"Elite Compounder",c:T.gold,la:"A+"};if(score>=75)return{l:isEs?"Alta Calidad":"High Quality",c:T.green,la:"A"};if(score>=60)return{l:isEs?"Calidad Decente":"Decent Quality",c:T.blue,la:"B+"};if(score>=45)return{l:isEs?"Calidad Mixta":"Mixed Quality",c:"#f59e0b",la:"B"};if(score>=30)return{l:isEs?"Bajo Potencial":"Low Potential",c:T.red,la:"C"};return{l:isEs?"Evitar":"Avoid",c:T.red,la:"D"};}
+function calcScore(m,moat){
+  const allCriteria=Object.values(CRITERIA||{}).flat();
+  if(!allCriteria.length)return 50;
+  const passed=allCriteria.filter(c=>sm(c,m[c.key]||0)==="pass").length;
+  const criteriaScore=(passed/allCriteria.length)*100;
+  const moatVals=Object.values(moat||{}).filter(v=>typeof v==="number");
+  const moatScore=moatVals.length?(moatVals.reduce((a,b)=>a+b,0)/moatVals.length)*20:50;
+  return Math.round(criteriaScore*0.65+moatScore*0.35);
+}
 const Lbl=({children,s={}})=><div style={{fontSize:11,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4,...s}}>{children}</div>;
 
 // ── DEFAULT STATE FACTORIES ──────────────────────────────────────────────────
