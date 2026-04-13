@@ -30,11 +30,6 @@ async function cloudLoad(table, key, userId) {
   // fallback to localStorage
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
-import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
-  AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
-  BarChart, Bar, Legend,
-} from "recharts";
 
 // ── ERROR BOUNDARY — prevents white screen on any crash ──────────────────────
 class ErrorBoundary extends React.Component{
