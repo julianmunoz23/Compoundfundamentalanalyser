@@ -3257,6 +3257,255 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
   </Card>;
 }
 
+
+// ── PORTFOLIO DASHBOARD ───────────────────────────────────────────────────────
+function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,aiAnalysis,lang,isPremium,onShowPaywall}){
+  const isEs=lang==="es";
+  const [showDetails,setShowDetails]=useState(false);
+
+  // Classify positions into zones
+  const winners=enriched.filter(p=>p.pnlPct!=null&&p.pnlPct>=10);
+  const watchers=enriched.filter(p=>p.pnlPct!=null&&p.pnlPct>=-10&&p.pnlPct<10);
+  const alerts=enriched.filter(p=>p.pnlPct!=null&&p.pnlPct<-10);
+  const noPrices=enriched.filter(p=>p.pnlPct==null);
+
+  // Portfolio health score 0-100
+  const healthScore=enriched.length===0?0:Math.round(
+    ((winners.length*100)+(watchers.length*60)+(alerts.length*20))/(enriched.length*100)*100
+  );
+  const healthGrade=healthScore>=75?"A":healthScore>=60?"B+":healthScore>=45?"B":healthScore>=30?"C":"D";
+  const healthColor=healthScore>=75?T.green:healthScore>=45?T.gold:T.red;
+
+  // Sector concentration
+  const aiPositions=aiAnalysis?.positions||[];
+  const topSector=aiAnalysis?.topSector||"";
+
+  // Bar chart data — sorted by P&L %
+  const barData=[...enriched]
+    .filter(p=>p.pnlPct!=null)
+    .sort((a,b)=>b.pnlPct-a.pnlPct);
+
+  // Max abs value for bar scaling
+  const maxPnl=Math.max(...barData.map(p=>Math.abs(p.pnlPct)),1);
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+      {/* ── ROW 1: Health gauge + Zone cards + AI insight ── */}
+      <div style={{display:"grid",gridTemplateColumns:"160px 1fr 1fr 1fr",gap:12}}>
+
+        {/* Health Gauge */}
+        <div style={{background:T.card,border:`2px solid ${healthColor}44`,borderRadius:14,padding:"16px 12px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>
+            {isEs?"Salud del Portafolio":"Portfolio Health"}
+          </div>
+          {/* SVG Gauge */}
+          <svg width={100} height={60} viewBox="0 0 100 60">
+            {/* Background arc */}
+            <path d="M 10 55 A 40 40 0 0 1 90 55" fill="none" stroke={T.border} strokeWidth={8} strokeLinecap="round"/>
+            {/* Colored arc based on score */}
+            <path d={`M 10 55 A 40 40 0 0 1 ${10+80*(healthScore/100)} ${55-Math.sin(Math.PI*(healthScore/100))*40}`}
+              fill="none" stroke={healthColor} strokeWidth={8} strokeLinecap="round"
+              style={{filter:`drop-shadow(0 0 4px ${healthColor}88)`}}/>
+            {/* Grade text */}
+            <text x={50} y={45} textAnchor="middle" fill={healthColor}
+              style={{fontFamily:"'Playfair Display',serif",fontSize:22,fontWeight:700}}>{healthGrade}</text>
+          </svg>
+          <div style={{fontSize:12,color:healthColor,fontWeight:700,marginTop:4}}>{healthScore}/100</div>
+          <div style={{fontSize:10,color:T.muted,marginTop:2}}>
+            {healthScore>=75?(isEs?"Excelente":"Excellent"):healthScore>=45?(isEs?"Moderado":"Moderate"):(isEs?"Revisar":"Needs Review")}
+          </div>
+        </div>
+
+        {/* Zone: Winners */}
+        <div style={{background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",transition:"all 0.2s"}}
+          onClick={()=>setShowDetails(d=>d==="winners"?null:"winners")}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=T.green}
+          onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.green}33`}>
+          <div style={{fontSize:28,marginBottom:6}}>🚀</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.green,fontWeight:700}}>{winners.length}</div>
+          <div style={{fontSize:12,color:T.green,fontWeight:600,marginBottom:4}}>
+            {isEs?"Ganadoras":"Winners"} <span style={{fontSize:10,opacity:0.7}}>(+10%)</span>
+          </div>
+          <div style={{fontSize:10,color:T.muted}}>
+            {winners.length>0
+              ?winners.map(p=>`${p.ticker} +${p.pnlPct.toFixed(1)}%`).slice(0,2).join(" · ")
+              :(isEs?"Ninguna aún":"None yet")}
+          </div>
+        </div>
+
+        {/* Zone: Watchers */}
+        <div style={{background:`${T.gold}10`,border:`1px solid ${T.gold}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",transition:"all 0.2s"}}
+          onClick={()=>setShowDetails(d=>d==="watchers"?null:"watchers")}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=T.gold}
+          onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.gold}33`}>
+          <div style={{fontSize:28,marginBottom:6}}>👁️</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,fontWeight:700}}>{watchers.length}</div>
+          <div style={{fontSize:12,color:T.gold,fontWeight:600,marginBottom:4}}>
+            {isEs?"A Seguir":"Watchers"} <span style={{fontSize:10,opacity:0.7}}>(-10% a +10%)</span>
+          </div>
+          <div style={{fontSize:10,color:T.muted}}>
+            {watchers.length>0
+              ?watchers.map(p=>`${p.ticker} ${p.pnlPct>=0?"+":""}${p.pnlPct.toFixed(1)}%`).slice(0,2).join(" · ")
+              :(isEs?"Ninguna":"None")}
+          </div>
+        </div>
+
+        {/* Zone: Alerts */}
+        <div style={{background:`${T.red}10`,border:`1px solid ${T.red}33`,borderRadius:14,padding:"14px 16px",cursor:"pointer",transition:"all 0.2s"}}
+          onClick={()=>setShowDetails(d=>d==="alerts"?null:"alerts")}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=T.red}
+          onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.red}33`}>
+          <div style={{fontSize:28,marginBottom:6}}>⚠️</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.red,fontWeight:700}}>{alerts.length}</div>
+          <div style={{fontSize:12,color:T.red,fontWeight:600,marginBottom:4}}>
+            {isEs?"Revisar":"Review"} <span style={{fontSize:10,opacity:0.7}}>(-10%)</span>
+          </div>
+          <div style={{fontSize:10,color:T.muted}}>
+            {alerts.length>0
+              ?alerts.map(p=>`${p.ticker} ${p.pnlPct.toFixed(1)}%`).slice(0,2).join(" · ")
+              :(isEs?"Todo bien":"All good")}
+          </div>
+        </div>
+      </div>
+
+      {/* ── ZONE DETAIL DRAWER ── */}
+      {showDetails&&<div className="fi" style={{background:T.card,border:`1px solid ${showDetails==="winners"?T.green:showDetails==="watchers"?T.gold:T.red}44`,borderRadius:12,padding:"12px 16px"}}>
+        <div style={{fontSize:11,color:T.muted,marginBottom:10,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em"}}>
+          {showDetails==="winners"?`🚀 ${isEs?"Posiciones ganadoras":"Winning positions"}`:showDetails==="watchers"?`👁️ ${isEs?"A seguir de cerca":"Watch closely"}`:`⚠️ ${isEs?"Revisar urgente":"Urgent review"}`}
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+          {(showDetails==="winners"?winners:showDetails==="watchers"?watchers:alerts).map(p=>(
+            <div key={p.ticker} style={{background:T.accent,borderRadius:8,padding:"8px 14px",display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:13,fontWeight:700,color:T.text}}>{p.ticker}</span>
+              <span style={{fontSize:12,color:p.pnlPct>=0?T.green:T.red,fontWeight:600}}>{p.pnlPct>=0?"+":""}{p.pnlPct.toFixed(2)}%</span>
+              {p.currentPrice&&<span style={{fontSize:10,color:T.muted}}>${p.currentPrice.toFixed(2)}</span>}
+            </div>
+          ))}
+        </div>
+      </div>}
+
+      {/* ── ROW 2: P&L Bar Chart + AI Insight ── */}
+      <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:12}}>
+
+        {/* P&L Horizontal Bar Chart */}
+        <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:"16px 20px"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>
+                📊 {isEs?"Rendimiento por Acción":"Performance by Stock"}
+              </div>
+              <div style={{fontSize:10,color:T.muted,marginTop:2}}>
+                {isEs?"Ordenado de mayor a menor ganancia · Click para analizar":"Sorted best to worst · Click to analyze"}
+              </div>
+            </div>
+            {!isPremium&&<div style={{fontSize:9,color:T.gold,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:6,padding:"3px 8px",cursor:"pointer"}} onClick={onShowPaywall}>🔒 Premium</div>}
+          </div>
+
+          {barData.length===0
+            ?<div style={{textAlign:"center",padding:"20px 0",fontSize:12,color:T.muted}}>
+                {isEs?"Actualiza precios para ver el gráfico":"Refresh prices to see the chart"}
+              </div>
+            :<div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {barData.map(p=>{
+                const barWidth=Math.abs(p.pnlPct)/maxPnl*100;
+                const isPos=p.pnlPct>=0;
+                const color=isPos?(p.pnlPct>=20?T.green:T.green+"bb"):(p.pnlPct<=-20?T.red:T.red+"bb");
+                return(
+                  <div key={p.ticker} style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",alignItems:"center",gap:8}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:700,color:T.text,textAlign:"right"}}>{p.ticker}</span>
+                    <div style={{position:"relative",height:22,background:T.accent,borderRadius:4,overflow:"hidden"}}>
+                      <div style={{
+                        position:"absolute",
+                        left:isPos?"50%":"auto",right:isPos?"auto":"50%",
+                        width:`${barWidth/2}%`,height:"100%",
+                        background:color,borderRadius:isPos?"0 3px 3px 0":"3px 0 0 3px",
+                        transition:"width 0.5s ease",
+                        display:"flex",alignItems:"center",justifyContent:isPos?"flex-start":"flex-end",
+                      }}/>
+                      {/* Center line */}
+                      <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.border}}/>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,color,fontWeight:700}}>{isPos?"+":""}{p.pnlPct.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* X axis labels */}
+              <div style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",gap:8,marginTop:2}}>
+                <span/>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,color:T.muted,padding:"0 0"}}>
+                  <span>-{maxPnl.toFixed(0)}%</span>
+                  <span>0%</span>
+                  <span>+{maxPnl.toFixed(0)}%</span>
+                </div>
+                <span/>
+              </div>
+            </div>
+          }
+        </div>
+
+        {/* Right panel: AI Insight + Concentration */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+
+          {/* AI Insight card */}
+          <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`,borderRadius:14,padding:"14px 16px",flex:1}}>
+            <div style={{fontSize:10,color:T.gold,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>
+              🤖 {isEs?"Diagnóstico IA":"AI Diagnosis"}
+            </div>
+            {aiAnalysis
+              ?<>
+                <div style={{fontSize:12,color:T.text,lineHeight:1.7,marginBottom:10}}>{aiAnalysis.summary?.split(".")[0]}.</div>
+                {aiAnalysis.suggestions?.slice(0,2).map((s,i)=>(
+                  <div key={i} style={{display:"flex",gap:6,fontSize:11,color:T.muted,marginBottom:5,lineHeight:1.5}}>
+                    <span style={{color:T.gold,flexShrink:0}}>→</span>{s}
+                  </div>
+                ))}
+              </>
+              :<div style={{fontSize:11,color:T.muted,lineHeight:1.7}}>
+                {isPremium
+                  ?<>{isEs?"Ejecuta el Análisis IA para obtener un diagnóstico personalizado de tu portafolio.":"Run the AI Analysis to get a personalized diagnosis of your portfolio."}</>
+                  :<>{isEs?"Análisis IA disponible en plan Basic o Premium.":"AI Analysis available on Basic or Premium plan."} <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}} onClick={onShowPaywall}>{isEs?"Ver planes →":"See plans →"}</span></>
+                }
+              </div>
+            }
+          </div>
+
+          {/* Concentration warning */}
+          {enriched.length>0&&(()=>{
+            const topHolding=barData[0];
+            const topVal=topHolding?(topHolding.currentValue||topHolding.totalCostBasis):0;
+            const topPct=totalValue>0?(topVal/totalValue*100):0;
+            const isConcentrated=topPct>30;
+            return(
+              <div style={{background:isConcentrated?`${T.red}10`:`${T.green}10`,border:`1px solid ${isConcentrated?T.red:T.green}33`,borderRadius:12,padding:"10px 14px"}}>
+                <div style={{fontSize:10,fontWeight:600,color:isConcentrated?T.red:T.green,marginBottom:4}}>
+                  {isConcentrated?`⚠️ ${isEs?"Concentración alta":"High Concentration"}`:`✅ ${isEs?"Bien diversificado":"Well diversified"}`}
+                </div>
+                <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>
+                  {isConcentrated
+                    ?<>{topHolding?.ticker} {isEs?"representa":"represents"} <strong style={{color:T.red}}>{topPct.toFixed(0)}%</strong> {isEs?"de tu portafolio":"of your portfolio"}</>
+                    :<>{isEs?"Tu posición mayor":"Largest position"} ({topHolding?.ticker}) {isEs?"es":"is"} <strong style={{color:T.green}}>{topPct.toFixed(0)}%</strong></>
+                  }
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Sector badge if AI ran */}
+          {aiAnalysis?.topSector&&(
+            <div style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:11,color:T.muted}}>{isEs?"Sector dominante":"Top sector"}</span>
+              <span style={{fontSize:11,color:T.purple,fontWeight:700,padding:"2px 8px",background:`${T.purple}15`,borderRadius:6}}>{aiAnalysis.topSector}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── PORTFOLIO TRACKER ────────────────────────────────────────────────────────
 const BROKERS=[
   {name:"Interactive Brokers",url:"https://www.interactivebrokers.com",desc:"Best for active investors · Low commissions",badge:"Most Popular"},
@@ -3583,7 +3832,23 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       </Card>)}
     </div>}
 
-    <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
+
+    {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
+    {positions.length>0&&(
+      <PortfolioDashboard
+        enriched={enriched}
+        totalCost={totalCost}
+        totalValue={totalValue}
+        totalPnL={totalPnL}
+        totalPnLPct={totalPnLPct}
+        aiAnalysis={aiAnalysis}
+        lang={lang}
+        isPremium={isAdmin()||userPlan==="premium"||userPlan==="basic"}
+        onShowPaywall={()=>onShowPaywall("portfolio")}
+      />
+    )}
+
+        <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
       <Card>
