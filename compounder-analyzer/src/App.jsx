@@ -274,36 +274,37 @@ function AdBanner({size="leaderboard"}){
 
 // ── PAYWALL ───────────────────────────────────────────────────────────────────
 function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
+  const isEs=lang==="es";
   const configs={
     stock:{
       icon:"🎯",
-      title:"You've seen the potential. Now act on it.",
-      sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
-      features:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Consenso Wall Street en Tiempo Real","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
+      title:isEs?"Ya viste el potencial. Ahora actúa.":"You've seen the potential. Now act on it.",
+      sub:isEs?<>Usaste tus <span style={{color:T.text,fontWeight:600}}>3 análisis gratis</span>. Actualiza para seguir analizando acciones con consenso Wall Street, score de calidad y valuación DCF — sin límite.</>:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
+      features:isEs?["Análisis IA de Acciones Ilimitados","Dashboard de Ciclo de Mercado","Consenso Wall Street en Tiempo Real","Objetivos de Precio de Analistas","Análisis FCF Growth Rate","Score Buffett/Munger","Valuación DCF Inline"]:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Wall Street Consensus Live","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
       price:"$7.99/mo",
-      trial:"7-day free trial · Cancel anytime",
-      cta:"🎯 Unlock Unlimited Analysis",
-      proof:"Join investors already using Inversoria",
+      trial:isEs?"7 días gratis · Cancela cuando quieras":"7-day free trial · Cancel anytime",
+      cta:isEs?"🎯 Desbloquear Análisis Ilimitados":"🎯 Unlock Unlimited Analysis",
+      proof:isEs?"Únete a los inversores que ya usan Inversoria":"Join investors already using Inversoria",
     },
     portfolio:{
       icon:"📁",
-      title:"Your portfolio deserves a real analysis.",
-      sub:<>{lang==="es"?"El plan gratuito incluye":"Free plan supports"} <span style={{color:T.text,fontWeight:600}}>3 {lang==="es"?"posiciones":"stock positions"}</span>. Upgrade to track unlimited positions with live prices, AI rebalancing, DCA recommendations, and risk profile matching.</>,
-      features:["Unlimited Portfolio Positions","AI Portfolio Score & Assessment","Rebalance Plan (what to trim/add)","DCA Advisor — where to invest cash","Risk Profile Alignment Check","P&L en tiempo real con precios live"],
+      title:isEs?"Tu portafolio merece un análisis real.":"Your portfolio deserves a real analysis.",
+      sub:isEs?<>El plan gratuito incluye <span style={{color:T.text,fontWeight:600}}>5 acciones</span>. Actualiza para rastrear posiciones ilimitadas con precios en vivo y rebalanceo IA.</>:<>Free plan supports <span style={{color:T.text,fontWeight:600}}>5 stock positions</span>. Upgrade for unlimited positions with live prices and AI rebalancing.</>,
+      features:isEs?["Posiciones Ilimitadas","Score IA del Portafolio","Plan de Rebalanceo","Asesor DCA","Verificación de Perfil de Riesgo","P&L en tiempo real"]:["Unlimited Portfolio Positions","AI Portfolio Score","Rebalance Plan","DCA Advisor","Risk Profile Check","Real-time P&L"],
       price:"$7.99/mo",
-      trial:"7-day free trial · Cancel anytime",
-      cta:"📁 Unlock My Full Portfolio",
-      proof:"See exactly where your money should go",
+      trial:isEs?"7 días gratis · Cancela cuando quieras":"7-day free trial · Cancel anytime",
+      cta:isEs?"📁 Desbloquear Mi Portafolio":"📁 Unlock My Full Portfolio",
+      proof:isEs?"Ve exactamente a dónde debe ir tu dinero":"See exactly where your money should go",
     },
     riskPortfolio:{
       icon:"🧬",
-      title:"Your investor DNA is ready. Now build the portfolio.",
-      sub:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is always free</span>. Subscribe to get a personalized AI portfolio of stocks and ETFs — built specifically for your profile, goals, and investment amount.</>,
-      features:["AI-Curated Stock Portfolio","ETF Recommendations","Asset Allocation Breakdown","Expected Return Modeling","Quarterly Rebalance Guide","Broker Recommendations"],
+      title:isEs?"Tu ADN inversor está listo. Construye el portafolio.":"Your investor DNA is ready. Now build the portfolio.",
+      sub:isEs?<>Tu <span style={{color:T.text,fontWeight:600}}>Perfil de Riesgo siempre es gratis</span>. Suscríbete para obtener un portafolio IA personalizado de acciones y ETFs — diseñado para tu perfil y monto.</>:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is always free</span>. Subscribe to get a personalized AI portfolio of stocks and ETFs — built specifically for your profile and investment amount.</>,
+      features:isEs?["Portafolio de Acciones con IA","Recomendaciones de ETFs","Asignación de Activos","Modelado de Retorno Esperado","Guía de Rebalanceo Trimestral","Recomendaciones de Brokers"]:["AI-Curated Stock Portfolio","ETF Recommendations","Asset Allocation Breakdown","Expected Return Modeling","Quarterly Rebalance Guide","Broker Recommendations"],
       price:"$12.99/mo",
-      trial:"7-day free trial · Cancel anytime",
-      cta:"🚀 Build My AI Portfolio",
-      proof:"The portfolio Buffett would build for your risk profile",
+      trial:isEs?"7 días gratis · Cancela cuando quieras":"7-day free trial · Cancel anytime",
+      cta:isEs?"🚀 Construir Mi Portafolio IA":"🚀 Build My AI Portfolio",
+      proof:isEs?"El portafolio que Buffett construiría para tu perfil":"The portfolio Buffett would build for your risk profile",
     },
   };
   const c=configs[context]||configs.stock;
@@ -326,20 +327,47 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
             </div>
           ))}
         </div>
-        {/* Price + CTA */}
-        <div style={{background:`${T.gold}08`,border:`1px solid ${T.goldDim}44`,borderRadius:12,padding:"16px 20px",marginBottom:16}}>
-          <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:6,marginBottom:6}}>
-            <span style={{fontFamily:"'Playfair Display',serif",fontSize:36,color:T.gold,fontWeight:700}}>{c.price}</span>
-            <span style={{fontSize:12,color:T.muted}}>billed monthly</span>
+        {/* Dual plan cards */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+          {/* Basic */}
+          <div style={{background:`${T.gold}08`,border:`2px solid ${T.goldDim}`,borderRadius:12,padding:"14px 16px",textAlign:"center",cursor:"pointer",transition:"all 0.2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.gold;e.currentTarget.style.background=`${T.gold}14`;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.goldDim;e.currentTarget.style.background=`${T.gold}08`;}}>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>{isEs?"Plan Basic":"Basic Plan"}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,fontWeight:700,lineHeight:1}}>$7.99</div>
+            <div style={{fontSize:10,color:T.muted,marginBottom:8}}>/mo</div>
+            <div style={{fontSize:10,color:T.text,lineHeight:1.6,marginBottom:10,textAlign:"left"}}>
+              {isEs?"✓ Análisis ilimitados":"✓ Unlimited analyses"}<br/>
+              {isEs?"✓ Portafolio ilimitado":"✓ Unlimited portfolio"}<br/>
+              ✓ Market Cycle
+            </div>
+            <button className="btn btn-gold" style={{fontSize:12,padding:"9px 0",borderRadius:8,width:"100%"}}
+              onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hola@inversoria.lat for early access.");}}>
+              {isEs?"Elegir Basic":"Choose Basic"}
+            </button>
           </div>
-          <div style={{fontSize:11,color:T.green,marginBottom:12}}>🎁 {c.trial}</div>
-          <button className="btn btn-gold" style={{fontSize:15,padding:"14px 32px",borderRadius:10,width:"100%"}}
-            onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hola@inversoria.lat for early access.");}}>
-            {c.cta}
-        </button>
+          {/* Premium */}
+          <div style={{background:`${T.purple}10`,border:`2px solid ${T.purple}`,borderRadius:12,padding:"14px 16px",textAlign:"center",cursor:"pointer",transition:"all 0.2s",position:"relative"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.purple;e.currentTarget.style.background=`${T.purple}18`;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.purple;e.currentTarget.style.background=`${T.purple}10`;}}>
+            <div style={{position:"absolute",top:-10,left:"50%",transform:"translateX(-50%)",background:T.purple,borderRadius:20,padding:"2px 10px",fontSize:9,color:"#fff",fontWeight:700,whiteSpace:"nowrap"}}>⭐ {isEs?"MÁS POPULAR":"MOST POPULAR"}</div>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>{isEs?"Plan Premium":"Premium Plan"}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.purple,fontWeight:700,lineHeight:1}}>$12.99</div>
+            <div style={{fontSize:10,color:T.muted,marginBottom:8}}>/mo</div>
+            <div style={{fontSize:10,color:T.text,lineHeight:1.6,marginBottom:10,textAlign:"left"}}>
+              {isEs?"✓ Todo lo de Basic":"✓ Everything in Basic"}<br/>
+              {isEs?"✓ Portafolio IA personalizado":"✓ AI personalized portfolio"}<br/>
+              {isEs?"✓ Mi Estrategia":"✓ My Strategy tab"}
+            </div>
+            <button style={{background:T.purple,color:"#fff",border:"none",borderRadius:8,padding:"9px 0",width:"100%",fontSize:12,fontWeight:600,cursor:"pointer"}}
+              onClick={()=>{onSignUp?onSignUp():alert("💳 Coming soon! Email us at hola@inversoria.lat for early access.");}}>
+              {isEs?"Elegir Premium":"Choose Premium"}
+            </button>
+          </div>
         </div>
-        <button onClick={onClose} style={{fontSize:11,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline",marginTop:4}}>
-          Maybe later
+        <div style={{fontSize:10,color:T.green,marginBottom:12,textAlign:"center"}}>🎁 {c.trial}</div>
+        <button onClick={onClose} style={{fontSize:11,color:T.muted,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}}>
+          {isEs?"Quizás después":"Maybe later"}
         </button>
       </div>
     </div>
@@ -2801,7 +2829,7 @@ Respond ONLY with valid JSON, no markdown:
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={getPortfolio} disabled={loading} style={{fontSize:15,padding:"14px 32px",borderRadius:12}}>
-          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:<>🤖 Get My AI Portfolio <span style={{fontSize:12,opacity:0.8}}>— Premium</span></>}
+          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:<>{isEs?"🤖 Obtener Mi Portafolio IA":"🤖 Get My AI Portfolio"} <span style={{fontSize:12,opacity:0.8}}>{isEs?"— Premium":"— Premium"}</span></>}
         </button>
         <button className="btn btn-outline" onClick={reset} style={{padding:"14px 20px",borderRadius:12}}>{lang==="es"?"Volver al Quiz":"Retake Quiz"}</button>
       </div>
@@ -2813,7 +2841,9 @@ Respond ONLY with valid JSON, no markdown:
         <div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.green,marginBottom:4}}>{lang==="es"?"📁 ¿Ya tienes acciones? Analicemos tu portafolio":"📁 Already have stocks? Let's analyze your portfolio"}</div>
           <div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>
-            Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{pLabel(profile,lang)}</strong> profile — and tell you exactly what to buy, hold, or sell.
+            {lang==="es"
+              ?<>Sube tus posiciones y la IA evaluará si tu portafolio actual coincide con tu perfil <strong style={{color:T.text}}>{pLabel(profile,lang)}</strong> — y te dirá exactamente qué comprar, mantener o vender.</>
+              :<>Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{pLabel(profile,lang)}</strong> profile — and tell you exactly what to buy, hold, or sell.</>}
           </div>
         </div>
         <button className="btn btn-gold" onClick={onGoToPortfolio} style={{fontSize:14,padding:"12px 24px",borderRadius:10,whiteSpace:"nowrap",flexShrink:0}}>
@@ -4281,8 +4311,8 @@ Siempre consulta con un asesor financiero certificado antes de tomar decisiones 
           {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
 
 • Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
-• Plan Basic ($7.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
-• Plan Premium ($12.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
+• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
+• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
 
 Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
           {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
