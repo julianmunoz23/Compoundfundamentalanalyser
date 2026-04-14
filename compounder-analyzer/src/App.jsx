@@ -280,7 +280,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       title:"You've seen the potential. Now act on it.",
       sub:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
       features:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Consenso Wall Street en Tiempo Real","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
-      price:"$9.99/mo",
+      price:"$7.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🎯 Unlock Unlimited Analysis",
       proof:"Join investors already using Inversoria",
@@ -290,7 +290,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       title:"Your portfolio deserves a real analysis.",
       sub:<>{lang==="es"?"El plan gratuito incluye":"Free plan supports"} <span style={{color:T.text,fontWeight:600}}>3 {lang==="es"?"posiciones":"stock positions"}</span>. Upgrade to track unlimited positions with live prices, AI rebalancing, DCA recommendations, and risk profile matching.</>,
       features:["Unlimited Portfolio Positions","AI Portfolio Score & Assessment","Rebalance Plan (what to trim/add)","DCA Advisor — where to invest cash","Risk Profile Alignment Check","P&L en tiempo real con precios live"],
-      price:"$9.99/mo",
+      price:"$7.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"📁 Unlock My Full Portfolio",
       proof:"See exactly where your money should go",
@@ -300,7 +300,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       title:"Your investor DNA is ready. Now build the portfolio.",
       sub:<>Your <span style={{color:T.text,fontWeight:600}}>Risk Profile is always free</span>. Subscribe to get a personalized AI portfolio of stocks and ETFs — built specifically for your profile, goals, and investment amount.</>,
       features:["AI-Curated Stock Portfolio","ETF Recommendations","Asset Allocation Breakdown","Expected Return Modeling","Quarterly Rebalance Guide","Broker Recommendations"],
-      price:"$19.99/mo",
+      price:"$12.99/mo",
       trial:"7-day free trial · Cancel anytime",
       cta:"🚀 Build My AI Portfolio",
       proof:"The portfolio Buffett would build for your risk profile",
@@ -1851,6 +1851,8 @@ function MarketCycleBanner({ticker="",sector="",portfolioTickers=[],lang="en",ca
 
 ${context}
 
+${lang==="es"?"IMPORTANT: ALL text fields must be in SPANISH. Keep JSON keys in English.":"Respond in English."}
+
 Respond ONLY with valid JSON, no markdown:
 {
   "cycle":"<Early Bull|Expansion|Late Expansion|Distribution|Bear Market|Early Recovery>",
@@ -2785,7 +2787,7 @@ Respond ONLY with valid JSON, no markdown:
 
       {/* Investment amount */}
       <div style={{maxWidth:400,margin:"0 auto 24px"}}>
-        <div style={{fontSize:12,color:T.muted,marginBottom:8}}>How much would you like to invest?</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:8}}>{lang==="es"?"¿Cuánto quieres invertir?":"How much would you like to invest?"}</div>
         <div style={{display:"flex",alignItems:"center",gap:8,background:T.accent,borderRadius:10,padding:"10px 14px",border:`1px solid ${T.border}`}}>
           <span style={{color:T.muted,fontFamily:"monospace",fontSize:16}}>$</span>
           <input type="number" value={amount} min={1000} step={1000} onChange={e=>setAmount(parseFloat(e.target.value)||1000)}
@@ -2795,7 +2797,7 @@ Respond ONLY with valid JSON, no markdown:
 
       {/* FREE badge */}
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.green}12`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 14px",marginBottom:12}}>
-        <span style={{fontSize:11,color:T.green}}>✓ Risk Profile is FREE — AI Portfolio is Premium</span>
+        <span style={{fontSize:11,color:T.green}}>{lang==="es"?"✓ Perfil de Riesgo GRATIS — Portafolio IA es Premium":"✓ Risk Profile is FREE — AI Portfolio is Premium"}</span>
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={getPortfolio} disabled={loading} style={{fontSize:15,padding:"14px 32px",borderRadius:12}}>
@@ -2809,13 +2811,13 @@ Respond ONLY with valid JSON, no markdown:
       {/* CTA → Portfolio Tracker */}
       <div style={{marginTop:16,padding:"20px 24px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
         <div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.green,marginBottom:4}}>📁 Already have stocks? Let's analyze your portfolio</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.green,marginBottom:4}}>{lang==="es"?"📁 ¿Ya tienes acciones? Analicemos tu portafolio":"📁 Already have stocks? Let's analyze your portfolio"}</div>
           <div style={{fontSize:12,color:T.muted,lineHeight:1.7}}>
             Upload your positions and our AI will evaluate if your current portfolio matches your <strong style={{color:T.text}}>{pLabel(profile,lang)}</strong> profile — and tell you exactly what to buy, hold, or sell.
           </div>
         </div>
         <button className="btn btn-gold" onClick={onGoToPortfolio} style={{fontSize:14,padding:"12px 24px",borderRadius:10,whiteSpace:"nowrap",flexShrink:0}}>
-          📁 Analyze My Portfolio →
+          {lang==="es"?"📁 Analizar Mi Portafolio →":"📁 Analyze My Portfolio →"}
         </button>
       </div>
     </div>
@@ -2972,7 +2974,7 @@ Respond ONLY with valid JSON, no markdown:
     {/* ✅ I EXECUTED THIS STRATEGY */}
     <div style={{background:`linear-gradient(135deg,${T.green}10,${T.accent})`,border:`2px solid ${T.green}44`,borderRadius:16,padding:"24px 28px",textAlign:"center"}}>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.green,marginBottom:8}}>
-        ✅ Did you buy these stocks?
+        {lang==="es"?"✅ ¿Compraste estas acciones?":"✅ Did you buy these stocks?"}
       </div>
       <div style={{fontSize:13,color:T.muted,maxWidth:500,margin:"0 auto 20px",lineHeight:1.7}}>
         Mark this strategy as executed and we'll track your progress — comparing what the AI recommended vs what you actually hold, month after month.
@@ -3051,7 +3053,7 @@ Respond ONLY with valid JSON, no markdown:
       <div style={{textAlign:"center",flexShrink:0}}>
         <div style={{fontSize:36,marginBottom:8}}>{profile.icon}</div>
         <button className="btn btn-gold" onClick={onGoToPortfolio} style={{fontSize:15,padding:"14px 28px",borderRadius:12,whiteSpace:"nowrap"}}>
-          📁 Analyze My Portfolio →
+          {lang==="es"?"📁 Analizar Mi Portafolio →":"📁 Analyze My Portfolio →"}
         </button>
         <div style={{fontSize:10,color:T.muted,marginTop:8}}>Your profile score is saved automatically</div>
       </div>
@@ -4279,8 +4281,8 @@ Siempre consulta con un asesor financiero certificado antes de tomar decisiones 
           {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
 
 • Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
-• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
-• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
+• Plan Basic ($7.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
+• Plan Premium ($12.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
 
 Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
           {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
@@ -4552,7 +4554,21 @@ export default function App(){
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
       {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
-      {tab==="strategy"&&<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>}
+      {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
+  ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
+  :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
+    <div style={{fontSize:48,marginBottom:16}}>📈</div>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.gold,marginBottom:12,fontWeight:700}}>
+      {lang==="es"?"Mi Estrategia — Basic/Premium":"My Strategy — Basic/Premium"}
+    </div>
+    <div style={{fontSize:14,color:T.muted,marginBottom:28,lineHeight:1.75}}>
+      {lang==="es"?"Desde $7.99/mes · Cancela cuando quieras":"From $7.99/mo · Cancel anytime"}
+    </div>
+    <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:15,padding:"14px 36px",borderRadius:12}}>
+      {lang==="es"?"🚀 Ver Planes":"🚀 See Plans"}
+    </button>
+  </div>
+)}
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
