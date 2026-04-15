@@ -3135,15 +3135,31 @@ Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
       return;
     }
     setLoadingDCA(true);setErr("");setDca(null);
-    const summary=positions.map(p=>{
+    const cashAmt=parseFloat(cash);
+    const dcaSummary=positions.map(p=>{
       const w=totalValue>0?((p.currentValue||p.totalCostBasis)/totalValue*100).toFixed(1):0;
-      return`${p.ticker}: ${w}% weight`;
-    }).join(" | ");
+      const pnlStr=p.pnlPct!=null?`P&L: ${p.pnlPct>=0?"+":""}${p.pnlPct.toFixed(1)}%`:"P&L: unknown";
+      const priceStr=p.currentPrice?`current: $${p.currentPrice.toFixed(2)}`:"";
+      return`${p.ticker}: ${w}% weight | avg cost: $${p.avgCost.toFixed(2)}${priceStr?` | ${priceStr}`:""} | ${pnlStr} | value: $${Math.round(p.currentValue||p.totalCostBasis).toLocaleString()}`;
+    }).join("\n");
     try{
-      const r=await callAI(`You are a DCA investment advisor. Investor profile: ${profileLabel}.
-Current portfolio: ${summary}. Available cash to invest: $${parseFloat(cash).toLocaleString()}.
-Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no markdown:
-{"allocations":[{"ticker":"<ticker or new stock>","amount":<dollar amount>,"pct":<% of available cash>,"reason":"<1 sentence>","isNew":<true if new position, false if adding to existing>}],"summary":"<2 sentences explaining the DCA strategy>","totalDeployed":<number>}`);
+      const r=await callAI(`You are an expert DCA investment advisor using Buffett/Munger principles. Investor profile: ${profileLabel}.
+
+CURRENT PORTFOLIO:
+${dcaSummary}
+
+Total portfolio value: $${Math.round(totalValue).toLocaleString()}
+Cash to deploy: $${cashAmt.toLocaleString()}
+
+STRATEGY RULES:
+- Positions DOWN > 10% (negative P&L): Consider averaging down IF the business is fundamentally strong
+- Positions UP > 30%: Add only if still undervalued; otherwise wait for pullback
+- Positions FLAT (-10% to +10%): Good opportunity to add if high conviction
+- May suggest 1 NEW position if portfolio lacks diversification
+- Minimum allocation: $${Math.max(50,Math.round(cashAmt*0.05)).toLocaleString()} per position
+
+Respond ONLY with valid JSON, no markdown:
+{"allocations":[{"ticker":"<ticker>","amount":<dollars>,"pct":<% of cash>,"reason":"<specific: mention P&L, avg cost, and DCA rationale>","isNew":<bool>,"action":"<Average Down|Add to Winner|New Position|Maintain Weight>"}],"summary":"<2-3 sentences: overall strategy and key rationale>","topPick":"<ticker + 1 sentence why it is the best DCA opportunity right now>","totalDeployed":<number>}`);
       setDca(r);incDCACount();
     }catch(e){setErr("DCA error: "+e.message);}
     setLoadingDCA(false);
@@ -3226,11 +3242,23 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
         {dca&&<div style={{marginTop:14}}>
           <div style={{fontSize:11,color:T.muted,lineHeight:1.6,marginBottom:12}}>{dca.summary}</div>
           <div style={{display:"flex",flexDirection:"column",gap:6}}>
-            {dca.allocations?.map(({ticker,amount,pct,reason,isNew})=>(
-              <div key={ticker} style={{background:T.card,borderRadius:8,padding:"10px 12px",border:`1px solid ${T.green}22`}}>
+            {/* Top Pick card */}
+            {dca.topPick&&<div style={{padding:"10px 12px",background:`${T.gold}12`,border:`1px solid ${T.goldDim}`,borderRadius:10,marginBottom:4,display:"flex",gap:8,alignItems:"flex-start"}}>
+              <span style={{fontSize:14,flexShrink:0}}>⭐</span>
+              <div>
+                <div style={{fontSize:10,color:T.gold,fontWeight:700,marginBottom:2}}>{lang==="es"?"Mejor Oportunidad DCA":"Best DCA Opportunity"}</div>
+                <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{dca.topPick}</div>
+              </div>
+            </div>}
+            {dca.allocations?.map(({ticker,amount,pct,reason,isNew,action})=>{
+              const ac=action==="Average Down"?T.blue:action==="Add to Winner"?T.green:action==="New Position"?T.purple:T.gold;
+              const al=action==="Average Down"?(lang==="es"?"⬇️ Promediar":"⬇️ Avg Down"):action==="Add to Winner"?(lang==="es"?"🚀 Agregar":"🚀 Add to Winner"):action==="New Position"?(lang==="es"?"🆕 Nueva":"🆕 New Position"):(lang==="es"?"⚖️ Mantener":"⚖️ Hold Weight");
+              return(
+              <div key={ticker} style={{background:T.card,borderRadius:8,padding:"10px 12px",border:`1px solid ${ac}33`}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <Mn sz={13} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                    <span style={{fontSize:9,padding:"2px 7px",borderRadius:8,background:`${ac}20`,color:ac,fontWeight:700}}>{al}</span>
                     {isNew&&<span style={{fontSize:9,padding:"1px 6px",borderRadius:8,background:`${T.purple}20`,color:T.purple,border:`1px solid ${T.purple}33`}}>NEW</span>}
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -3239,9 +3267,9 @@ Suggest how to distribute this cash via DCA. Respond ONLY with valid JSON, no ma
                   </div>
                 </div>
                 <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{reason}</div>
-                <div style={{height:2,background:T.border,borderRadius:2,marginTop:6}}><div style={{height:"100%",width:`${pct}%`,background:T.green,borderRadius:2}}/></div>
+                <div style={{height:3,background:T.border,borderRadius:2,marginTop:6}}><div style={{height:"100%",width:`${pct}%`,background:ac,borderRadius:2,opacity:0.7}}/></div>
               </div>
-            ))}
+            );})}
           </div>
           <div style={{marginTop:10,padding:"8px 12px",background:`${T.green}10`,border:`1px solid ${T.green}22`,borderRadius:8,display:"flex",justifyContent:"space-between"}}>
             <span style={{fontSize:11,color:T.muted}}>Total to deploy</span>
@@ -3697,6 +3725,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
 ${summary}
 Total positions: ${positions.length}
 Investor Risk Profile: ${profileCtx}
+${lang==="es"?"IMPORTANT: Respond ENTIRELY in SPANISH. All text fields (summary, profileMatchReason, suggestions, verdict reasons, overallGrade) must be in Spanish. Keep JSON keys in English.":""}
 Provide a concise but actionable analysis. If a risk profile is available, explicitly state if the portfolio matches it or not, and which positions are misaligned. Respond ONLY with valid JSON, no markdown:
 {
   "overallScore":"<A+|A|B+|B|C|D>",
