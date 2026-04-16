@@ -42,12 +42,12 @@ class ErrorBoundary extends React.Component{
   componentDidCatch(e,info){console.error("App crash:",e,info);}
   render(){
     if(this.state.err)return(
-      <div style={{minHeight:"100vh",background:"#0a0c10",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      <div style={{minHeight:"100vh",background:"#0e0e1a",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
         <div style={{background:"#141820",border:"1px solid #e74c3c44",borderRadius:16,padding:32,maxWidth:500,textAlign:"center"}}>
           <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#c9a84c",marginBottom:10}}>Something went wrong</div>
           <div style={{fontSize:13,color:"#6b7694",marginBottom:20,lineHeight:1.7}}>{this.state.err.message}</div>
-          <button onClick={()=>this.setState({err:null})} style={{background:"#c9a84c",color:"#0a0c10",border:"none",borderRadius:8,padding:"10px 24px",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+          <button onClick={()=>this.setState({err:null})} style={{background:"#c9a84c",color:"#0e0e1a",border:"none",borderRadius:8,padding:"10px 24px",fontSize:14,fontWeight:600,cursor:"pointer"}}>
             Try Again
           </button>
         </div>
@@ -59,10 +59,10 @@ class ErrorBoundary extends React.Component{
 
 
 const T = {
-  bg:"#0a0c10",surface:"#10141c",card:"#141820",border:"#1e2534",
-  gold:"#c9a84c",goldLight:"#e8c97a",goldDim:"#7a6330",
-  green:"#2ecc71",red:"#e74c3c",blue:"#4a9eff",purple:"#a855f7",
-  text:"#e8eaf0",muted:"#6b7694",accent:"#1a2235",
+  bg:"#0e0e1a",surface:"#13132a",card:"#15152e",border:"#252548",
+  gold:"#a78bfa",goldLight:"#c4b5fd",goldDim:"#5b4d8a",
+  green:"#34d399",red:"#f87171",blue:"#60a5fa",purple:"#7c3aed",
+  text:"#f0eeff",muted:"#8888aa",accent:"#1a1535",
 };
 
 const css=`
@@ -79,17 +79,17 @@ const css=`
   .tbtn{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:0.08em;font-weight:500;padding:8px 18px;text-transform:uppercase;color:${T.muted};transition:color 0.2s;}
   .tbtn:hover{color:${T.goldLight};}
   .btn{cursor:pointer;border:none;font-family:'DM Sans',sans-serif;font-weight:600;border-radius:8px;transition:all 0.2s;font-size:13px;}
-  .btn-gold{background:${T.gold};color:#0a0c10;padding:10px 22px;}.btn-gold:hover{background:${T.goldLight};transform:translateY(-1px);}
+  .btn-gold{background:${T.purple};color:#fff;padding:10px 22px;}.btn-gold:hover{background:${T.gold};transform:translateY(-1px);}
   .btn-gold:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
   .btn-outline{background:transparent;border:1px solid ${T.border};color:${T.muted};padding:8px 16px;}.btn-outline:hover{border-color:${T.goldDim};color:${T.gold};}
   .seg{cursor:pointer;border:1px solid ${T.border};font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:5px 12px;border-radius:6px;transition:all 0.2s;background:${T.accent};color:${T.muted};}
-  .seg-on{background:${T.gold}22!important;color:${T.gold}!important;border-color:${T.goldDim}!important;}
+  .seg-on{background:${T.purple}22!important;color:${T.gold}!important;border-color:${T.goldDim}!important;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   .fi{animation:fadeIn 0.35s ease both;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .sp{animation:spin 0.8s linear infinite;display:inline-block;}
   .trow:hover td{background:${T.accent}55;}
-  .hero-grad{background:linear-gradient(135deg,#0a0c10 0%,#0f1420 50%,#0a0c10 100%);}
+  .hero-grad{background:linear-gradient(135deg,#0e0e1a 0%,#13132a 40%,#1a1535 100%);}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
   .ad-pulse{animation:pulse 3s ease-in-out infinite;}
   .tbtn{transition:color 0.15s,border-color 0.15s;}
@@ -842,7 +842,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
         {mode!=="reset"&&<div style={{display:"flex",background:T.accent,borderRadius:10,padding:4,marginBottom:20}}>
           {["signup","login"].map(m=>(
             <button key={m} onClick={()=>setMode(m)} style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,
-              background:mode===m?T.gold:"transparent",color:mode===m?"#0a0c10":T.muted,transition:"all 0.2s"}}>
+              background:mode===m?T.gold:"transparent",color:mode===m?"#0e0e1a":T.muted,transition:"all 0.2s"}}>
               {m==="signup"?(isEs?"Registrarme":"Sign Up"):(isEs?"Iniciar Sesión":"Sign In")}
             </button>
           ))}
@@ -930,7 +930,7 @@ function Hero({onStart,lang="en"}){
       </p>
       {/* ── POWER TAGLINE ── */}
       {isEs
-        ?<div style={{display:"inline-flex",alignItems:"center",gap:10,background:`linear-gradient(135deg,${T.gold}18,${T.red}12)`,border:`1px solid ${T.gold}55`,borderRadius:12,padding:"10px 20px",marginBottom:28}}>
+        ?<div style={{display:"inline-flex",alignItems:"center",gap:10,background:`linear-gradient(135deg,${T.gold}18,${T.purple}12)`,border:`1px solid ${T.gold}55`,borderRadius:12,padding:"10px 20px",marginBottom:28}}>
           <span style={{fontSize:18}}>🏦</span>
           <span style={{fontSize:15,color:T.gold,fontWeight:700,letterSpacing:"0.01em"}}>
             La herramienta que los bancos <span style={{color:T.goldLight,textDecoration:"underline",textDecorationStyle:"wavy",textUnderlineOffset:"4px"}}>no quieren</span> que uses
@@ -3242,7 +3242,7 @@ Respond ONLY with valid JSON, no markdown:
           </div>
           <span style={{fontSize:11,color:T.muted,alignSelf:"center",whiteSpace:"nowrap"}}>available</span>
         </div>
-        <button className="btn btn-gold" onClick={runDCA} disabled={loadingDCA||!cash} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9,background:T.green,color:"#0a0c10"}}>
+        <button className="btn btn-gold" onClick={runDCA} disabled={loadingDCA||!cash} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9,background:T.green,color:"#0e0e1a"}}>
           {loadingDCA
             ?<><span className="sp">⟳</span> {lang==="es"?"Planificando...":"Planning..."}</>
             :canUseDCAFree()
@@ -4842,7 +4842,7 @@ export default function App(){
               </div>}
             </div>
             {user&&<div style={{display:"flex",alignItems:"center",gap:6,background:T.accent,borderRadius:20,padding:"4px 10px",border:`1px solid ${T.border}`}}>
-              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#0a0c10",fontWeight:700}}>
+              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#0e0e1a",fontWeight:700}}>
                 {user.email?.[0]?.toUpperCase()||"U"}
               </div>
               <span style={{fontSize:11,color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted,fontWeight:600}}>
