@@ -4788,9 +4788,15 @@ export default function App(){
       <div style={{maxWidth:1380,margin:"0 auto"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
           <div onClick={()=>setTab(null)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>📈</div>
+            <div style={{width:34,height:34,borderRadius:9,background:T.purple,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 0 12px ${T.purple}66`}}>
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+              </svg>
+            </div>
             <div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,letterSpacing:"0.02em",lineHeight:1}}>{L.nav_brand}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.text,letterSpacing:"0.01em",lineHeight:1,fontWeight:700}}>{L.nav_brand}</div>
               <div className="nav-brand-sub" style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
             </div>
           </div>
@@ -4907,7 +4913,7 @@ export default function App(){
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
       <div style={{fontSize:9,color:T.muted}}>
-        <span style={{color:T.goldDim,fontFamily:"'Playfair Display',serif"}}>Inversoria</span>
+        <span style={{color:T.gold,fontFamily:"'Playfair Display',serif",fontWeight:700}}>Inversoria</span>
         {" "}· Buffett · Munger · {L.footer_disc}
       </div>
       <div style={{display:"flex",gap:16}}>
