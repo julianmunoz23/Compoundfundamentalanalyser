@@ -4871,6 +4871,89 @@ function TermsOfService({onClose,lang="en"}){
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Términos de Uso</div>
         <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
         {[
+          {t:"1. Aceptación de los Términos",b:`Al acceder y usar Inversoria (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.\n\nEl uso de la Plataforma está disponible para personas mayores de 18 años con capacidad legal para celebrar contratos.`},
+          {t:"2. Descripción del Servicio",b:`Inversoria es una plataforma educativa de análisis de inversiones que ofrece:\n\n• Calculadora de interés compuesto.\n• Análisis de acciones mediante inteligencia artificial (framework Buffett/Munger).\n• Quiz de perfil de riesgo de inversor.\n• Seguimiento de portafolio con precios de mercado.\n• Herramientas de planificación DCA y rebalanceo.\n• Dashboard de ciclos de mercado.\n\nEl servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
+          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST ES EXCLUSIVAMENTE EDUCATIVO E INFORMATIVO.\n\n• No somos una firma de asesoría de inversiones registrada.\n• Los análisis generados por IA son estimaciones educativas, NO recomendaciones de inversión.\n• Los scores de calidad, análisis de moat y proyecciones DCF son herramientas de aprendizaje.\n• Los consensos de analistas provienen de fuentes públicas y pueden no estar actualizados.\n• Las rentabilidades pasadas no garantizan rentabilidades futuras.\n\nSiempre consulta con un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la pérdida total del capital invertido.`},
+          {t:"4. Planes y Pagos",b:`La Plataforma ofrece:\n\n• Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).\n• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.\n• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.\n\nLos pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
+          {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.\n• No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.\n• Para solicitar un reembolso: hola@inversoria.lat\n• Los reembolsos se procesan en 5-10 días hábiles.`},
+          {t:"6. Cuenta de Usuario",b:`• Eres responsable de mantener la confidencialidad de tu contraseña.\n• No puedes compartir, vender o transferir tu cuenta.\n• Debes notificarnos inmediatamente de cualquier uso no autorizado.\n• Nos reservamos el derecho de suspender cuentas que violen estos términos.`},
+          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Inversoria.\n• Se te otorga una licencia limitada, no exclusiva y no transferible para uso personal.\n• No puedes copiar, distribuir, modificar o crear obras derivadas sin autorización escrita.\n• Los datos de mercado y análisis son para uso personal exclusivamente.`},
+          {t:"8. Limitación de Responsabilidad",b:`EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY APLICABLE:\n\n• No nos responsabilizamos por pérdidas de inversión derivadas del uso de la Plataforma.\n• No garantizamos la exactitud, completitud o actualidad de los datos de mercado.\n• No somos responsables por interrupciones del servicio, errores de terceros (APIs de datos) o pérdida de datos.\n• Nuestra responsabilidad máxima se limita al monto pagado por el usuario en los últimos 3 meses.`},
+          {t:"9. Conducta del Usuario",b:`Está prohibido:\n\n• Usar la Plataforma para fines ilegales o no autorizados.\n• Intentar acceder a cuentas de otros usuarios.\n• Realizar ingeniería inversa del software.\n• Usar bots o scraping automatizado.\n• Compartir tu cuenta con terceros.\n• Publicar contenido falso o engañoso.`},
+          {t:"10. Modificaciones del Servicio",b:`Nos reservamos el derecho de:\n\n• Modificar o discontinuar funciones con 30 días de aviso.\n• Cambiar los precios de suscripción con 30 días de aviso.\n• Actualizar estos Términos con notificación por email.\n\nEl uso continuado tras los cambios implica aceptación.`},
+          {t:"11. Ley Aplicable y Jurisdicción",b:`Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa se someterá a los tribunales competentes de Bogotá, Colombia, sin perjuicio de los derechos que la normativa local de tu país de residencia te pueda otorgar como consumidor.`},
+          {t:"12. Contacto",b:`Para cualquier consulta sobre estos Términos:\n📧 hola@inversoria.lat\n🌐 inversoria.lat`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+const TABS=[
+  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
+  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
+  {id:"score",es:"Analizar Acción",en:"Analyze Stock",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+  {id:"profile",es:"Perfil de Riesgo",en:"Risk Profile",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
+  {id:"portfolio",es:"Mi Portafolio",en:"My Portfolio",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>},
+  {id:"strategy",es:"Mi Estrategia",en:"My Strategy",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+];
+const FREE_LIMIT=3;
+function PrivacyPolicy({onClose,lang="en"}){
+  const isEs=lang==="es";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:3000,overflowY:"auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:760,margin:"0 auto",background:T.card,borderRadius:16,padding:"40px 40px",border:`1px solid ${T.border}`,position:"relative"}}>
+        <button onClick={onClose} style={{position:"sticky",top:0,float:"right",background:T.accent,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",color:T.muted,fontSize:13,marginBottom:16}}>✕ Cerrar</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Política de Privacidad</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
+        {[
+          {t:"1. Responsable del Tratamiento",b:`Inversoria (en adelante "la Plataforma") es responsable del tratamiento de los datos personales recopilados a través de inversoria.lat y sus dominios asociados.\n\nEsta política cumple con la Ley 1581 de 2012 y el Decreto 1377 de 2013 (Colombia), la LFPDPPP (México), la Ley 25.326 (Argentina), la Ley 19.628 (Chile) y la LGPD (Brasil).`},
+          {t:"2. Datos que Recopilamos",b:`Recopilamos los siguientes datos personales:\n\n• Datos de identificación: correo electrónico, nombre de usuario.\n• Datos de uso: tickers analizados, posiciones de portafolio ingresadas, perfil de riesgo seleccionado.\n• Datos técnicos: dirección IP, tipo de navegador, sistema operativo, páginas visitadas, tiempo de sesión.\n• Datos de pago: procesados exclusivamente por Stripe Inc. No almacenamos datos de tarjetas de crédito.\n\nNo recopilamos datos sensibles como origen racial, creencias religiosas, datos biométricos ni información de salud.`},
+          {t:"3. Finalidad del Tratamiento",b:`Los datos personales se utilizan para:\n\n• Crear y gestionar tu cuenta de usuario.\n• Proveer los servicios de análisis de inversiones, calculadora y seguimiento de portafolio.\n• Personalizar tu experiencia según tu perfil de riesgo e historial de uso.\n• Enviar comunicaciones transaccionales (confirmación de cuenta, recibos de pago).\n• Mejorar la plataforma mediante análisis de uso agregado y anónimo.\n• Cumplir con obligaciones legales y prevenir fraudes.\n\nNo utilizamos tus datos para decisiones automatizadas que produzcan efectos legales significativos.`},
+          {t:"4. Base Legal del Tratamiento",b:`El tratamiento de tus datos se basa en:\n\n• Tu consentimiento expreso al registrarte y aceptar esta política.\n• La ejecución del contrato de prestación de servicios.\n• El interés legítimo de la Plataforma para mejorar sus servicios.\n• El cumplimiento de obligaciones legales aplicables.`},
+          {t:"5. Tus Derechos (ARCO)",b:`De conformidad con la normativa aplicable, tienes derecho a:\n\n• Acceso: Conocer qué datos personales tenemos sobre ti.\n• Rectificación: Corregir datos inexactos o incompletos.\n• Cancelación/Supresión: Solicitar la eliminación de tus datos.\n• Oposición: Oponerte al tratamiento de tus datos para fines específicos.\n• Portabilidad: Recibir tus datos en formato estructurado.\n• Revocación del consentimiento: En cualquier momento, sin efecto retroactivo.\n\nPara ejercer estos derechos escríbenos a: hola@inversoria.lat\nResponderemos en un plazo máximo de 15 días hábiles.`},
+          {t:"6. Compartir Datos con Terceros",b:`Compartimos datos únicamente con:\n\n• Supabase Inc. (base de datos y autenticación) — almacenamiento seguro en servidores con cifrado AES-256.\n• Stripe Inc. (procesamiento de pagos) — cumple con PCI-DSS nivel 1.\n• Anthropic PBC (análisis de IA) — solo se envían los datos necesarios para el análisis solicitado.\n• Proveedores de datos de mercado (datos agregados de mercado, no datos personales).\n\nNo vendemos, alquilamos ni cedemos tus datos personales a terceros con fines comerciales.`},
+          {t:"7. Transferencias Internacionales",b:`Algunos de nuestros proveedores procesan datos fuera de tu país de residencia. En todos los casos exigimos garantías contractuales adecuadas (cláusulas contractuales tipo o certificaciones equivalentes) para proteger tus datos conforme a los estándares de tu país.`},
+          {t:"8. Retención de Datos",b:`Conservamos tus datos mientras mantengas una cuenta activa y durante los períodos legalmente requeridos:\n\n• Datos de cuenta: mientras la cuenta esté activa + 2 años tras su eliminación.\n• Datos de transacciones: 10 años (obligación fiscal/contable).\n• Datos de uso y analítica: máximo 24 meses en forma agregada.\n\nPuedes solicitar la eliminación anticipada de tu cuenta en cualquier momento.`},
+          {t:"9. Seguridad",b:`Implementamos medidas técnicas y organizativas adecuadas:\n\n• Cifrado en tránsito (TLS 1.3) y en reposo (AES-256).\n• Autenticación segura gestionada por Supabase Auth.\n• Acceso restringido a datos personales por parte del equipo.\n• Revisiones periódicas de seguridad.\n\nEn caso de brecha de seguridad que afecte tus datos, te notificaremos dentro de las 72 horas siguientes a su detección.`},
+          {t:"10. Cookies y Tecnologías Similares",b:`Utilizamos:\n\n• Cookies esenciales: para mantener tu sesión activa (no requieren consentimiento).\n• Almacenamiento local (localStorage): para guardar preferencias de idioma, moneda y datos de portafolio de usuarios no registrados.\n• Analytics (opcional): Google Analytics para análisis de uso agregado y anónimo.\n\nPuedes configurar tu navegador para rechazar cookies, aunque esto puede afectar la funcionalidad.`},
+          {t:"11. Menores de Edad",b:`La Plataforma no está dirigida a menores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos que hemos recopilado datos de un menor, los eliminaremos inmediatamente.`},
+          {t:"12. Cambios a esta Política",b:`Podemos actualizar esta política periódicamente. Te notificaremos por correo electrónico y mediante aviso en la Plataforma con al menos 30 días de anticipación ante cambios sustanciales. El uso continuado de la Plataforma tras la notificación implica aceptación.`},
+          {t:"13. Contacto y Autoridad de Control",b:`Para consultas sobre privacidad:\n📧 hola@inversoria.lat\n\nTienes derecho a presentar reclamaciones ante la autoridad de protección de datos de tu país:\n• Colombia: Superintendencia de Industria y Comercio (SIC)\n• México: INAI\n• Argentina: AAIP\n• Chile: Consejo para la Transparencia\n• Brasil: ANPD`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{marginTop:32,padding:"16px 20px",background:T.accent,borderRadius:10,border:`1px solid ${T.border}`,fontSize:12,color:T.muted,lineHeight:1.7}}>
+          ⚠️ Esta política fue elaborada para cumplir con las principales normativas de protección de datos de América Latina. Para asesoría legal específica en tu jurisdicción, consulta un abogado especializado.
+        </div>
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsOfService({onClose,lang="en"}){
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:3000,overflowY:"auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:760,margin:"0 auto",background:T.card,borderRadius:16,padding:"40px 40px",border:`1px solid ${T.border}`,position:"relative"}}>
+        <button onClick={onClose} style={{position:"sticky",top:0,float:"right",background:T.accent,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",color:T.muted,fontSize:13,marginBottom:16}}>✕ Cerrar</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Términos de Uso</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
+        {[
           {t:"1. Aceptación de los Términos",b:`Al acceder y usar Inversoria (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.
 
 El uso de la Plataforma está disponible para personas mayores de 18 años con capacidad legal para celebrar contratos.`},
@@ -4884,4 +4967,388 @@ El uso de la Plataforma está disponible para personas mayores de 18 años con c
 • Dashboard de ciclos de mercado.
 
 El servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
-          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST 
+          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST ES EXCLUSIVAMENTE EDUCATIVO E INFORMATIVO.
+
+• No somos una firma de asesoría de inversiones registrada.
+• Los análisis generados por IA son estimaciones educativas, NO recomendaciones de inversión.
+• Los scores de calidad, análisis de moat y proyecciones DCF son herramientas de aprendizaje.
+• Los consensos de analistas provienen de fuentes públicas y pueden no estar actualizados.
+• Las rentabilidades pasadas no garantizan rentabilidades futuras.
+
+Siempre consulta con un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la pérdida total del capital invertido.`},
+          {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
+
+• Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
+• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
+• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
+
+Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
+          {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
+• No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.
+• Para solicitar un reembolso: hola@inversoria.lat
+• Los reembolsos se procesan en 5-10 días hábiles.`},
+          {t:"6. Cuenta de Usuario",b:`• Eres responsable de mantener la confidencialidad de tu contraseña.
+• No puedes compartir, vender o transferir tu cuenta.
+• Debes notificarnos inmediatamente de cualquier uso no autorizado.
+• Nos reservamos el derecho de suspender cuentas que violen estos términos.`},
+          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Inversoria.
+• Se te otorga una licencia limitada, no exclusiva y no transferible para uso personal.
+• No puedes copiar, distribuir, modificar o crear obras derivadas sin autorización escrita.
+• Los datos de mercado y análisis son para uso personal exclusivamente.`},
+          {t:"8. Limitación de Responsabilidad",b:`EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY APLICABLE:
+
+• No nos responsabilizamos por pérdidas de inversión derivadas del uso de la Plataforma.
+• No garantizamos la exactitud, completitud o actualidad de los datos de mercado.
+• No somos responsables por interrupciones del servicio, errores de terceros (APIs de datos) o pérdida de datos.
+• Nuestra responsabilidad máxima se limita al monto pagado por el usuario en los últimos 3 meses.`},
+          {t:"9. Conducta del Usuario",b:`Está prohibido:
+
+• Usar la Plataforma para fines ilegales o no autorizados.
+• Intentar acceder a cuentas de otros usuarios.
+• Realizar ingeniería inversa del software.
+• Usar bots o scraping automatizado.
+• Compartir tu cuenta con terceros.
+• Publicar contenido falso o engañoso.`},
+          {t:"10. Modificaciones del Servicio",b:`Nos reservamos el derecho de:
+
+• Modificar o discontinuar funciones con 30 días de aviso.
+• Cambiar los precios de suscripción con 30 días de aviso.
+• Actualizar estos Términos con notificación por email.
+
+El uso continuado tras los cambios implica aceptación.`},
+          {t:"11. Ley Aplicable y Jurisdicción",b:`Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa se someterá a los tribunales competentes de Bogotá, Colombia, sin perjuicio de los derechos que la normativa local de tu país de residencia te pueda otorgar como consumidor.`},
+          {t:"12. Contacto",b:`Para cualquier consulta sobre estos Términos:
+📧 hola@inversoria.lat
+🌐 inversoria.lat`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+const TABS=[
+  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
+  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
+  {id:"score",es:"Analizar Acción",en:"Analyze Stock",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+  {id:"profile",es:"Perfil de Riesgo",en:"Risk Profile",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
+  {id:"portfolio",es:"Mi Portafolio",en:"My Portfolio",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>},
+  {id:"strategy",es:"Mi Estrategia",en:"My Strategy",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+];
+const FREE_LIMIT=3;
+
+function isAdmin(){try{return localStorage.getItem("inversoria_admin")==="true";}catch{return false;}}
+function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_count")||"0");}catch{return 0;}}
+function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("inversoria_count",String(n));return n;}catch{return 999;}}
+// DCA usage counter — 2 free uses
+const DCA_FREE_LIMIT=2;
+function getDCACount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_dca_count")||"0");}catch{return 0;}}
+function incDCACount(){try{if(isAdmin())return 0;const n=getDCACount()+1;localStorage.setItem("inversoria_dca_count",String(n));return n;}catch{return 999;}}
+function canUseDCAFree(){return isAdmin()||getDCACount()<DCA_FREE_LIMIT;}
+// Rebalance usage counter — 2 free uses
+const REB_FREE_LIMIT=2;
+function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_reb_count")||"0");}catch{return 0;}}
+function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("inversoria_reb_count",String(n));return n;}catch{return 999;}}
+function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
+
+export default function App(){
+  const [tab,setTab]=useState(null);
+  const [user,setUser]=useState(null);          // Supabase user object
+  const [userPlan,setUserPlan]=useState("free"); // free | basic | premium
+  const [showAuth,setShowAuth]=useState(false);
+  const [authMode,setAuthMode]=useState("signup");
+  const [lang,setLang]=useState(()=>{try{return localStorage.getItem("compoundr_lang")||"en";}catch{return "en";}});
+  const L=LANG[lang]||LANG.en;
+  const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{} };
+  const [currCode,setCurrCode]=useState(()=>{try{return localStorage.getItem("compoundr_currency")||"USD";}catch{return "USD";}});
+  const [showCurrMenu,setShowCurrMenu]=useState(false);
+  const [liveRates,setLiveRates]=useState({});
+  const [ratesLoaded,setRatesLoaded]=useState(false);
+  const [ratesError,setRatesError]=useState(false);
+
+  // Fetch live rates on mount
+  useState(()=>{
+    fetchExchangeRates().then(rates=>{
+      setLiveRates(rates);
+      setRatesLoaded(true);
+    }).catch(()=>{setRatesError(true);setRatesLoaded(true);});
+  });
+
+  const currObj=CURRENCIES[currCode]||CURRENCIES.USD;
+  const liveRate=currCode==="USD"?1:(liveRates[currCode]||CURRENCIES[currCode]?.rate||1);
+  setCurrencyGlobal(currObj,liveRate); // sync global fmt with live rate
+
+  const changeCurrency=(code)=>{
+    setCurrCode(code);
+    const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
+    setCurrencyGlobal(CURRENCIES[code],rate);
+    try{localStorage.setItem("compoundr_currency",code);}catch{}
+    setShowCurrMenu(false);
+  };
+  const [m,setM]=useState(defM());
+  const [moat,setMoat]=useState(defMoat());
+  const [company,setCompany]=useState("");
+  const [sector,setSector]=useState("Technology");
+  const [showPaywall,setShowPaywall]=useState(false);
+  const [paywallContext,setPaywallContext]=useState("stock");
+  const [adminMode,setAdminMode]=useState(isAdmin());
+  const [showPrivacy,setShowPrivacy]=useState(false);
+  const [showTerms,setShowTerms]=useState(false);
+  const [showMethodology,setShowMethodology]=useState(false);
+
+  useState(()=>{
+    const handler=(e)=>{
+      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){localStorage.setItem("inversoria_admin","true");setAdminMode(true);alert("✅ Admin mode ON — unlimited access");}
+      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){localStorage.removeItem("inversoria_admin");setAdminMode(false);alert("🔒 Admin mode OFF");}
+    };
+    window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
+  });
+
+  // ── SUPABASE AUTH LISTENER ──
+  useEffect(()=>{
+    if(!supabase)return;
+    // Get current session on mount
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+    });
+    // Listen for auth changes
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+      else{setUser(null);setUserPlan("free");}
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
+
+  const syncUserPlan=async(userId)=>{
+    try{
+      const {data}=await supabase.from("user_plans").select("plan").eq("user_id",userId).single();
+      if(data?.plan)setUserPlan(data.plan);
+    }catch(e){setUserPlan("free");}
+  };
+
+  const signOut=async()=>{
+    if(supabase)await supabase.auth.signOut();
+    setUser(null);setUserPlan("free");
+  };
+
+  const isPremium=()=>isAdmin()||userPlan==="basic"||userPlan==="premium";
+  const isPro=()=>isAdmin()||userPlan==="premium";
+
+  const canAnalyze=(ctx="stock")=>{if(isPremium())return true;const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setShowPaywall(true);return false;}return true;};
+  const onAnalysis=()=>{incCount();};
+  const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
+
+  return<ErrorBoundary>
+  <div style={{minHeight:"100vh",background:T.bg}} onClick={()=>showCurrMenu&&setShowCurrMenu(false)}>
+    <style>{css}</style>
+    {showPrivacy&&<PrivacyPolicy onClose={()=>setShowPrivacy(false)} lang={lang}/>}
+    {showTerms&&<TermsOfService onClose={()=>setShowTerms(false)} lang={lang}/>}
+    {showMethodology&&<MethodologyModal onClose={()=>setShowMethodology(false)} lang={lang}/>}
+    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext} lang={lang}
+      onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
+    {showAuth&&<AuthModal lang={lang} initialMode={authMode}
+      onClose={()=>setShowAuth(false)}
+      onAuth={(u)=>{setUser(u);setShowAuth(false);}}/>}
+    <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(8px)"}}>
+      <div style={{maxWidth:1380,margin:"0 auto"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
+          <div onClick={()=>setTab(null)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:34,height:34,borderRadius:9,background:T.purple,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 0 12px ${T.purple}66`}}>
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+              </svg>
+            </div>
+            <div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.text,letterSpacing:"0.01em",lineHeight:1,fontWeight:700}}>{L.nav_brand}</div>
+              <div className="nav-brand-sub" style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
+            </div>
+          </div>
+          <div className="nav-actions" style={{display:"flex",alignItems:"center",gap:8}}>
+            {/* Lang switcher — refined */}
+            <button onClick={toggleLang} style={{background:`${T.gold}12`,border:`1px solid ${T.gold}30`,borderRadius:8,padding:"5px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background=`${T.gold}22`;}}
+              onMouseLeave={e=>{e.currentTarget.style.background=`${T.gold}12`;}}>
+              <span style={{fontSize:12}}>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
+              <span style={{fontSize:11,color:T.gold,fontWeight:700,letterSpacing:"0.05em"}}>{lang==="en"?"ES":"EN"}</span>
+            </button>
+            {/* Currency picker */}
+            <div style={{position:"relative"}}>
+              <button onClick={()=>setShowCurrMenu(v=>!v)}
+                style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:3}}>
+                <span style={{fontSize:14}}>{currObj.flag}</span>
+                <span style={{color:T.text,fontWeight:600,fontSize:10}}>{currCode}</span>
+                <span style={{fontSize:8}}>▼</span>
+              </button>
+              {showCurrMenu&&<div className="curr-dropdown" style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:6,zIndex:200,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+                <div style={{fontSize:9,color:T.muted,padding:"4px 8px",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Select Currency</div>
+                {/* Rate source indicator */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"2px 8px 6px"}}>
+                  <span style={{fontSize:9,color:T.muted}}>Rates: European Central Bank</span>
+                  {ratesLoaded
+                    ?<span style={{fontSize:9,color:ratesError?T.gold:T.green}}>{ratesError?"⚠️ Fallback rates":"✅ Live rates"}</span>
+                    :<span style={{fontSize:9,color:T.muted}}><span className="sp">⟳</span> Loading...</span>}
+                </div>
+                {Object.values(CURRENCIES).map(({flag,code,name,symbol})=>{
+                  const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
+                  return<div key={code} onClick={()=>changeCurrency(code)}
+                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:6,cursor:"pointer",background:currCode===code?`${T.gold}15`:"transparent"}}
+                    onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+                    onMouseLeave={e=>e.currentTarget.style.background=currCode===code?`${T.gold}15`:"transparent"}>
+                    <span style={{fontSize:14}}>{flag}</span>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:11,color:currCode===code?T.gold:T.text,fontWeight:currCode===code?600:400}}>{symbol} {code} — {name}</div>
+                      <div style={{fontSize:9,color:T.muted}}>
+                        {code==="USD"?"Base currency":`1 USD = ${rate.toLocaleString("en-US",{maximumFractionDigits:2})} ${code}`}
+                      </div>
+                    </div>
+                    {currCode===code&&<span style={{fontSize:10,color:T.gold}}>✓</span>}
+                  </div>;
+                })}
+                <div style={{borderTop:`1px solid ${T.border}33`,marginTop:4,padding:"6px 8px 2px"}}>
+                  <div style={{fontSize:9,color:T.muted,lineHeight:1.5}}>
+                    ⚠️ Stock prices always in USD (market standard).<br/>
+                    Portfolio totals & calculators use selected currency.
+                  </div>
+                </div>
+              </div>}
+            </div>
+            {user&&<div style={{display:"flex",alignItems:"center",gap:6,background:T.accent,borderRadius:20,padding:"4px 10px",border:`1px solid ${T.border}`}}>
+              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.purple},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,flexShrink:0}}>
+                {user.email?.[0]?.toUpperCase()||"U"}
+              </div>
+              <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.03em",color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted}}>
+                {userPlan==="premium"?"★ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
+              </span>
+              <button onClick={signOut}
+                style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"0 2px",display:"flex",alignItems:"center"}}
+                title={lang==="es"?"Cerrar sesión":"Sign out"}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>}
+            {!user&&<button onClick={()=>{setAuthMode("login");setShowAuth(true);}} style={{background:`${T.purple}12`,border:`1px solid ${T.gold}35`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,color:T.gold,fontWeight:600,letterSpacing:"0.03em"}}>
+              {lang==="es"?"Iniciar Sesión":"Sign In"}
+            </button>}
+            {adminMode
+              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:8,background:`${T.green}10`,display:"flex",alignItems:"center",gap:5,fontWeight:600}}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Admin
+              </div>
+              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:8}}>
+                  {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
+                </div>
+                <button className="btn btn-gold" onClick={()=>{
+                  if(!user){setAuthMode("signup");setShowAuth(true);}
+                  else{setPaywallContext("stock");setShowPaywall(true);}
+                }} style={{fontSize:12,padding:"8px 16px"}}>
+                  {L.nav_premium}
+                </button></>
+            }
+          </div>
+        </div>
+        {tab&&<div className="tabs-wrap" style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto",alignItems:"center"}}>
+          <div style={{width:20,height:20,borderRadius:5,background:T.purple,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:8,marginLeft:4}}>
+            <svg width="13" height="13" viewBox="0 0 32 32" fill="none">
+              <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+            </svg>
+          </div>
+          {[
+            {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
+            {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
+            {id:"score",l:L.tab_score,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+            {id:"profile",l:L.tab_profile,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
+            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
+            {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+          ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
+            style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
+              {t.icon&&<span style={{opacity:tab===t.id?1:0.6,display:"flex",alignItems:"center"}}>{t.icon}</span>}{t.l}</button>)}
+        </div>}
+      </div>
+    </div>
+    {!tab&&<Hero onStart={handleStart} lang={lang}/>}
+    {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
+      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
+      {tab==="whatif"&&<WhatIfTab lang={lang}/>}
+      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
+      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
+      {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
+  ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
+  :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
+    <div style={{fontSize:48,marginBottom:16}}>📈</div>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.gold,marginBottom:12,fontWeight:700}}>
+      {lang==="es"?"Mi Estrategia — Basic/Premium":"My Strategy — Basic/Premium"}
+    </div>
+    <div style={{fontSize:14,color:T.muted,marginBottom:28,lineHeight:1.75}}>
+      {lang==="es"?"Desde $7.99/mes · Cancela cuando quieras":"From $7.99/mo · Cancel anytime"}
+    </div>
+    <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:15,padding:"14px 36px",borderRadius:12}}>
+      {lang==="es"?"🚀 Ver Planes":"🚀 See Plans"}
+    </button>
+  </div>
+)}
+    </div>}
+    <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
+    <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+      <div style={{fontSize:9,color:T.muted,lineHeight:1.8}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+          <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#7c3aed"/>
+            <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+          </svg>
+          <span style={{color:T.gold,fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:11}}>Inversoria</span>
+          <span style={{color:T.muted}}>·</span>
+          <span>{lang==="es"?"Análisis de Inversiones con IA · LATAM":"AI-Powered Investment Analysis · LATAM"}</span>
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:12,alignItems:"center"}}>
+          <span>Colombia 🇨🇴</span>
+          <a href="mailto:hola@inversoria.lat" style={{color:T.muted,textDecoration:"none"}}
+            onMouseEnter={e=>e.target.style.color=T.gold}
+            onMouseLeave={e=>e.target.style.color=T.muted}>
+            hola@inversoria.lat
+          </a>
+          <span style={{color:`${T.muted}66`}}>·</span>
+          <span style={{color:`${T.muted}88`,fontStyle:"italic"}}>
+            {lang==="es"
+              ?"Contenido educativo — no constituye asesoría financiera certificada"
+              :"Educational content — not certified financial advice"}
+          </span>
+        </div>
+      </div>
+      <div style={{display:"flex",gap:16}}>
+        <button onClick={(e)=>{e.stopPropagation();setShowPrivacy(true);}}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
+          onMouseEnter={e=>e.target.style.color=T.gold}
+          onMouseLeave={e=>e.target.style.color=T.muted}>
+          {lang==="es"?"Política de Privacidad":"Privacy Policy"}
+        </button>
+        <button onClick={(e)=>{e.stopPropagation();setShowTerms(true);}}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
+          onMouseEnter={e=>e.target.style.color=T.gold}
+          onMouseLeave={e=>e.target.style.color=T.muted}>
+          {lang==="es"?"Términos de Uso":"Terms of Use"}
+        </button>
+        <button onClick={(e)=>{e.stopPropagation();window.open("mailto:hola@inversoria.lat");}}
+          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
+          onMouseEnter={e=>e.target.style.color=T.gold}
+          onMouseLeave={e=>e.target.style.color=T.muted}>
+          {lang==="es"?"Contacto":"Contact"}
+        </button>
+      </div>
+    </div>
+  </div>
+  </ErrorBoundary>;
+}
