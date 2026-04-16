@@ -912,25 +912,25 @@ function Hero({onStart,lang="en"}){
       {/* Badge social proof */}
       <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:T.green,fontWeight:500}}>
-          ★ {isEs?"Ya somos más de 500 inversores en LATAM — únete gratis":"Trusted by 500+ investors across Latin America"}
+          ★ {isEs?"✦ Más de 500 inversores en LATAM ya toman mejores decisiones":"✦ 500+ LATAM investors already making smarter decisions"}
         </span>
       </div>
 
       {/* Headline */}
       <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(34,5,50),color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
         {isEs
-          ?<>¿Vale la pena<br/><span style={{color:T.gold}}>esta acción?</span></>
+          ?<>¿En qué<br/><span style={{color:T.gold}}>debería invertir?</span></>
           :<>Is this stock<br/><span style={{color:T.gold}}>worth buying?</span></>}
       </h1>
 
       <p style={{fontSize:19,color:T.muted,maxWidth:560,margin:"0 auto 10px",lineHeight:1.75,fontWeight:400}}>
         {isEs
-          ?"La IA analiza cualquier acción en 30 segundos y te dice si es buena o mala inversión — en español, sin experiencia previa."
-          :"AI analyzes any stock in 30 seconds and tells you if it's a good or bad investment — in Spanish, no experience needed."}
+          ?"Dile a la IA el nombre de cualquier acción y en 30 segundos sabrás si vale la pena comprarla — sin tecnicismos, sin experiencia previa."
+          :"Tell the AI any stock name and in 30 seconds you'll know if it's worth buying — no finance degree, no experience needed."}
       </p>
       <p style={{fontSize:13,color:`${T.muted}88`,marginBottom:28}}>
         {isEs
-          ?"Tu analista de inversiones personal · Colombia · México · Argentina · Chile · Todo LATAM"
+          ?"La herramienta que los bancos no quieren que uses · Colombia · México · Argentina · Chile · Todo LATAM"
           :"Your personal investment analyst · All of Latin America"}
       </p>
 
@@ -938,18 +938,18 @@ function Hero({onStart,lang="en"}){
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
         <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("score")}
           style={{fontSize:16,padding:"15px 36px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
-          {isEs?"🎯 Analizar una acción gratis":"🎯 Analyze a stock — free"}
+          {isEs?"🎯 Analiza tu primera acción — gratis":"🎯 Analyze a stock — free"}
         </button>
         <button className="btn btn-outline" onClick={()=>onStart("profile")}
           style={{fontSize:14,padding:"15px 26px",borderRadius:12}}>
-          {isEs?"🧬 ¿Qué tipo de inversor soy?":"🧬 What type of investor am I?"}
+          {isEs?"🧬 ¿Cómo debería invertir yo?":"🧬 What type of investor am I?"}
         </button>
       </div>
 
       {/* Free tier info */}
       <p style={{fontSize:12,color:`${T.muted}77`,marginBottom:0}}>
         {isEs
-          ?"3 análisis gratis · Sin registrarte · Sin tarjeta de crédito"
+          ?"Empieza gratis · Sin registrarte · Sin tarjeta · Sin excusas"
           :"3 free analyses · No sign up required · No credit card"}
       </p>
     </div>
@@ -1007,10 +1007,10 @@ function Hero({onStart,lang="en"}){
     <div style={{borderTop:`1px solid ${T.border}22`,borderBottom:`1px solid ${T.border}22`,background:`${T.accent}88`,padding:"20px 28px",marginBottom:0}}>
       <div className="kpi-4" style={{maxWidth:800,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,textAlign:"center"}}>
         {[
-          {n:"500+",l:isEs?"inversores en LATAM":"investors in LATAM"},
-          {n:"30s",l:isEs?"por análisis de acción":"per stock analysis"},
-          {n:"8",l:isEs?"países y monedas":"countries & currencies"},
-          {n:"100%",l:isEs?"en español":"in Spanish"},
+          {n:"500+",l:isEs?"inversores confían en Inversoria":"investors trust Inversoria"},
+          {n:"30s",l:isEs?"para saber si una acción vale":"to know if a stock is worth it"},
+          {n:"8",l:isEs?"países · tu moneda local":"countries · your local currency"},
+          {n:"100%",l:isEs?"en español · sin tecnicismos":"in Spanish · no jargon"},
         ].map(({n,l})=>(
           <div key={l}>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.gold,fontWeight:700}}>{n}</div>
