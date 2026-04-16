@@ -4922,15 +4922,15 @@ export default function App(){
         </div>
         {tab&&<div className="tabs-wrap" style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto"}}>
           {[
-            {id:"compound",l:L.tab_compound},
-            {id:"whatif",l:L.tab_whatif},
-            {id:"score",l:L.tab_score},
-            {id:"profile",l:L.tab_profile},
-            {id:"portfolio",l:L.tab_portfolio},
-            {id:"strategy",l:L.tab_strategy},
+            {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
+            {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
+            {id:"score",l:L.tab_score,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+            {id:"profile",l:L.tab_profile,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
+            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
+            {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
           ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
             style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
-              {t.icon&&<span style={{opacity:tab===t.id?1:0.6}}>{t.icon}</span>}{lang==="es"?t.es:t.en}</button>)}
+              {t.icon&&<span style={{opacity:tab===t.id?1:0.6,display:"flex",alignItems:"center"}}>{t.icon}</span>}{t.l}</button>)}
         </div>}
       </div>
     </div>
