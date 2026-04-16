@@ -3645,24 +3645,132 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
     reader.onload=(ev)=>{
-      const lines=ev.target.result.trim().split("\n");
+      const raw=ev.target.result.trim();
+      const lines=raw.split(/\r?\n/).filter(l=>l.trim());
+      if(lines.length<2){setImportErr(lang==="es"?"El archivo está vacío o solo tiene encabezados.":"File is empty or has only headers.");return;}
+
+      // ── SMART COLUMN DETECTOR ──────────────────────────────────────────
+      // Splits a CSV line respecting quoted fields
+      const splitCSV=(line)=>{
+        const cols=[];let cur="";let inQ=false;
+        for(let i=0;i<line.length;i++){
+          const c=line[i];
+          if(c==='"'){inQ=!inQ;}
+          else if((c===","||c===";")&&!inQ){cols.push(cur.trim().replace(/^"|"$/g,""));cur="";}
+          else cur+=c;
+        }
+        cols.push(cur.trim().replace(/^"|"$/g,""));
+        return cols;
+      };
+
+      const headers=splitCSV(lines[0]).map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,""));
+
+      // Map header names to column indices for each broker
+      const findCol=(...names)=>{
+        for(const n of names){
+          const idx=headers.findIndex(h=>h.includes(n.replace(/[^a-z0-9]/g,"")));
+          if(idx>=0)return idx;
+        }
+        return -1;
+      };
+
+      // Detect broker format
+      let broker="generic";
+      if(headers.some(h=>h.includes("ibcommission")||h.includes("trademoney")))broker="ibkr";
+      else if(headers.some(h=>h.includes("symbol")&&h.includes("opentime")||h.includes("openingrate")))broker="xtb";
+      else if(headers.some(h=>h.includes("assetcategory")||h.includes("buysell")))broker="ibkr";
+      else if(headers.some(h=>h.includes("instrument")&&headers.some(h2=>h2.includes("openingrate"))))broker="xtb";
+      else if(headers.some(h=>h.includes("averageopen")||h.includes("openrate")))broker="xtb";
+
+      // Column mappings per broker
+      let tickerCol,sharesCol,priceCol,dateCol;
+
+      if(broker==="ibkr"){
+        // Interactive Brokers Flex Query format
+        tickerCol=findCol("symbol","ticker");
+        sharesCol=findCol("quantity","qty","shares");
+        priceCol=findCol("tradeprice","price","avgprice","averageprice");
+        dateCol=findCol("tradedate","date","datetime","settledate");
+      } else if(broker==="xtb"){
+        // XTB Account History format
+        tickerCol=findCol("symbol","instrument","position");
+        sharesCol=findCol("volume","quantity","lots","shares");
+        priceCol=findCol("openingrate","openrate","openprice","price","rate");
+        dateCol=findCol("openingtime","opentime","date","time");
+      } else {
+        // Generic / Inversoria native format
+        tickerCol=findCol("ticker","symbol","stock","accion","activo","instrumento","codigo");
+        sharesCol=findCol("shares","quantity","cantidad","acciones","qty","volume","participaciones");
+        priceCol=findCol("buyprice","price","precio","preciocompra","openingprice","avgcost","costopromedio","costbase","open");
+        dateCol=findCol("date","fecha","tradedate","openingtime","purchasedate");
+      }
+
+      // Fallback to positional columns if not found
+      if(tickerCol<0)tickerCol=0;
+      if(sharesCol<0)sharesCol=1;
+      if(priceCol<0)priceCol=2;
+      if(dateCol<0)dateCol=3;
+
       const parsed=[];
-      // Skip header row if first cell is not a ticker
-      const startRow=isNaN(parseFloat(lines[0]?.split(",")[1]))?1:0;
-      for(let i=startRow;i<lines.length;i++){
-        const cols=lines[i].split(",").map(c=>c.replace(/"/g,"").trim());
+      const today=new Date().toISOString().split("T")[0];
+      let skipped=0;
+
+      for(let i=1;i<lines.length;i++){
+        const cols=splitCSV(lines[i]);
         if(cols.length<3)continue;
-        const ticker=cols[0].toUpperCase().replace(/[^A-Z]/g,"");
-        const shares=parseFloat(cols[1].replace(/[$,]/g,""));
-        const price=parseFloat(cols[2].replace(/[$,]/g,""));
-        const date=cols[3]||new Date().toISOString().split("T")[0];
-        if(!ticker||isNaN(shares)||isNaN(price)||shares<=0||price<=0)continue;
+
+        // Extract raw values
+        let rawTicker=(cols[tickerCol]||"").toUpperCase().replace(/[^A-Z0-9.]/g,"");
+        // IB uses format like "NVDA" or "NVDA(US)" — clean it
+        rawTicker=rawTicker.replace(/\(.*\)/g,"").replace(/\.[A-Z]+$/,"");
+        // Resolve known ticker names
+        const ticker=KNOWN_TICKERS[rawTicker]||rawTicker;
+
+        const rawShares=(cols[sharesCol]||"").replace(/[$,\s]/g,"");
+        const shares=Math.abs(parseFloat(rawShares));
+
+        const rawPrice=(cols[priceCol]||"").replace(/[$,\s]/g,"");
+        const price=parseFloat(rawPrice);
+
+        // Parse date — handle multiple formats
+        let date=today;
+        if(cols[dateCol]){
+          const d=cols[dateCol].replace(/['"]/g,"").trim();
+          // yyyyMMdd → yyyy-MM-dd
+          if(/^\d{8}$/.test(d))date=`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+          // dd/MM/yyyy or MM/dd/yyyy
+          else if(/\d{1,2}\/\d{1,2}\/\d{4}/.test(d)){
+            const parts=d.split("/");
+            date=`${parts[2]}-${parts[0].padStart(2,"0")}-${parts[1].padStart(2,"0")}`;
+          }
+          // yyyy-MM-dd already OK
+          else if(/\d{4}-\d{2}-\d{2}/.test(d))date=d.slice(0,10);
+          // IB datetime: "2024-01-15;09:30:00"
+          else if(d.includes(";"))date=d.split(";")[0];
+        }
+
+        // Skip sells (negative quantity in IB), invalid rows, or non-buy entries
+        const isSell=parseFloat(rawShares)<0;
+        const buySellCol=findCol("buysell","type","side","operacion");
+        const isSellLabel=buySellCol>=0&&(cols[buySellCol]||"").toUpperCase().includes("SELL");
+        if(isSell||isSellLabel){skipped++;continue;}
+
+        if(!ticker||ticker.length<1||ticker.length>6||isNaN(shares)||isNaN(price)||shares<=0||price<=0){skipped++;continue;}
+
         parsed.push({id:Date.now()+Math.random(),ticker,shares,buyPrice:price,date});
       }
-      if(!parsed.length){setImportErr("CSV format not recognized. Expected: Ticker, Shares, Buy Price, Date");return;}
+
+      if(!parsed.length){
+        setImportErr(lang==="es"
+          ?`No se pudieron importar posiciones. ${skipped>0?`${skipped} filas omitidas (ventas o formato incorrecto).`:""} Verifica que el archivo tenga columnas de Ticker, Cantidad y Precio.`
+          :`Could not import positions. ${skipped>0?`${skipped} rows skipped (sells or bad format).`:""} Verify the file has Ticker, Quantity and Price columns.`);
+        return;
+      }
+
       const updated=[...positions,...parsed];
       setPositions(updated);save(updated);
-      setImportErr(`✅ Imported ${parsed.length} position${parsed.length>1?"s":""} from CSV!`);
+      const brokerName=broker==="ibkr"?"Interactive Brokers":broker==="xtb"?"XTB":"generic";
+      setImportErr(`✅ ${lang==="es"?"Importadas":"Imported"} ${parsed.length} ${lang==="es"?"posiciones":"positions"} ${broker!=="generic"?`(${brokerName} ${lang==="es"?"detectado":"detected"})`:""}.${skipped>0?` ${skipped} ${lang==="es"?"ventas omitidas":"sells skipped"}.`:""}`);
       setImportMode("manual");
     };
     reader.readAsText(file);
@@ -3995,16 +4103,46 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         {/* CSV UPLOAD */}
         {importMode==="csv"&&<>
           <div style={{padding:12,background:`${T.gold}08`,borderRadius:8,border:`1px solid ${T.goldDim}33`,marginBottom:12}}>
-            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:6}}>📂 CSV File Format:</div>
-            <div style={{fontSize:11,color:T.muted,lineHeight:1.8}}>
-              Your CSV must have columns: <span style={{fontFamily:"'DM Mono',monospace",color:T.text}}>Ticker, Shares, Buy Price, Date</span><br/>
-              Works with exports from: <span style={{color:T.text}}>Interactive Brokers, TD Ameritrade, Robinhood, Fidelity, Schwab</span><br/>
-              Header row is detected and skipped automatically.
+            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:8}}>
+              {lang==="es"?"📂 Brokers compatibles — detección automática":"📂 Compatible brokers — auto-detected"}
             </div>
-            <div style={{marginTop:8,padding:"6px 10px",background:T.accent,borderRadius:6,fontSize:10,color:T.muted,fontFamily:"'DM Mono',monospace"}}>
+            {/* Broker badges */}
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+              {[
+                {name:"Interactive Brokers",flag:"🇺🇸"},
+                {name:"XTB",flag:"🌎"},
+                {name:"eToro",flag:"🌎"},
+                {name:"Trii",flag:"🇨🇴"},
+                {name:"HAPI",flag:"🇲🇽"},
+                {name:"Robinhood",flag:"🇺🇸"},
+                {name:"Fidelity",flag:"🇺🇸"},
+                {name:"TD Ameritrade",flag:"🇺🇸"},
+              ].map(({name,flag})=>(
+                <span key={name} style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:T.accent,border:`1px solid ${T.border}`,color:T.text}}>
+                  {flag} {name}
+                </span>
+              ))}
+            </div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.7}}>
+              {lang==="es"
+                ?"El sistema detecta automáticamente el formato de tu broker. También puedes usar el formato universal:"
+                :"System auto-detects your broker's format. You can also use the universal format:"}
+            </div>
+            <div style={{marginTop:6,padding:"6px 10px",background:T.accent,borderRadius:6,fontSize:10,color:T.muted,fontFamily:"'DM Mono',monospace"}}>
               Ticker,Shares,Buy Price,Date<br/>
               NVDA,10,450.00,2024-01-15<br/>
-              AAPL,25,185.50,2024-03-20
+              EC,100,9.50,2024-06-01
+            </div>
+          </div>
+          {/* Step guide for Trii */}
+          <div style={{padding:"10px 12px",background:`${T.blue}08`,border:`1px solid ${T.blue}22`,borderRadius:8,marginBottom:10}}>
+            <div style={{fontSize:10,color:T.blue,fontWeight:600,marginBottom:4}}>
+              🇨🇴 {lang==="es"?"¿Usas Trii o HAPI? Ingresa tus posiciones manualmente:":"Using Trii or HAPI? Enter your positions manually:"}
+            </div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.7}}>
+              {lang==="es"
+                ?"En la app de Trii ve a Portafolio → toca cada acción → anota el costo promedio y cantidad → ingrésalos en el formulario Manual."
+                :"In Trii app go to Portfolio → tap each stock → note avg cost and quantity → enter them in the Manual form."}
             </div>
           </div>
           <label style={{display:"block",cursor:"pointer"}}>
@@ -4746,388 +4884,4 @@ El uso de la Plataforma está disponible para personas mayores de 18 años con c
 • Dashboard de ciclos de mercado.
 
 El servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
-          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST ES EXCLUSIVAMENTE EDUCATIVO E INFORMATIVO.
-
-• No somos una firma de asesoría de inversiones registrada.
-• Los análisis generados por IA son estimaciones educativas, NO recomendaciones de inversión.
-• Los scores de calidad, análisis de moat y proyecciones DCF son herramientas de aprendizaje.
-• Los consensos de analistas provienen de fuentes públicas y pueden no estar actualizados.
-• Las rentabilidades pasadas no garantizan rentabilidades futuras.
-
-Siempre consulta con un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la pérdida total del capital invertido.`},
-          {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
-
-• Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
-• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
-• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
-
-Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
-          {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
-• No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.
-• Para solicitar un reembolso: hola@inversoria.lat
-• Los reembolsos se procesan en 5-10 días hábiles.`},
-          {t:"6. Cuenta de Usuario",b:`• Eres responsable de mantener la confidencialidad de tu contraseña.
-• No puedes compartir, vender o transferir tu cuenta.
-• Debes notificarnos inmediatamente de cualquier uso no autorizado.
-• Nos reservamos el derecho de suspender cuentas que violen estos términos.`},
-          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Inversoria.
-• Se te otorga una licencia limitada, no exclusiva y no transferible para uso personal.
-• No puedes copiar, distribuir, modificar o crear obras derivadas sin autorización escrita.
-• Los datos de mercado y análisis son para uso personal exclusivamente.`},
-          {t:"8. Limitación de Responsabilidad",b:`EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY APLICABLE:
-
-• No nos responsabilizamos por pérdidas de inversión derivadas del uso de la Plataforma.
-• No garantizamos la exactitud, completitud o actualidad de los datos de mercado.
-• No somos responsables por interrupciones del servicio, errores de terceros (APIs de datos) o pérdida de datos.
-• Nuestra responsabilidad máxima se limita al monto pagado por el usuario en los últimos 3 meses.`},
-          {t:"9. Conducta del Usuario",b:`Está prohibido:
-
-• Usar la Plataforma para fines ilegales o no autorizados.
-• Intentar acceder a cuentas de otros usuarios.
-• Realizar ingeniería inversa del software.
-• Usar bots o scraping automatizado.
-• Compartir tu cuenta con terceros.
-• Publicar contenido falso o engañoso.`},
-          {t:"10. Modificaciones del Servicio",b:`Nos reservamos el derecho de:
-
-• Modificar o discontinuar funciones con 30 días de aviso.
-• Cambiar los precios de suscripción con 30 días de aviso.
-• Actualizar estos Términos con notificación por email.
-
-El uso continuado tras los cambios implica aceptación.`},
-          {t:"11. Ley Aplicable y Jurisdicción",b:`Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa se someterá a los tribunales competentes de Bogotá, Colombia, sin perjuicio de los derechos que la normativa local de tu país de residencia te pueda otorgar como consumidor.`},
-          {t:"12. Contacto",b:`Para cualquier consulta sobre estos Términos:
-📧 hola@inversoria.lat
-🌐 inversoria.lat`},
-        ].map(({t,b})=>(
-          <div key={t} style={{marginBottom:28}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
-            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
-          </div>
-        ))}
-        <div style={{textAlign:"center",marginTop:24}}>
-          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[
-  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
-  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
-  {id:"score",es:"Analizar Acción",en:"Analyze Stock",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-  {id:"profile",es:"Perfil de Riesgo",en:"Risk Profile",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
-  {id:"portfolio",es:"Mi Portafolio",en:"My Portfolio",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>},
-  {id:"strategy",es:"Mi Estrategia",en:"My Strategy",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
-];
-const FREE_LIMIT=3;
-
-function isAdmin(){try{return localStorage.getItem("inversoria_admin")==="true";}catch{return false;}}
-function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_count")||"0");}catch{return 0;}}
-function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("inversoria_count",String(n));return n;}catch{return 999;}}
-// DCA usage counter — 2 free uses
-const DCA_FREE_LIMIT=2;
-function getDCACount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_dca_count")||"0");}catch{return 0;}}
-function incDCACount(){try{if(isAdmin())return 0;const n=getDCACount()+1;localStorage.setItem("inversoria_dca_count",String(n));return n;}catch{return 999;}}
-function canUseDCAFree(){return isAdmin()||getDCACount()<DCA_FREE_LIMIT;}
-// Rebalance usage counter — 2 free uses
-const REB_FREE_LIMIT=2;
-function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_reb_count")||"0");}catch{return 0;}}
-function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("inversoria_reb_count",String(n));return n;}catch{return 999;}}
-function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
-
-export default function App(){
-  const [tab,setTab]=useState(null);
-  const [user,setUser]=useState(null);          // Supabase user object
-  const [userPlan,setUserPlan]=useState("free"); // free | basic | premium
-  const [showAuth,setShowAuth]=useState(false);
-  const [authMode,setAuthMode]=useState("signup");
-  const [lang,setLang]=useState(()=>{try{return localStorage.getItem("compoundr_lang")||"en";}catch{return "en";}});
-  const L=LANG[lang]||LANG.en;
-  const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{} };
-  const [currCode,setCurrCode]=useState(()=>{try{return localStorage.getItem("compoundr_currency")||"USD";}catch{return "USD";}});
-  const [showCurrMenu,setShowCurrMenu]=useState(false);
-  const [liveRates,setLiveRates]=useState({});
-  const [ratesLoaded,setRatesLoaded]=useState(false);
-  const [ratesError,setRatesError]=useState(false);
-
-  // Fetch live rates on mount
-  useState(()=>{
-    fetchExchangeRates().then(rates=>{
-      setLiveRates(rates);
-      setRatesLoaded(true);
-    }).catch(()=>{setRatesError(true);setRatesLoaded(true);});
-  });
-
-  const currObj=CURRENCIES[currCode]||CURRENCIES.USD;
-  const liveRate=currCode==="USD"?1:(liveRates[currCode]||CURRENCIES[currCode]?.rate||1);
-  setCurrencyGlobal(currObj,liveRate); // sync global fmt with live rate
-
-  const changeCurrency=(code)=>{
-    setCurrCode(code);
-    const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
-    setCurrencyGlobal(CURRENCIES[code],rate);
-    try{localStorage.setItem("compoundr_currency",code);}catch{}
-    setShowCurrMenu(false);
-  };
-  const [m,setM]=useState(defM());
-  const [moat,setMoat]=useState(defMoat());
-  const [company,setCompany]=useState("");
-  const [sector,setSector]=useState("Technology");
-  const [showPaywall,setShowPaywall]=useState(false);
-  const [paywallContext,setPaywallContext]=useState("stock");
-  const [adminMode,setAdminMode]=useState(isAdmin());
-  const [showPrivacy,setShowPrivacy]=useState(false);
-  const [showTerms,setShowTerms]=useState(false);
-  const [showMethodology,setShowMethodology]=useState(false);
-
-  useState(()=>{
-    const handler=(e)=>{
-      if(e.ctrlKey&&e.shiftKey&&e.key==="A"){localStorage.setItem("inversoria_admin","true");setAdminMode(true);alert("✅ Admin mode ON — unlimited access");}
-      if(e.ctrlKey&&e.shiftKey&&e.key==="D"){localStorage.removeItem("inversoria_admin");setAdminMode(false);alert("🔒 Admin mode OFF");}
-    };
-    window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);
-  });
-
-  // ── SUPABASE AUTH LISTENER ──
-  useEffect(()=>{
-    if(!supabase)return;
-    // Get current session on mount
-    supabase.auth.getSession().then(({data:{session}})=>{
-      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
-    });
-    // Listen for auth changes
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
-      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
-      else{setUser(null);setUserPlan("free");}
-    });
-    return()=>subscription.unsubscribe();
-  },[]);
-
-  const syncUserPlan=async(userId)=>{
-    try{
-      const {data}=await supabase.from("user_plans").select("plan").eq("user_id",userId).single();
-      if(data?.plan)setUserPlan(data.plan);
-    }catch(e){setUserPlan("free");}
-  };
-
-  const signOut=async()=>{
-    if(supabase)await supabase.auth.signOut();
-    setUser(null);setUserPlan("free");
-  };
-
-  const isPremium=()=>isAdmin()||userPlan==="basic"||userPlan==="premium";
-  const isPro=()=>isAdmin()||userPlan==="premium";
-
-  const canAnalyze=(ctx="stock")=>{if(isPremium())return true;const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setShowPaywall(true);return false;}return true;};
-  const onAnalysis=()=>{incCount();};
-  const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
-
-  return<ErrorBoundary>
-  <div style={{minHeight:"100vh",background:T.bg}} onClick={()=>showCurrMenu&&setShowCurrMenu(false)}>
-    <style>{css}</style>
-    {showPrivacy&&<PrivacyPolicy onClose={()=>setShowPrivacy(false)} lang={lang}/>}
-    {showTerms&&<TermsOfService onClose={()=>setShowTerms(false)} lang={lang}/>}
-    {showMethodology&&<MethodologyModal onClose={()=>setShowMethodology(false)} lang={lang}/>}
-    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext} lang={lang}
-      onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
-    {showAuth&&<AuthModal lang={lang} initialMode={authMode}
-      onClose={()=>setShowAuth(false)}
-      onAuth={(u)=>{setUser(u);setShowAuth(false);}}/>}
-    <div style={{background:T.surface,borderBottom:`1px solid ${T.border}`,padding:"0 28px",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(8px)"}}>
-      <div style={{maxWidth:1380,margin:"0 auto"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0 0"}}>
-          <div onClick={()=>setTab(null)} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:34,height:34,borderRadius:9,background:T.purple,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,boxShadow:`0 0 12px ${T.purple}66`}}>
-              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
-              </svg>
-            </div>
-            <div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.text,letterSpacing:"0.01em",lineHeight:1,fontWeight:700}}>{L.nav_brand}</div>
-              <div className="nav-brand-sub" style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
-            </div>
-          </div>
-          <div className="nav-actions" style={{display:"flex",alignItems:"center",gap:8}}>
-            {/* Lang switcher — refined */}
-            <button onClick={toggleLang} style={{background:`${T.gold}12`,border:`1px solid ${T.gold}30`,borderRadius:8,padding:"5px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.background=`${T.gold}22`;}}
-              onMouseLeave={e=>{e.currentTarget.style.background=`${T.gold}12`;}}>
-              <span style={{fontSize:12}}>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
-              <span style={{fontSize:11,color:T.gold,fontWeight:700,letterSpacing:"0.05em"}}>{lang==="en"?"ES":"EN"}</span>
-            </button>
-            {/* Currency picker */}
-            <div style={{position:"relative"}}>
-              <button onClick={()=>setShowCurrMenu(v=>!v)}
-                style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 8px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:3}}>
-                <span style={{fontSize:14}}>{currObj.flag}</span>
-                <span style={{color:T.text,fontWeight:600,fontSize:10}}>{currCode}</span>
-                <span style={{fontSize:8}}>▼</span>
-              </button>
-              {showCurrMenu&&<div className="curr-dropdown" style={{position:"absolute",top:"calc(100% + 6px)",right:0,background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:6,zIndex:200,minWidth:200,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
-                <div style={{fontSize:9,color:T.muted,padding:"4px 8px",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Select Currency</div>
-                {/* Rate source indicator */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"2px 8px 6px"}}>
-                  <span style={{fontSize:9,color:T.muted}}>Rates: European Central Bank</span>
-                  {ratesLoaded
-                    ?<span style={{fontSize:9,color:ratesError?T.gold:T.green}}>{ratesError?"⚠️ Fallback rates":"✅ Live rates"}</span>
-                    :<span style={{fontSize:9,color:T.muted}}><span className="sp">⟳</span> Loading...</span>}
-                </div>
-                {Object.values(CURRENCIES).map(({flag,code,name,symbol})=>{
-                  const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
-                  return<div key={code} onClick={()=>changeCurrency(code)}
-                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:6,cursor:"pointer",background:currCode===code?`${T.gold}15`:"transparent"}}
-                    onMouseEnter={e=>e.currentTarget.style.background=T.accent}
-                    onMouseLeave={e=>e.currentTarget.style.background=currCode===code?`${T.gold}15`:"transparent"}>
-                    <span style={{fontSize:14}}>{flag}</span>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:11,color:currCode===code?T.gold:T.text,fontWeight:currCode===code?600:400}}>{symbol} {code} — {name}</div>
-                      <div style={{fontSize:9,color:T.muted}}>
-                        {code==="USD"?"Base currency":`1 USD = ${rate.toLocaleString("en-US",{maximumFractionDigits:2})} ${code}`}
-                      </div>
-                    </div>
-                    {currCode===code&&<span style={{fontSize:10,color:T.gold}}>✓</span>}
-                  </div>;
-                })}
-                <div style={{borderTop:`1px solid ${T.border}33`,marginTop:4,padding:"6px 8px 2px"}}>
-                  <div style={{fontSize:9,color:T.muted,lineHeight:1.5}}>
-                    ⚠️ Stock prices always in USD (market standard).<br/>
-                    Portfolio totals & calculators use selected currency.
-                  </div>
-                </div>
-              </div>}
-            </div>
-            {user&&<div style={{display:"flex",alignItems:"center",gap:6,background:T.accent,borderRadius:20,padding:"4px 10px",border:`1px solid ${T.border}`}}>
-              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.purple},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,flexShrink:0}}>
-                {user.email?.[0]?.toUpperCase()||"U"}
-              </div>
-              <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.03em",color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted}}>
-                {userPlan==="premium"?"★ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
-              </span>
-              <button onClick={signOut}
-                style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"0 2px",display:"flex",alignItems:"center"}}
-                title={lang==="es"?"Cerrar sesión":"Sign out"}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>}
-            {!user&&<button onClick={()=>{setAuthMode("login");setShowAuth(true);}} style={{background:`${T.purple}12`,border:`1px solid ${T.gold}35`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,color:T.gold,fontWeight:600,letterSpacing:"0.03em"}}>
-              {lang==="es"?"Iniciar Sesión":"Sign In"}
-            </button>}
-            {adminMode
-              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:8,background:`${T.green}10`,display:"flex",alignItems:"center",gap:5,fontWeight:600}}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Admin
-              </div>
-              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:8}}>
-                  {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
-                </div>
-                <button className="btn btn-gold" onClick={()=>{
-                  if(!user){setAuthMode("signup");setShowAuth(true);}
-                  else{setPaywallContext("stock");setShowPaywall(true);}
-                }} style={{fontSize:12,padding:"8px 16px"}}>
-                  {L.nav_premium}
-                </button></>
-            }
-          </div>
-        </div>
-        {tab&&<div className="tabs-wrap" style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto",alignItems:"center"}}>
-          <div style={{width:20,height:20,borderRadius:5,background:T.purple,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:8,marginLeft:4}}>
-            <svg width="13" height="13" viewBox="0 0 32 32" fill="none">
-              <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
-            </svg>
-          </div>
-          {[
-            {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
-            {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
-            {id:"score",l:L.tab_score,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-            {id:"profile",l:L.tab_profile,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
-            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
-            {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
-          ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
-            style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
-              {t.icon&&<span style={{opacity:tab===t.id?1:0.6,display:"flex",alignItems:"center"}}>{t.icon}</span>}{t.l}</button>)}
-        </div>}
-      </div>
-    </div>
-    {!tab&&<Hero onStart={handleStart} lang={lang}/>}
-    {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
-      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
-      {tab==="whatif"&&<WhatIfTab lang={lang}/>}
-      {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
-      {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
-      {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
-  ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
-  :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
-    <div style={{fontSize:48,marginBottom:16}}>📈</div>
-    <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.gold,marginBottom:12,fontWeight:700}}>
-      {lang==="es"?"Mi Estrategia — Basic/Premium":"My Strategy — Basic/Premium"}
-    </div>
-    <div style={{fontSize:14,color:T.muted,marginBottom:28,lineHeight:1.75}}>
-      {lang==="es"?"Desde $7.99/mes · Cancela cuando quieras":"From $7.99/mo · Cancel anytime"}
-    </div>
-    <button className="btn btn-gold" onClick={()=>{setPaywallContext("stock");setShowPaywall(true);}} style={{fontSize:15,padding:"14px 36px",borderRadius:12}}>
-      {lang==="es"?"🚀 Ver Planes":"🚀 See Plans"}
-    </button>
-  </div>
-)}
-    </div>}
-    <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
-    <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-      <div style={{fontSize:9,color:T.muted,lineHeight:1.8}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
-          <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="#7c3aed"/>
-            <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
-          </svg>
-          <span style={{color:T.gold,fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:11}}>Inversoria</span>
-          <span style={{color:T.muted}}>·</span>
-          <span>{lang==="es"?"Análisis de Inversiones con IA · LATAM":"AI-Powered Investment Analysis · LATAM"}</span>
-        </div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:12,alignItems:"center"}}>
-          <span>Colombia 🇨🇴</span>
-          <a href="mailto:hola@inversoria.lat" style={{color:T.muted,textDecoration:"none"}}
-            onMouseEnter={e=>e.target.style.color=T.gold}
-            onMouseLeave={e=>e.target.style.color=T.muted}>
-            hola@inversoria.lat
-          </a>
-          <span style={{color:`${T.muted}66`}}>·</span>
-          <span style={{color:`${T.muted}88`,fontStyle:"italic"}}>
-            {lang==="es"
-              ?"Contenido educativo — no constituye asesoría financiera certificada"
-              :"Educational content — not certified financial advice"}
-          </span>
-        </div>
-      </div>
-      <div style={{display:"flex",gap:16}}>
-        <button onClick={(e)=>{e.stopPropagation();setShowPrivacy(true);}}
-          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
-          onMouseEnter={e=>e.target.style.color=T.gold}
-          onMouseLeave={e=>e.target.style.color=T.muted}>
-          {lang==="es"?"Política de Privacidad":"Privacy Policy"}
-        </button>
-        <button onClick={(e)=>{e.stopPropagation();setShowTerms(true);}}
-          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
-          onMouseEnter={e=>e.target.style.color=T.gold}
-          onMouseLeave={e=>e.target.style.color=T.muted}>
-          {lang==="es"?"Términos de Uso":"Terms of Use"}
-        </button>
-        <button onClick={(e)=>{e.stopPropagation();window.open("mailto:hola@inversoria.lat");}}
-          style={{background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.muted,padding:"4px 8px",textDecoration:"underline"}}
-          onMouseEnter={e=>e.target.style.color=T.gold}
-          onMouseLeave={e=>e.target.style.color=T.muted}>
-          {lang==="es"?"Contacto":"Contact"}
-        </button>
-      </div>
-    </div>
-  </div>
-  </ErrorBoundary>;
-}
+          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST 
