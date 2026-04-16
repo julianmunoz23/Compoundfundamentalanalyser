@@ -312,7 +312,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
       <div className="paywall-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:520,width:"100%",textAlign:"center",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
         {/* Close button */}
-        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:18,lineHeight:1}}>✕</button>
+        <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:18,lineHeight:1}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         {/* Social proof badge */}
         <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 14px",marginBottom:18}}>
           <span style={{fontSize:11,color:T.green}}>✦ {c.proof}</span>
@@ -534,6 +534,11 @@ const KNOWN_TICKERS={
   "PAYPAL":"PYPL","SALESFORCE":"CRM","ADOBE":"ADBE",
   "COSTCO":"COST","WALMART":"WMT","TARGET":"TGT",
   "JOHNSON":"JNJ","PFIZER":"PFE","UNITEDHEALTH":"UNH",
+  "ECOPETROL":"EC","BANCOLOMBIA":"CIB","GRUPO AVAL":"AVAL","TECNOGLASS":"TGLS",
+  "CEMEX":"CX","FEMSA":"FMX","PETROBRAS":"PBR","VALE":"VALE","ITAU":"ITUB",
+  "MERCADOLIBRE":"MELI","NUBANK":"NU","GLOBANT":"GLOB","DESPEGAR":"DESP",
+  "INTEL":"INTC","AMD":"AMD","ARM":"ARM","QUALCOMM":"QCOM","BROADCOM":"AVGO",
+  "SERVICENOW":"NOW","SNOWFLAKE":"SNOW","PALANTIR":"PLTR","CROWDSTRIKE":"CRWD",
   "JPMORGAN":"JPM","GOLDMAN":"GS","BERKSHIRE":"BRK.B",
   "VISA":"V","MASTERCARD":"MA","AMERICAN EXPRESS":"AXP",
   "DISNEY":"DIS","WARNER":"WBD","COMCAST":"CMCSA",
@@ -825,7 +830,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div className="auth-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:420,width:"100%",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
-        <button onClick={onClose} style={{position:"absolute",top:14,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20}}>✕</button>
+        <button onClick={onClose} style={{position:"absolute",top:14,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
 
         {/* Logo */}
         <div style={{textAlign:"center",marginBottom:24}}>
@@ -3913,10 +3918,19 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
         {/* MANUAL */}
         {importMode==="manual"&&<>
-          <Lbl>Ticker</Lbl>
-          <input type="text" value={form.ticker} onChange={e=>setF("ticker",e.target.value.toUpperCase())}
-            placeholder="NVDA, AAPL, MSFT..." onKeyDown={e=>e.key==="Enter"&&addPosition()}
-            style={{marginBottom:12,fontWeight:700,fontSize:15,letterSpacing:"0.05em"}}/>
+          <Lbl>Ticker {form.ticker&&KNOWN_TICKERS[form.ticker.toUpperCase()]&&form.ticker.toUpperCase()!==KNOWN_TICKERS[form.ticker.toUpperCase()]&&<span style={{fontSize:10,color:T.green,marginLeft:6}}>→ Se usará {KNOWN_TICKERS[form.ticker.toUpperCase()]}</span>}</Lbl>
+          <input type="text" value={form.ticker}
+            onChange={e=>{
+              const raw=e.target.value.toUpperCase();
+              const resolved=KNOWN_TICKERS[raw]||raw;
+              setF("ticker",resolved);
+            }}
+            placeholder={lang==="es"?"Ej: ADBE, AAPL, MSFT, EC...":"e.g. ADBE, AAPL, MSFT, EC..."}
+            onKeyDown={e=>e.key==="Enter"&&addPosition()}
+            style={{marginBottom:4,fontWeight:700,fontSize:15,letterSpacing:"0.05em"}}/>
+          <div style={{fontSize:10,color:T.muted,marginBottom:10}}>
+            {lang==="es"?"Escribe el símbolo (ADBE) o el nombre (Adobe) — lo convertimos automáticamente":"Type ticker (ADBE) or company name (Adobe) — we auto-convert it"}
+          </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
             <div>
               <Lbl>Shares</Lbl>
@@ -4093,7 +4107,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                             style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:14,padding:"2px 6px"}}
                             onMouseEnter={e=>e.currentTarget.style.color=T.red}
                             onMouseLeave={e=>e.currentTarget.style.color=T.muted}
-                            title="Remove all entries for this ticker">✕</button>
+                            title="Remove all entries for this ticker"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                         </td>
                       </tr>;
                     })}
@@ -4241,16 +4255,33 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
   if(!strategy)return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{textAlign:"center",padding:"60px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
       <div style={{fontSize:56,marginBottom:16}}>📈</div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{lang==="es"?"Aún no tienes una estrategia guardada":"No strategy saved yet"}</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{lang==="es"?"Tu estrategia de inversión personalizada":"Your personalized investment strategy"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,maxWidth:640,margin:"0 auto 28px"}}>
+        {[
+          {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,t:lang==="es"?"Perfil de Riesgo":"Risk Profile",d:lang==="es"?"Conservador · Moderado · Agresivo":"Conservative · Moderate · Aggressive"},
+          {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,t:lang==="es"?"Acciones + ETFs":"Stocks + ETFs",d:lang==="es"?"Seleccionados por la IA según tu perfil":"AI-selected to match your profile"},
+          {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,t:lang==="es"?"Seguimiento real":"Real tracking",d:lang==="es"?"Compara tu portafolio vs el plan":"Compare your portfolio vs the plan"},
+        ].map(({icon,t,d},i)=>(
+          <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}>
+            <div style={{color:T.gold,marginBottom:8,display:"flex",justifyContent:"center"}}>{icon}</div>
+            <div style={{fontSize:12,color:T.text,fontWeight:600,marginBottom:4}}>{t}</div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{d}</div>
+          </div>
+        ))}
+      </div>
       <div style={{fontSize:13,color:T.muted,maxWidth:520,margin:"0 auto 32px",lineHeight:1.8}}>
-        {lang==="es"?"Crea tu Perfil de Riesgo, genera un portafolio IA y haz clic en ":"Create your Risk Profile, generate an AI portfolio, then click "}<strong style={{color:T.green}}>{lang==="es"?"✅ Sí — Seguir Mi Estrategia":"✅ Yes — Track My Strategy"}</strong>{lang==="es"?" para empezar a rastrear tu plan aquí.":" to start tracking your plan vs reality here."}
+        {lang==="es"
+  ?<>Inversoria analiza tu perfil de inversor y construye un portafolio personalizado de acciones y ETFs — seleccionados según tu tolerancia al riesgo, horizonte de inversión y monto disponible. Luego rastrea tu avance real vs el plan recomendado.</>
+  :<>Inversoria analyzes your investor profile and builds a personalized portfolio of stocks and ETFs — selected based on your risk tolerance, investment horizon, and available capital. Then tracks your real progress vs the recommended plan.</>}
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <button className="btn btn-gold" onClick={onGoToProfile} style={{fontSize:14,padding:"13px 28px",borderRadius:10}}>
-          🧬 Create My Risk Profile →
+        <button className="btn btn-gold" onClick={onGoToProfile} style={{fontSize:14,padding:"13px 28px",borderRadius:10,display:"flex",alignItems:"center",gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          {lang==="es"?"Crear Mi Perfil de Riesgo →":"Create My Risk Profile →"}
         </button>
-        {positions.length>0&&<button className="btn btn-outline" onClick={onGoToPortfolio} style={{padding:"13px 20px",borderRadius:10}}>
-          📁 I already have a portfolio
+        {positions.length>0&&<button className="btn btn-outline" onClick={onGoToPortfolio} style={{padding:"13px 20px",borderRadius:10,display:"flex",alignItems:"center",gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          {lang==="es"?"Ya tengo un portafolio":"I already have a portfolio"}
         </button>}
       </div>
     </div>
@@ -4671,7 +4702,14 @@ El uso continuado tras los cambios implica aceptación.`},
 }
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-const TABS=[{id:"compound",l:"💰 Compound Calculator"},{id:"whatif",l:"🚀 What If?"},{id:"score",l:"🎯 Analyze a Stock"},{id:"profile",l:"🧬 Risk Profile"},{id:"portfolio",l:"📁 My Portfolio"},{id:"strategy",l:"📈 My Strategy"}];
+const TABS=[
+  {id:"compound",l:lang==="es"?"Calculadora":"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
+  {id:"whatif",l:lang==="es"?"¿Y si...?":"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
+  {id:"score",l:lang==="es"?"Analizar Acción":"Analyze Stock",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+  {id:"profile",l:lang==="es"?"Perfil de Riesgo":"Risk Profile",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
+  {id:"portfolio",l:lang==="es"?"Mi Portafolio":"My Portfolio",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>},
+  {id:"strategy",l:lang==="es"?"Mi Estrategia":"My Strategy",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+];
 const FREE_LIMIT=3;
 
 function isAdmin(){try{return localStorage.getItem("inversoria_admin")==="true";}catch{return false;}}
@@ -4800,11 +4838,13 @@ export default function App(){
               <div className="nav-brand-sub" style={{fontSize:8,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:2}}>{L.nav_sub}</div>
             </div>
           </div>
-          <div className="nav-actions" style={{display:"flex",alignItems:"center",gap:10}}>
-            {/* Lang switcher */}
-            <button onClick={toggleLang} style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:11,color:T.muted,display:"flex",alignItems:"center",gap:4}}>
-              <span>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
-              <span style={{color:T.text,fontWeight:600}}>{lang==="en"?"ES":"EN"}</span>
+          <div className="nav-actions" style={{display:"flex",alignItems:"center",gap:8}}>
+            {/* Lang switcher — refined */}
+            <button onClick={toggleLang} style={{background:`${T.gold}12`,border:`1px solid ${T.gold}30`,borderRadius:8,padding:"5px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.background=`${T.gold}22`;}}
+              onMouseLeave={e=>{e.currentTarget.style.background=`${T.gold}12`;}}>
+              <span style={{fontSize:12}}>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
+              <span style={{fontSize:11,color:T.gold,fontWeight:700,letterSpacing:"0.05em"}}>{lang==="en"?"ES":"EN"}</span>
             </button>
             {/* Currency picker */}
             <div style={{position:"relative"}}>
@@ -4848,21 +4888,27 @@ export default function App(){
               </div>}
             </div>
             {user&&<div style={{display:"flex",alignItems:"center",gap:6,background:T.accent,borderRadius:20,padding:"4px 10px",border:`1px solid ${T.border}`}}>
-              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.gold},${T.goldDim})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"#0e0e1a",fontWeight:700}}>
+              <div style={{width:20,height:20,borderRadius:"50%",background:`linear-gradient(135deg,${T.purple},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,flexShrink:0}}>
                 {user.email?.[0]?.toUpperCase()||"U"}
               </div>
-              <span style={{fontSize:11,color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted,fontWeight:600}}>
-                {userPlan==="premium"?"⭐ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
+              <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.03em",color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted}}>
+                {userPlan==="premium"?"★ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
               </span>
-              <button onClick={signOut} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:T.muted,padding:"0 2px"}}
-                title={lang==="es"?"Cerrar sesión":"Sign out"}>✕</button>
+              <button onClick={signOut}
+                style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"0 2px",display:"flex",alignItems:"center"}}
+                title={lang==="es"?"Cerrar sesión":"Sign out"}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>}
-            {!user&&<button onClick={()=>{setAuthMode("login");setShowAuth(true);}} style={{background:"none",border:`1px solid ${T.border}`,borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:11,color:T.muted}}>
+            {!user&&<button onClick={()=>{setAuthMode("login");setShowAuth(true);}} style={{background:`${T.purple}12`,border:`1px solid ${T.gold}35`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,color:T.gold,fontWeight:600,letterSpacing:"0.03em"}}>
               {lang==="es"?"Iniciar Sesión":"Sign In"}
             </button>}
             {adminMode
-              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:6,background:`${T.green}10`}}>🔑 Admin</div>
-              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:6}}>
+              ?<div style={{fontSize:11,color:T.green,padding:"4px 10px",border:`1px solid ${T.green}44`,borderRadius:8,background:`${T.green}10`,display:"flex",alignItems:"center",gap:5,fontWeight:600}}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Admin
+              </div>
+              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:8}}>
                   {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
                 </div>
                 <button className="btn btn-gold" onClick={()=>{
@@ -4883,7 +4929,8 @@ export default function App(){
             {id:"portfolio",l:L.tab_portfolio},
             {id:"strategy",l:L.tab_strategy},
           ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
-            style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap"}}>{t.l}</button>)}
+            style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
+              {t.icon&&<span style={{opacity:tab===t.id?1:0.6}}>{t.icon}</span>}{t.l}</button>)}
         </div>}
       </div>
     </div>
