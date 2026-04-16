@@ -542,7 +542,13 @@ const KNOWN_TICKERS={
   "JPMORGAN":"JPM","GOLDMAN":"GS","BERKSHIRE":"BRK.B",
   "VISA":"V","MASTERCARD":"MA","AMERICAN EXPRESS":"AXP",
   "DISNEY":"DIS","WARNER":"WBD","COMCAST":"CMCSA",
-  };
+  "INTEL":"INTC","AMD":"AMD","QUALCOMM":"QCOM",
+  "BOEING":"BA","LOCKHEED":"LMT","EXXON":"XOM",
+  "DUOLINGO":"DUOL","HIMS":"HIMS","PALANTIR":"PLTR",
+  "SNOWFLAKE":"SNOW","DATADOG":"DDOG","CROWDSTRIKE":"CRWD",
+  "COINBASE":"COIN","ROBINHOOD":"HOOD","BLOCK":"SQ","SQUARE":"SQ",
+  "ZOOM":"ZM","SLACK":"CRM","TWILIO":"TWLO",
+};
 
 async function resolveTicker(input){
   const clean=input.trim().toUpperCase();
@@ -2210,7 +2216,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               <span style={{fontSize:9,color:T.muted,background:T.accent,border:`1px solid ${T.border}`,borderRadius:4,padding:"1px 6px"}}>
                 Finnhub · {lang==="es"?"Analistas reales":"Real analysts"}
               </span>
-            </div>}
+            </div></span>}
           {fh.period&&!fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
           {fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Estimación basada en datos públicos recientes</span>}
         </div>
@@ -4155,4 +4161,658 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             </div>
           </div>}
           <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16}}>
-     
+            <div style={{textAlign:"center",minWidth:90}}>
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:4}}>Portfolio Score</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:36,color:aiAnalysis.overallScore?.includes("A")?T.green:aiAnalysis.overallScore?.includes("B")?T.gold:T.red,fontWeight:700}}>{aiAnalysis.overallScore}</div>
+              <div style={{fontSize:10,color:T.muted}}>{aiAnalysis.overallGrade}</div>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>{lang==="es"?"🤖 Evaluación IA":"🤖 AI Assessment"}</div>
+              <div style={{fontSize:13,color:T.text,lineHeight:1.7,marginBottom:10}}>{aiAnalysis.summary}</div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                {[
+                  {l:"Risk",v:aiAnalysis.risk,c:(aiAnalysis.risk==="Low"||aiAnalysis.risk==="Bajo")?T.green:aiAnalysis.risk==="High"?T.red:T.gold},
+                  {l:"Concentration",v:aiAnalysis.concentration,c:T.blue},
+                  {l:"vs S&P 500",v:aiAnalysis.vsMarket||"—",c:(aiAnalysis.vsMarket||"").includes("Out")?T.green:(aiAnalysis.vsMarket||"").includes("Under")?T.red:T.gold},
+                  {l:"Top Sector",v:aiAnalysis.topSector,c:T.purple},
+                  ...(savedProfile&&aiAnalysis.profileMatch?[{l:"Profile Match",v:aiAnalysis.profileMatch,c:(aiAnalysis.profileMatch||"").includes("Perfect")||(aiAnalysis.profileMatch||"").includes("Good")?T.green:T.red}]:[]),
+                ].map(({l,v,c})=><div key={l} style={{background:T.card,borderRadius:8,padding:"6px 12px"}}>
+                  <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",marginBottom:2}}>{l}</div>
+                  <Mn sz={12} c={c} s={{fontWeight:600}}>{v}</Mn>
+                </div>)}
+              </div>
+            </div>
+          </div>
+
+          {/* Per-position verdicts */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8,marginBottom:14}}>
+            {aiAnalysis.positions?.map(({ticker,verdict,reason,buffettScore})=>(
+              <div key={ticker} style={{background:T.card,borderRadius:10,padding:"10px 12px",border:`1px solid ${verdictColor(verdict)}22`}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <Mn sz={14} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <span style={{fontSize:10,color:T.muted}}>Score: <span style={{color:T.gold,fontWeight:700}}>{buffettScore}</span></span>
+                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:`${verdictColor(verdict)}18`,color:verdictColor(verdict),fontWeight:600}}>{verdict}</span>
+                  </div>
+                </div>
+                <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{reason}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Suggestions */}
+          <div style={{padding:14,background:T.accent,borderRadius:10,border:`1px solid ${T.border}`}}>
+            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:8}}>💡 AI Suggestions</div>
+            {aiAnalysis.suggestions?.map((s,i)=>(
+              <div key={i} style={{display:"flex",gap:8,marginBottom:6,fontSize:12,color:T.muted,lineHeight:1.5}}>
+                <span style={{color:T.gold,flexShrink:0}}>{i+1}.</span>{s}
+              </div>
+            ))}
+          </div>
+        </Card>}
+
+        {/* ── REBALANCE + DCA ── */}
+        {aiAnalysis&&<RebalanceDCA positions={enriched} totalValue={totalValue} savedProfile={savedProfile} callAI={callAI} lang={lang}/>}
+      </div>
+    </div>
+
+    <AdBanner size="leaderboard"/>
+
+    {/* Disclaimer */}
+    <Card s={{background:`${T.red}08`,border:`1px solid ${T.red}22`,padding:12}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.8}}>
+        ⚠️ <span style={{color:T.gold}}>Disclaimer:</span> Portfolio analysis is for educational purposes only. Not financial advice. Always consult a licensed financial advisor.
+      </div>
+    </Card>
+  </div>;
+}
+
+// ── MY STRATEGY TAB ──────────────────────────────────────────────────────────
+function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
+  const [strategy,setStrategy]=useState(null);
+  const [positions,setPositions]=useState([]);
+  const [prices,setPrices]=useState({});
+  const [loadingPrices,setLoadingPrices]=useState(false);
+
+  // Load saved data
+  useState(()=>{
+    try{
+      const s=localStorage.getItem("inversoria_strategy");
+      if(s)setStrategy(JSON.parse(s));
+      const p=localStorage.getItem("inversoria_portfolio");
+      if(p)setPositions(JSON.parse(p));
+    }catch(e){}
+  });
+
+  // Fetch live prices for strategy tickers
+  const fetchPrices=async(tickers)=>{
+    if(!tickers?.length)return;
+    setLoadingPrices(true);
+    const key=import.meta.env.VITE_FINNHUB_KEY;
+    const results={};
+    for(const ticker of tickers){
+      try{
+        await new Promise(r=>setTimeout(r,250));
+        const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
+        const d=await res.json();
+        if(d.c)results[ticker]={price:d.c,changePct:d.dp};
+      }catch(e){}
+    }
+    setPrices(results);setLoadingPrices(false);
+  };
+
+  const clearStrategy=()=>{
+    if(window.confirm("Clear your saved strategy?")){
+      try{localStorage.removeItem("inversoria_strategy");}catch(e){}
+      setStrategy(null);
+    }
+  };
+
+  // ── NO STRATEGY SAVED ──
+  if(!strategy)return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    <div style={{textAlign:"center",padding:"60px 28px",background:`linear-gradient(135deg,${T.card},${T.accent})`,borderRadius:16,border:`1px solid ${T.goldDim}44`}}>
+      <div style={{fontSize:56,marginBottom:16}}>📈</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.gold,marginBottom:10,fontWeight:700}}>{lang==="es"?"Tu estrategia de inversión personalizada":"Your personalized investment strategy"}</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,maxWidth:640,margin:"0 auto 28px"}}>
+        {[
+          {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,t:lang==="es"?"Perfil de Riesgo":"Risk Profile",d:lang==="es"?"Conservador · Moderado · Agresivo":"Conservative · Moderate · Aggressive"},
+          {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,t:lang==="es"?"Acciones + ETFs":"Stocks + ETFs",d:lang==="es"?"Seleccionados por la IA según tu perfil":"AI-selected to match your profile"},
+          {icon:<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,t:lang==="es"?"Seguimiento real":"Real tracking",d:lang==="es"?"Compara tu portafolio vs el plan":"Compare your portfolio vs the plan"},
+        ].map(({icon,t,d},i)=>(
+          <div key={i} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"14px 12px",textAlign:"center"}}>
+            <div style={{color:T.gold,marginBottom:8,display:"flex",justifyContent:"center"}}>{icon}</div>
+            <div style={{fontSize:12,color:T.text,fontWeight:600,marginBottom:4}}>{t}</div>
+            <div style={{fontSize:10,color:T.muted,lineHeight:1.5}}>{d}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:13,color:T.muted,maxWidth:520,margin:"0 auto 32px",lineHeight:1.8}}>
+        {lang==="es"
+  ?<>Inversoria analiza tu perfil de inversor y construye un portafolio personalizado de acciones y ETFs — seleccionados según tu tolerancia al riesgo, horizonte de inversión y monto disponible. Luego rastrea tu avance real vs el plan recomendado.</>
+  :<>Inversoria analyzes your investor profile and builds a personalized portfolio of stocks and ETFs — selected based on your risk tolerance, investment horizon, and available capital. Then tracks your real progress vs the recommended plan.</>}
+      </div>
+      <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+        <button className="btn btn-gold" onClick={onGoToProfile} style={{fontSize:14,padding:"13px 28px",borderRadius:10,display:"flex",alignItems:"center",gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          {lang==="es"?"Crear Mi Perfil de Riesgo →":"Create My Risk Profile →"}
+        </button>
+        {positions.length>0&&<button className="btn btn-outline" onClick={onGoToPortfolio} style={{padding:"13px 20px",borderRadius:10,display:"flex",alignItems:"center",gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          {lang==="es"?"Ya tengo un portafolio":"I already have a portfolio"}
+        </button>}
+      </div>
+    </div>
+  </div>;
+
+  // ── STRATEGY EXISTS ──
+  const {profile,amount,portfolio,createdAt,executedAt}=strategy;
+  const allTickers=[...(portfolio.stocks||[]).map(s=>s.ticker),...(portfolio.etfs||[]).map(e=>e.ticker)];
+  const daysSince=Math.floor((Date.now()-new Date(executedAt).getTime())/(1000*60*60*24));
+
+  // Build portfolio map from My Portfolio data
+  const portfolioMap={};
+  positions.forEach(p=>{
+    if(!portfolioMap[p.ticker]){portfolioMap[p.ticker]={shares:0,avgCost:0,totalCost:0};}
+    portfolioMap[p.ticker].shares+=p.shares;
+    portfolioMap[p.ticker].totalCost+=p.shares*p.buyPrice;
+  });
+  Object.keys(portfolioMap).forEach(t=>{
+    portfolioMap[t].avgCost=portfolioMap[t].totalCost/portfolioMap[t].shares;
+  });
+
+  const totalPortfolioValue=Object.entries(portfolioMap).reduce((a,[t,p])=>{
+    const lp=prices[t];
+    return a+(lp?p.shares*lp.price:p.totalCost);
+  },0)||amount;
+
+  // Execution status per recommended position
+  const statusColor=s=>(s.includes("Ejecutado")||s.includes("Executed"))?T.green:(s.includes("Parcial")||s.includes("Partial"))?T.gold:T.red;
+
+  const allPositions=[
+    ...(portfolio.stocks||[]).map(p=>({...p,isETF:false})),
+    ...(portfolio.etfs||[]).map(p=>({...p,isETF:true,type:"ETF"})),
+  ];
+
+  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    {/* Strategy header */}
+    <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${profile.color}44`,borderRadius:16,padding:"24px 28px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <div style={{fontSize:44}}>{profile.icon}</div>
+          <div>
+            <div style={{fontSize:11,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Active Strategy</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:profile.color,fontWeight:700}}>{pLabel(profile,lang)} Investor Portfolio</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:4}}>
+              Started {new Date(executedAt).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})} · {daysSince} days ago · ${amount.toLocaleString()} initial amount
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+          {loadingPrices
+            ?<span style={{fontSize:11,color:T.muted}}><span className="sp">⟳</span> Loading prices...</span>
+            :<button className="seg" onClick={()=>fetchPrices(allTickers)} style={{fontSize:11}}>🔄 Refresh Prices</button>}
+          <button className="seg" onClick={clearStrategy} style={{fontSize:11,color:T.red}}>🗑 Clear</button>
+        </div>
+      </div>
+
+      {/* Summary KPIs */}
+      <div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginTop:20}}>
+        {[
+          {l:lang==="es"?"Posiciones Recomendadas":"Recommended Positions",v:allPositions.length,c:T.gold,icon:"📋"},
+          {l:lang==="es"?"Posiciones Ejecutadas":"Positions Executed",v:Object.keys(portfolioMap).filter(t=>allTickers.includes(t)).length,c:T.green,icon:"✅"},
+          {l:lang==="es"?"Días Siguiendo":"Days Tracking",v:daysSince,c:T.blue,icon:"📅"},
+          {l:"Expected Return",v:portfolio.expectedReturn||"—",c:T.green,icon:"📈"},
+        ].map(({l,v,c,icon})=><div key={l} style={{background:T.card,borderRadius:10,padding:"12px 14px",textAlign:"center",border:`1px solid ${T.border}`}}>
+          <div style={{fontSize:18,marginBottom:4}}>{icon}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:c,fontWeight:700}}>{v}</div>
+          <div style={{fontSize:10,color:T.muted,marginTop:2}}>{l}</div>
+        </div>)}
+      </div>
+    </div>
+
+    {/* Plan vs Reality table */}
+    <Card s={{padding:0,overflow:"hidden"}}>
+      <div style={{padding:"16px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>📊 Plan vs Reality</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:2}}>AI recommendation vs what you actually hold</div>
+        </div>
+        {positions.length===0&&<button className="btn btn-outline" onClick={onGoToPortfolio} style={{fontSize:12,padding:"7px 14px"}}>
+          📁 Add your positions →
+        </button>}
+      </div>
+      <div className="table-wrap" style={{overflowX:"auto"}}>
+        <table className="strategy-table" style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
+          <thead>
+            <tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
+              {["","Position","Type","Rec %","Rec $","Entry Zone","Target","Stop","Your Weight","Status","P&L"].map((h,i)=>(
+                <th key={i} style={{padding:"10px 12px",textAlign:i<=1?"center":"right",fontSize:9,color:h==="Target"?T.green:h==="Stop"?T.red:h==="Entry Zone"?T.blue:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {allPositions.map(({ticker,name,weight,type,isETF,entryLow,entryHigh,target,stopLoss,riskReward},idx)=>{
+              const recDollar=Math.round(amount*(weight/100));
+              const held=portfolioMap[ticker];
+              const lp=prices[ticker];
+              const currentPrice=lp?.price;
+              const currentValue=held&&currentPrice?held.shares*currentPrice:held?held.totalCost:null;
+              const actualPct=currentValue&&totalPortfolioValue>0?((currentValue/totalPortfolioValue)*100).toFixed(1):null;
+              const pnl=held&&currentPrice?((currentPrice-held.avgCost)/held.avgCost*100).toFixed(1):null;
+              const drift=actualPct&&weight?(parseFloat(actualPct)-weight).toFixed(1):null;
+              const status=!held?(lang==="es"?"❌ No ejecutado":"❌ Not executed"):Math.abs(parseFloat(actualPct||0)-weight)<=5?(lang==="es"?"✅ Ejecutado":"✅ Executed"):(lang==="es"?"⚠️ Parcial":"⚠️ Partial");
+              // Is current price in entry zone?
+              const inZone=currentPrice&&entryLow&&entryHigh&&currentPrice>=entryLow&&currentPrice<=entryHigh;
+              const belowZone=currentPrice&&entryLow&&currentPrice<entryLow;
+              const aboveTarget=currentPrice&&target&&currentPrice>=target;
+              const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
+              const dotColor=PIE_COLORS[idx%PIE_COLORS.length];
+              return<tr key={ticker} style={{borderBottom:`1px solid ${T.border}22`}}
+                onMouseEnter={e=>e.currentTarget.style.background=T.accent}
+                onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                <td style={{padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:dotColor,margin:"0 auto"}}/>
+                </td>
+                <td style={{padding:"10px 12px",textAlign:"center"}}>
+                  <Mn sz={13} c={T.text} s={{fontWeight:700}}>{ticker}</Mn>
+                  <div style={{fontSize:9,color:T.muted,marginTop:1}}>{name||""}</div>
+                </td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  <span style={{fontSize:10,padding:"2px 7px",borderRadius:8,background:`${isETF?T.blue:T.green}15`,color:isETF?T.blue:T.green}}>{isETF?"ETF":type||"Stock"}</span>
+                </td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.gold}>{weight}%</Mn></td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={11} c={T.muted}>${recDollar.toLocaleString()}</Mn></td>
+                {/* Entry Zone */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {entryLow&&entryHigh
+                    ?<div>
+                      <div style={{fontSize:11,color:inZone?T.green:T.blue,fontWeight:inZone?700:400}}>${entryLow}–${entryHigh}</div>
+                      {inZone&&<div style={{fontSize:9,color:T.green}}>{lang==="es"?"✅ En zona":"✅ In zone"}</div>}
+                      {belowZone&&<div style={{fontSize:9,color:T.muted}}>Wait — above zone</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                {/* Target */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {target
+                    ?<div>
+                      <Mn sz={11} c={aboveTarget?T.gold:T.green} s={{fontWeight:aboveTarget?700:400}}>${target}</Mn>
+                      {aboveTarget&&<div style={{fontSize:9,color:T.gold}}>{lang==="es"?"🎯 ¡Objetivo!":"🎯 Target hit!"}</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                {/* Stop Loss */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {stopLoss
+                    ?<div>
+                      <Mn sz={11} c={T.red}>${stopLoss}</Mn>
+                      {riskReward&&<div style={{fontSize:9,color:T.muted}}>R/R {riskReward}</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                {/* Your weight */}
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {actualPct
+                    ?<div>
+                      <Mn sz={12} c={Math.abs(parseFloat(drift||0))<=5?T.green:T.gold}>{actualPct}%</Mn>
+                      {drift&&<div style={{fontSize:9,color:parseFloat(drift)>0?"#e67e22":T.muted}}>{parseFloat(drift)>0?"+":""}{drift}%</div>}
+                    </div>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  <span style={{fontSize:10,padding:"3px 8px",borderRadius:20,background:`${statusColor(status)}15`,color:statusColor(status),fontWeight:600,whiteSpace:"nowrap"}}>{status}</span>
+                </td>
+                <td style={{padding:"10px 12px",textAlign:"right"}}>
+                  {pnl!=null
+                    ?<span style={{fontSize:12,color:parseFloat(pnl)>=0?T.green:T.red,fontWeight:600}}>{parseFloat(pnl)>=0?"+":""}{pnl}%</span>
+                    :<Mn sz={11} c={T.muted}>—</Mn>}
+                </td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
+      </div>
+      {positions.length===0&&<div style={{padding:"20px",textAlign:"center",fontSize:12,color:T.muted,background:`${T.gold}05`}}>
+        ⚡ Add your positions in <strong style={{color:T.gold}}>My Portfolio</strong> to see how your execution compares to the AI plan
+      </div>}
+    </Card>
+
+    {/* Strategy summary */}
+    {portfolio.summary&&<Card s={{background:T.accent}}>
+      <div style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>📋 Original Strategy</div>
+      <div style={{fontSize:13,color:T.text,lineHeight:1.75,marginBottom:12}}>{portfolio.summary}</div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+        {[
+          {l:"Expected Return",v:portfolio.expectedReturn,c:T.green},
+          {l:"Max Drawdown",v:portfolio.maxDrawdown,c:T.red},
+          {l:"Rebalance",v:portfolio.rebalance,c:T.gold},
+        ].map(({l,v,c})=>v&&<div key={l} style={{background:T.card,borderRadius:8,padding:"8px 14px"}}>
+          <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",marginBottom:2}}>{l}</div>
+          <Mn sz={13} c={c} s={{fontWeight:600}}>{v}</Mn>
+        </div>)}
+      </div>
+    </Card>}
+
+    {/* CTA to update/re-analyze */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+      <div onClick={onGoToPortfolio} style={{cursor:"pointer",background:`${T.blue}10`,border:`1px solid ${T.blue}33`,borderRadius:12,padding:"18px 20px",display:"flex",alignItems:"center",gap:12}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=T.blue}
+        onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.blue}33`}>
+        <span style={{fontSize:24}}>📁</span>
+        <div>
+          <div style={{fontSize:13,color:T.blue,fontWeight:600,marginBottom:3}}>Update My Portfolio</div>
+          <div style={{fontSize:11,color:T.muted}}>Add new positions or update existing ones</div>
+        </div>
+      </div>
+      <div onClick={onGoToProfile} style={{cursor:"pointer",background:`${T.purple}10`,border:`1px solid ${T.purple}33`,borderRadius:12,padding:"18px 20px",display:"flex",alignItems:"center",gap:12}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=T.purple}
+        onMouseLeave={e=>e.currentTarget.style.borderColor=`${T.purple}33`}>
+        <span style={{fontSize:24}}>🧬</span>
+        <div>
+          <div style={{fontSize:13,color:T.purple,fontWeight:600,marginBottom:3}}>Rebuild My Strategy</div>
+          <div style={{fontSize:11,color:T.muted}}>Retake the quiz and generate a new AI portfolio</div>
+        </div>
+      </div>
+    </div>
+
+    <Card s={{background:`${T.red}08`,border:`1px solid ${T.red}22`,padding:12}}>
+      <div style={{fontSize:11,color:T.muted,textAlign:"center"}}>
+        ⚠️ <span style={{color:T.gold}}>Disclaimer:</span> This is for educational tracking purposes only. Not financial advice.
+      </div>
+    </Card>
+  </div>;
+}
+
+// ── LEGAL PAGES ──────────────────────────────────────────────────────────────
+// ── METHODOLOGY MODAL ─────────────────────────────────────────────────────
+function MethodologyModal({onClose,lang="en"}){
+  const isEs=lang==="es";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(4px)"}}
+      onClick={onClose}>
+      <div style={{background:"#13132a",border:`1px solid #a78bfa44`,borderRadius:16,maxWidth:640,width:"100%",maxHeight:"85vh",overflowY:"auto",padding:32}}
+        onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
+          <div style={{width:36,height:36,borderRadius:9,background:"#7c3aed",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+              <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:"#f0eeff",fontWeight:700}}>
+              {isEs?"Cómo Funciona Inversoria":"How Inversoria Works"}
+            </div>
+            <div style={{fontSize:11,color:"#8888aa",marginTop:2}}>
+              {isEs?"Metodología, fuentes de datos y limitaciones":"Methodology, data sources and limitations"}
+            </div>
+          </div>
+          <button onClick={onClose} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#8888aa",padding:4}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        {/* Sections */}
+        {[
+          {
+            icon:"📊",
+            title:isEs?"Fuentes de datos":"Data sources",
+            body:isEs
+              ?"Inversoria utiliza datos de Finnhub (precios en tiempo real, consenso de analistas de Wall Street, estimaciones de EPS y precio objetivo) para empresas listadas en NYSE, NASDAQ y principales bolsas globales. Para empresas LATAM locales, usamos estimaciones cualitativas basadas en reportes públicos."
+              :"Inversoria uses Finnhub data (real-time prices, Wall Street analyst consensus, EPS estimates and price targets) for companies listed on NYSE, NASDAQ and major global exchanges. For local LATAM companies, we use qualitative estimates based on public reports."
+          },
+          {
+            icon:"🧠",
+            title:isEs?"Metodología de análisis":"Analysis methodology",
+            body:isEs
+              ?"Nuestro modelo de análisis sigue los principios de Warren Buffett y Charlie Munger: evaluamos el foso económico (moat), la calidad del negocio, el crecimiento de FCF, el retorno sobre capital invertido (ROIC), la deuda y el margen operativo. La IA sintetiza estos factores con datos de mercado para producir una puntuación de calidad."
+              :"Our analysis model follows Warren Buffett and Charlie Munger principles: we evaluate economic moat, business quality, FCF growth, return on invested capital (ROIC), debt levels and operating margin. The AI synthesizes these factors with market data to produce a quality score."
+          },
+          {
+            icon:"🤖",
+            title:isEs?"Rol de la inteligencia artificial":"Role of artificial intelligence",
+            body:isEs
+              ?"Utilizamos Claude de Anthropic para interpretar datos financieros y generar el análisis narrativo. La IA no toma decisiones de inversión ni predice precios futuros — su función es explicar los datos existentes en términos comprensibles, identificar fortalezas y riesgos, y contextualizar el negocio."
+              :"We use Anthropic's Claude to interpret financial data and generate narrative analysis. The AI does not make investment decisions or predict future prices — its function is to explain existing data in understandable terms, identify strengths and risks, and contextualize the business."
+          },
+          {
+            icon:"⚖️",
+            title:isEs?"Limitaciones importantes":"Important limitations",
+            body:isEs
+              ?"Inversoria es una herramienta educativa. Los análisis son orientativos y no constituyen asesoría financiera certificada. Los datos tienen un retraso de hasta 15 minutos. Las estimaciones para empresas sin cobertura de analistas son aproximaciones. El rendimiento pasado no garantiza resultados futuros. Toda inversión conlleva riesgo de pérdida."
+              :"Inversoria is an educational tool. Analyses are indicative and do not constitute certified financial advice. Data may be delayed up to 15 minutes. Estimates for companies without analyst coverage are approximations. Past performance does not guarantee future results. All investments carry risk of loss."
+          },
+          {
+            icon:"🏢",
+            title:isEs?"Sobre Inversoria":"About Inversoria",
+            body:isEs
+              ?"Inversoria es una plataforma independiente de educación e información financiera enfocada en el mercado latinoamericano. No somos un broker, no gestionamos dinero y no ejecutamos operaciones. Nuestro objetivo es democratizar el acceso a análisis de calidad institucional para el inversor individual en LATAM. Contacto: hola@inversoria.lat"
+              :"Inversoria is an independent financial education and information platform focused on the Latin American market. We are not a broker, we do not manage money and we do not execute trades. Our goal is to democratize access to institutional-quality analysis for individual investors in LATAM. Contact: hola@inversoria.lat"
+          },
+        ].map(({icon,title,body},i)=>(
+          <div key={i} style={{marginBottom:20,paddingBottom:20,borderBottom:i<4?`1px solid #252548`:"none"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{fontSize:18}}>{icon}</span>
+              <span style={{fontSize:14,color:"#f0eeff",fontWeight:600}}>{title}</span>
+            </div>
+            <p style={{fontSize:12,color:"#8888aa",lineHeight:1.8,margin:0}}>{body}</p>
+          </div>
+        ))}
+
+        {/* Disclaimer box */}
+        <div style={{background:"#1a1535",border:`1px solid #a78bfa33`,borderRadius:10,padding:"12px 16px",marginTop:8}}>
+          <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:6}}>
+            {isEs?"⚠️ Aviso Legal":"⚠️ Legal Notice"}
+          </div>
+          <p style={{fontSize:11,color:"#8888aa",lineHeight:1.7,margin:0}}>
+            {isEs
+              ?"La información proporcionada por Inversoria tiene exclusivamente fines educativos e informativos. No somos asesores financieros certificados. Ningún contenido de esta plataforma debe interpretarse como una recomendación de inversión personalizada. Antes de invertir, considera tu situación financiera personal y consulta con un profesional certificado."
+              :"Information provided by Inversoria is for educational and informational purposes only. We are not certified financial advisors. No content on this platform should be interpreted as a personalized investment recommendation. Before investing, consider your personal financial situation and consult with a certified professional."}
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+function PrivacyPolicy({onClose,lang="en"}){
+  const isEs=lang==="es";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:3000,overflowY:"auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:760,margin:"0 auto",background:T.card,borderRadius:16,padding:"40px 40px",border:`1px solid ${T.border}`,position:"relative"}}>
+        <button onClick={onClose} style={{position:"sticky",top:0,float:"right",background:T.accent,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",color:T.muted,fontSize:13,marginBottom:16}}>✕ Cerrar</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Política de Privacidad</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
+        {[
+          {t:"1. Responsable del Tratamiento",b:`Inversoria (en adelante "la Plataforma") es responsable del tratamiento de los datos personales recopilados a través de inversoria.lat y sus dominios asociados.
+
+Esta política cumple con la Ley 1581 de 2012 y el Decreto 1377 de 2013 (Colombia), la LFPDPPP (México), la Ley 25.326 (Argentina), la Ley 19.628 (Chile) y la LGPD (Brasil).`},
+          {t:"2. Datos que Recopilamos",b:`Recopilamos los siguientes datos personales:
+
+• Datos de identificación: correo electrónico, nombre de usuario.
+• Datos de uso: tickers analizados, posiciones de portafolio ingresadas, perfil de riesgo seleccionado.
+• Datos técnicos: dirección IP, tipo de navegador, sistema operativo, páginas visitadas, tiempo de sesión.
+• Datos de pago: procesados exclusivamente por Stripe Inc. No almacenamos datos de tarjetas de crédito.
+
+No recopilamos datos sensibles como origen racial, creencias religiosas, datos biométricos ni información de salud.`},
+          {t:"3. Finalidad del Tratamiento",b:`Los datos personales se utilizan para:
+
+• Crear y gestionar tu cuenta de usuario.
+• Proveer los servicios de análisis de inversiones, calculadora y seguimiento de portafolio.
+• Personalizar tu experiencia según tu perfil de riesgo e historial de uso.
+• Enviar comunicaciones transaccionales (confirmación de cuenta, recibos de pago).
+• Mejorar la plataforma mediante análisis de uso agregado y anónimo.
+• Cumplir con obligaciones legales y prevenir fraudes.
+
+No utilizamos tus datos para decisiones automatizadas que produzcan efectos legales significativos.`},
+          {t:"4. Base Legal del Tratamiento",b:`El tratamiento de tus datos se basa en:
+
+• Tu consentimiento expreso al registrarte y aceptar esta política.
+• La ejecución del contrato de prestación de servicios.
+• El interés legítimo de la Plataforma para mejorar sus servicios.
+• El cumplimiento de obligaciones legales aplicables.`},
+          {t:"5. Tus Derechos (ARCO)",b:`De conformidad con la normativa aplicable, tienes derecho a:
+
+• Acceso: Conocer qué datos personales tenemos sobre ti.
+• Rectificación: Corregir datos inexactos o incompletos.
+• Cancelación/Supresión: Solicitar la eliminación de tus datos.
+• Oposición: Oponerte al tratamiento de tus datos para fines específicos.
+• Portabilidad: Recibir tus datos en formato estructurado.
+• Revocación del consentimiento: En cualquier momento, sin efecto retroactivo.
+
+Para ejercer estos derechos escríbenos a: hola@inversoria.lat
+Responderemos en un plazo máximo de 15 días hábiles.`},
+          {t:"6. Compartir Datos con Terceros",b:`Compartimos datos únicamente con:
+
+• Supabase Inc. (base de datos y autenticación) — almacenamiento seguro en servidores con cifrado AES-256.
+• Stripe Inc. (procesamiento de pagos) — cumple con PCI-DSS nivel 1.
+• Anthropic PBC (análisis de IA) — solo se envían los datos necesarios para el análisis solicitado.
+• Proveedores de datos de mercado (datos agregados de mercado, no datos personales).
+
+No vendemos, alquilamos ni cedemos tus datos personales a terceros con fines comerciales.`},
+          {t:"7. Transferencias Internacionales",b:`Algunos de nuestros proveedores procesan datos fuera de tu país de residencia. En todos los casos exigimos garantías contractuales adecuadas (cláusulas contractuales tipo o certificaciones equivalentes) para proteger tus datos conforme a los estándares de tu país.`},
+          {t:"8. Retención de Datos",b:`Conservamos tus datos mientras mantengas una cuenta activa y durante los períodos legalmente requeridos:
+
+• Datos de cuenta: mientras la cuenta esté activa + 2 años tras su eliminación.
+• Datos de transacciones: 10 años (obligación fiscal/contable).
+• Datos de uso y analítica: máximo 24 meses en forma agregada.
+
+Puedes solicitar la eliminación anticipada de tu cuenta en cualquier momento.`},
+          {t:"9. Seguridad",b:`Implementamos medidas técnicas y organizativas adecuadas:
+
+• Cifrado en tránsito (TLS 1.3) y en reposo (AES-256).
+• Autenticación segura gestionada por Supabase Auth.
+• Acceso restringido a datos personales por parte del equipo.
+• Revisiones periódicas de seguridad.
+
+En caso de brecha de seguridad que afecte tus datos, te notificaremos dentro de las 72 horas siguientes a su detección.`},
+          {t:"10. Cookies y Tecnologías Similares",b:`Utilizamos:
+
+• Cookies esenciales: para mantener tu sesión activa (no requieren consentimiento).
+• Almacenamiento local (localStorage): para guardar preferencias de idioma, moneda y datos de portafolio de usuarios no registrados.
+• Analytics (opcional): Google Analytics para análisis de uso agregado y anónimo.
+
+Puedes configurar tu navegador para rechazar cookies, aunque esto puede afectar la funcionalidad.`},
+          {t:"11. Menores de Edad",b:`La Plataforma no está dirigida a menores de 18 años. No recopilamos intencionalmente datos de menores. Si detectamos que hemos recopilado datos de un menor, los eliminaremos inmediatamente.`},
+          {t:"12. Cambios a esta Política",b:`Podemos actualizar esta política periódicamente. Te notificaremos por correo electrónico y mediante aviso en la Plataforma con al menos 30 días de anticipación ante cambios sustanciales. El uso continuado de la Plataforma tras la notificación implica aceptación.`},
+          {t:"13. Contacto y Autoridad de Control",b:`Para consultas sobre privacidad:
+📧 hola@inversoria.lat
+
+Tienes derecho a presentar reclamaciones ante la autoridad de protección de datos de tu país:
+• Colombia: Superintendencia de Industria y Comercio (SIC)
+• México: INAI
+• Argentina: AAIP
+• Chile: Consejo para la Transparencia
+• Brasil: ANPD`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{marginTop:32,padding:"16px 20px",background:T.accent,borderRadius:10,border:`1px solid ${T.border}`,fontSize:12,color:T.muted,lineHeight:1.7}}>
+          ⚠️ Esta política fue elaborada para cumplir con las principales normativas de protección de datos de América Latina. Para asesoría legal específica en tu jurisdicción, consulta un abogado especializado.
+        </div>
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsOfService({onClose,lang="en"}){
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:3000,overflowY:"auto",padding:"20px 16px"}}>
+      <div style={{maxWidth:760,margin:"0 auto",background:T.card,borderRadius:16,padding:"40px 40px",border:`1px solid ${T.border}`,position:"relative"}}>
+        <button onClick={onClose} style={{position:"sticky",top:0,float:"right",background:T.accent,border:`1px solid ${T.border}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",color:T.muted,fontSize:13,marginBottom:16}}>✕ Cerrar</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:6,fontWeight:700}}>Términos de Uso</div>
+        <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
+        {[
+          {t:"1. Aceptación de los Términos",b:`Al acceder y usar Inversoria (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.
+
+El uso de la Plataforma está disponible para personas mayores de 18 años con capacidad legal para celebrar contratos.`},
+          {t:"2. Descripción del Servicio",b:`Inversoria es una plataforma educativa de análisis de inversiones que ofrece:
+
+• Calculadora de interés compuesto.
+• Análisis de acciones mediante inteligencia artificial (framework Buffett/Munger).
+• Quiz de perfil de riesgo de inversor.
+• Seguimiento de portafolio con precios de mercado.
+• Herramientas de planificación DCA y rebalanceo.
+• Dashboard de ciclos de mercado.
+
+El servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
+          {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST ES EXCLUSIVAMENTE EDUCATIVO E INFORMATIVO.
+
+• No somos una firma de asesoría de inversiones registrada.
+• Los análisis generados por IA son estimaciones educativas, NO recomendaciones de inversión.
+• Los scores de calidad, análisis de moat y proyecciones DCF son herramientas de aprendizaje.
+• Los consensos de analistas provienen de fuentes públicas y pueden no estar actualizados.
+• Las rentabilidades pasadas no garantizan rentabilidades futuras.
+
+Siempre consulta con un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la pérdida total del capital invertido.`},
+          {t:"4. Planes y Pagos",b:`La Plataforma ofrece:
+
+• Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).
+• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.
+• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.
+
+Los pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
+          {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.
+• No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.
+• Para solicitar un reembolso: hola@inversoria.lat
+• Los reembolsos se procesan en 5-10 días hábiles.`},
+          {t:"6. Cuenta de Usuario",b:`• Eres responsable de mantener la confidencialidad de tu contraseña.
+• No puedes compartir, vender o transferir tu cuenta.
+• Debes notificarnos inmediatamente de cualquier uso no autorizado.
+• Nos reservamos el derecho de suspender cuentas que violen estos términos.`},
+          {t:"7. Propiedad Intelectual",b:`• Todo el contenido de la Plataforma (código, diseño, textos, análisis generados) es propiedad de Inversoria.
+• Se te otorga una licencia limitada, no exclusiva y no transferible para uso personal.
+• No puedes copiar, distribuir, modificar o crear obras derivadas sin autorización escrita.
+• Los datos de mercado y análisis son para uso personal exclusivamente.`},
+          {t:"8. Limitación de Responsabilidad",b:`EN LA MÁXIMA MEDIDA PERMITIDA POR LA LEY APLICABLE:
+
+• No nos responsabilizamos por pérdidas de inversión derivadas del uso de la Plataforma.
+• No garantizamos la exactitud, completitud o actualidad de los datos de mercado.
+• No somos responsables por interrupciones del servicio, errores de terceros (APIs de datos) o pérdida de datos.
+• Nuestra responsabilidad máxima se limita al monto pagado por el usuario en los últimos 3 meses.`},
+          {t:"9. Conducta del Usuario",b:`Está prohibido:
+
+• Usar la Plataforma para fines ilegales o no autorizados.
+• Intentar acceder a cuentas de otros usuarios.
+• Realizar ingeniería inversa del software.
+• Usar bots o scraping automatizado.
+• Compartir tu cuenta con terceros.
+• Publicar contenido falso o engañoso.`},
+          {t:"10. Modificaciones del Servicio",b:`Nos reservamos el derecho de:
+
+• Modificar o discontinuar funciones con 30 días de aviso.
+• Cambiar los precios de suscripción con 30 días de aviso.
+• Actualizar estos Términos con notificación por email.
+
+El uso continuado tras los cambios implica aceptación.`},
+          {t:"11. Ley Aplicable y Jurisdicción",b:`Estos Términos se rigen por las leyes de la República de Colombia. Cualquier disputa se someterá a los tribunales competentes de Bogotá, Colombia, sin perjuicio de los derechos que la normativa local de tu país de residencia te pueda otorgar como consumidor.`},
+          {t:"12. Contacto",b:`Para cualquier consulta sobre estos Términos:
+📧 hola@inversoria.lat
+🌐 inversoria.lat`},
+        ].map(({t,b})=>(
+          <div key={t} style={{marginBottom:28}}>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:10,fontWeight:700}}>{t}</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.9,whiteSpace:"pre-line"}}>{b}</div>
+          </div>
+        ))}
+        <div style={{textAlign:"center",marginTop:24}}>
+          <button onClick={onClose} className="btn btn-gold" style={{padding:"12px 32px",borderRadius:10}}>Entendido</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+const TABS=[
+  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
