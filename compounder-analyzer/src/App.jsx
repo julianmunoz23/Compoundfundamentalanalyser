@@ -928,11 +928,18 @@ function Hero({onStart,lang="en"}){
           ?"Dile a la IA el nombre de cualquier acción y en 30 segundos sabrás si vale la pena comprarla — sin tecnicismos, sin experiencia previa."
           :"Tell the AI any stock name and in 30 seconds you'll know if it's worth buying — no finance degree, no experience needed."}
       </p>
-      <p style={{fontSize:13,color:`${T.muted}88`,marginBottom:28}}>
-        {isEs
-          ?"La herramienta que los bancos no quieren que uses · Colombia · México · Argentina · Chile · Todo LATAM"
-          :"Your personal investment analyst · All of Latin America"}
-      </p>
+      {/* ── POWER TAGLINE ── */}
+      {isEs
+        ?<div style={{display:"inline-flex",alignItems:"center",gap:10,background:`linear-gradient(135deg,${T.gold}18,${T.red}12)`,border:`1px solid ${T.gold}55`,borderRadius:12,padding:"10px 20px",marginBottom:28}}>
+          <span style={{fontSize:18}}>🏦</span>
+          <span style={{fontSize:15,color:T.gold,fontWeight:700,letterSpacing:"0.01em"}}>
+            La herramienta que los bancos <span style={{color:T.goldLight,textDecoration:"underline",textDecorationStyle:"wavy",textUnderlineOffset:"4px"}}>no quieren</span> que uses
+          </span>
+          <span style={{fontSize:18}}>🤫</span>
+        </div>
+        :<p style={{fontSize:13,color:`${T.muted}88`,marginBottom:28}}>Your personal investment analyst · All of Latin America</p>
+      }
+      {isEs&&<p style={{fontSize:11,color:`${T.muted}66`,marginBottom:28,marginTop:-20}}>Colombia · México · Argentina · Chile · Todo LATAM</p>}
 
       {/* CTA buttons */}
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
