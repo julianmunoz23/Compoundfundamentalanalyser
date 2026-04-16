@@ -2216,7 +2216,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               <span style={{fontSize:9,color:T.muted,background:T.accent,border:`1px solid ${T.border}`,borderRadius:4,padding:"1px 6px"}}>
                 Finnhub · {lang==="es"?"Analistas reales":"Real analysts"}
               </span>
-            </div></span>}
+            </div>}
           {fh.period&&!fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
           {fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Estimación basada en datos públicos recientes</span>}
         </div>
