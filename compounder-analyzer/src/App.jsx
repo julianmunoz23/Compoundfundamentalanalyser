@@ -2194,12 +2194,29 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     </Card>
 
     {info&&<>
+      {/* ── DISCLAIMER BADGE ── */}
+      <div style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:`${T.gold}08`,border:`1px solid ${T.gold}22`,borderRadius:8,marginBottom:12}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:T.gold,flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span style={{fontSize:10,color:T.muted,lineHeight:1.5}}>
+          {lang==="es"
+            ?"Este análisis es educativo y no constituye asesoría financiera certificada. Toda inversión implica riesgo de pérdida. Consulta un asesor antes de invertir."
+            :"This analysis is educational and does not constitute certified financial advice. All investments involve risk of loss. Consult an advisor before investing."}
+        </span>
+      </div>
       {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
       {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
           {fh.isAiEstimate
           ?<span style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>🤖 Consenso Estimado por IA · Wall Street</span>
-          :<span style={{fontSize:10,color:T.green,letterSpacing:"0.12em",textTransform:"uppercase",fontWeight:600}}>🟢 LIVE — Datos en Tiempo Real · Wall Street</span>}
+          :<div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{fontSize:10,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+                <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#34d399"/></svg>
+                {lang==="es"?"Datos en tiempo real · Wall Street":"Live data · Wall Street consensus"}
+              </span>
+              <span style={{fontSize:9,color:T.muted,background:T.accent,border:`1px solid ${T.border}`,borderRadius:4,padding:"1px 6px"}}>
+                Finnhub · {lang==="es"?"Analistas reales":"Real analysts"}
+              </span>
+            </div></span>}
           {fh.period&&!fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
           {fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Estimación basada en datos públicos recientes</span>}
         </div>
@@ -4507,6 +4524,101 @@ function StrategyTab({onGoToProfile,onGoToPortfolio,lang="en",user=null}){
 }
 
 // ── LEGAL PAGES ──────────────────────────────────────────────────────────────
+// ── METHODOLOGY MODAL ─────────────────────────────────────────────────────
+function MethodologyModal({onClose,lang="en"}){
+  const isEs=lang==="es";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,backdropFilter:"blur(4px)"}}
+      onClick={onClose}>
+      <div style={{background:"#13132a",border:`1px solid #a78bfa44`,borderRadius:16,maxWidth:640,width:"100%",maxHeight:"85vh",overflowY:"auto",padding:32}}
+        onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
+          <div style={{width:36,height:36,borderRadius:9,background:"#7c3aed",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+              <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:"#f0eeff",fontWeight:700}}>
+              {isEs?"Cómo Funciona Inversoria":"How Inversoria Works"}
+            </div>
+            <div style={{fontSize:11,color:"#8888aa",marginTop:2}}>
+              {isEs?"Metodología, fuentes de datos y limitaciones":"Methodology, data sources and limitations"}
+            </div>
+          </div>
+          <button onClick={onClose} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",color:"#8888aa",padding:4}}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        {/* Sections */}
+        {[
+          {
+            icon:"📊",
+            title:isEs?"Fuentes de datos":"Data sources",
+            body:isEs
+              ?"Inversoria utiliza datos de Finnhub (precios en tiempo real, consenso de analistas de Wall Street, estimaciones de EPS y precio objetivo) para empresas listadas en NYSE, NASDAQ y principales bolsas globales. Para empresas LATAM locales, usamos estimaciones cualitativas basadas en reportes públicos."
+              :"Inversoria uses Finnhub data (real-time prices, Wall Street analyst consensus, EPS estimates and price targets) for companies listed on NYSE, NASDAQ and major global exchanges. For local LATAM companies, we use qualitative estimates based on public reports."
+          },
+          {
+            icon:"🧠",
+            title:isEs?"Metodología de análisis":"Analysis methodology",
+            body:isEs
+              ?"Nuestro modelo de análisis sigue los principios de Warren Buffett y Charlie Munger: evaluamos el foso económico (moat), la calidad del negocio, el crecimiento de FCF, el retorno sobre capital invertido (ROIC), la deuda y el margen operativo. La IA sintetiza estos factores con datos de mercado para producir una puntuación de calidad."
+              :"Our analysis model follows Warren Buffett and Charlie Munger principles: we evaluate economic moat, business quality, FCF growth, return on invested capital (ROIC), debt levels and operating margin. The AI synthesizes these factors with market data to produce a quality score."
+          },
+          {
+            icon:"🤖",
+            title:isEs?"Rol de la inteligencia artificial":"Role of artificial intelligence",
+            body:isEs
+              ?"Utilizamos Claude de Anthropic para interpretar datos financieros y generar el análisis narrativo. La IA no toma decisiones de inversión ni predice precios futuros — su función es explicar los datos existentes en términos comprensibles, identificar fortalezas y riesgos, y contextualizar el negocio."
+              :"We use Anthropic's Claude to interpret financial data and generate narrative analysis. The AI does not make investment decisions or predict future prices — its function is to explain existing data in understandable terms, identify strengths and risks, and contextualize the business."
+          },
+          {
+            icon:"⚖️",
+            title:isEs?"Limitaciones importantes":"Important limitations",
+            body:isEs
+              ?"Inversoria es una herramienta educativa. Los análisis son orientativos y no constituyen asesoría financiera certificada. Los datos tienen un retraso de hasta 15 minutos. Las estimaciones para empresas sin cobertura de analistas son aproximaciones. El rendimiento pasado no garantiza resultados futuros. Toda inversión conlleva riesgo de pérdida."
+              :"Inversoria is an educational tool. Analyses are indicative and do not constitute certified financial advice. Data may be delayed up to 15 minutes. Estimates for companies without analyst coverage are approximations. Past performance does not guarantee future results. All investments carry risk of loss."
+          },
+          {
+            icon:"🏢",
+            title:isEs?"Sobre Inversoria":"About Inversoria",
+            body:isEs
+              ?"Inversoria es una plataforma independiente de educación e información financiera enfocada en el mercado latinoamericano. No somos un broker, no gestionamos dinero y no ejecutamos operaciones. Nuestro objetivo es democratizar el acceso a análisis de calidad institucional para el inversor individual en LATAM. Contacto: hola@inversoria.lat"
+              :"Inversoria is an independent financial education and information platform focused on the Latin American market. We are not a broker, we do not manage money and we do not execute trades. Our goal is to democratize access to institutional-quality analysis for individual investors in LATAM. Contact: hola@inversoria.lat"
+          },
+        ].map(({icon,title,body},i)=>(
+          <div key={i} style={{marginBottom:20,paddingBottom:20,borderBottom:i<4?`1px solid #252548`:"none"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+              <span style={{fontSize:18}}>{icon}</span>
+              <span style={{fontSize:14,color:"#f0eeff",fontWeight:600}}>{title}</span>
+            </div>
+            <p style={{fontSize:12,color:"#8888aa",lineHeight:1.8,margin:0}}>{body}</p>
+          </div>
+        ))}
+
+        {/* Disclaimer box */}
+        <div style={{background:"#1a1535",border:`1px solid #a78bfa33`,borderRadius:10,padding:"12px 16px",marginTop:8}}>
+          <div style={{fontSize:11,color:"#a78bfa",fontWeight:600,marginBottom:6}}>
+            {isEs?"⚠️ Aviso Legal":"⚠️ Legal Notice"}
+          </div>
+          <p style={{fontSize:11,color:"#8888aa",lineHeight:1.7,margin:0}}>
+            {isEs
+              ?"La información proporcionada por Inversoria tiene exclusivamente fines educativos e informativos. No somos asesores financieros certificados. Ningún contenido de esta plataforma debe interpretarse como una recomendación de inversión personalizada. Antes de invertir, considera tu situación financiera personal y consulta con un profesional certificado."
+              :"Information provided by Inversoria is for educational and informational purposes only. We are not certified financial advisors. No content on this platform should be interpreted as a personalized investment recommendation. Before investing, consider your personal financial situation and consult with a certified professional."}
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 function PrivacyPolicy({onClose,lang="en"}){
   const isEs=lang==="es";
   return(
@@ -4817,6 +4929,7 @@ export default function App(){
     <style>{css}</style>
     {showPrivacy&&<PrivacyPolicy onClose={()=>setShowPrivacy(false)} lang={lang}/>}
     {showTerms&&<TermsOfService onClose={()=>setShowTerms(false)} lang={lang}/>}
+    {showMethodology&&<MethodologyModal onClose={()=>setShowMethodology(false)} lang={lang}/>}
     {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext} lang={lang}
       onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
     {showAuth&&<AuthModal lang={lang} initialMode={authMode}
@@ -4959,9 +5072,32 @@ export default function App(){
     </div>}
     <div style={{maxWidth:1380,margin:"0 auto",padding:"0 28px 20px"}}><AdBanner size="leaderboard"/></div>
     <div style={{borderTop:`1px solid ${T.border}`,padding:"16px 28px",maxWidth:1380,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-      <div style={{fontSize:9,color:T.muted}}>
-        <span style={{color:T.gold,fontFamily:"'Playfair Display',serif",fontWeight:700}}>Inversoria</span>
-        {" "}· Buffett · Munger · {L.footer_disc}
+      <div style={{fontSize:9,color:T.muted,lineHeight:1.8}}>
+        <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+          <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#7c3aed"/>
+            <path d="M5 24 Q9 24 12 18 Q16 11 20 8" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <path d="M20 8 L20 13 M20 8 L25 8 L25 13" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+            <circle cx="25" cy="8" r="2.5" fill="#c4b5fd"/>
+          </svg>
+          <span style={{color:T.gold,fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:11}}>Inversoria</span>
+          <span style={{color:T.muted}}>·</span>
+          <span>{lang==="es"?"Análisis de Inversiones con IA · LATAM":"AI-Powered Investment Analysis · LATAM"}</span>
+        </div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:12,alignItems:"center"}}>
+          <span>Colombia 🇨🇴</span>
+          <a href="mailto:hola@inversoria.lat" style={{color:T.muted,textDecoration:"none"}}
+            onMouseEnter={e=>e.target.style.color=T.gold}
+            onMouseLeave={e=>e.target.style.color=T.muted}>
+            hola@inversoria.lat
+          </a>
+          <span style={{color:`${T.muted}66`}}>·</span>
+          <span style={{color:`${T.muted}88`,fontStyle:"italic"}}>
+            {lang==="es"
+              ?"Contenido educativo — no constituye asesoría financiera certificada"
+              :"Educational content — not certified financial advice"}
+          </span>
+        </div>
       </div>
       <div style={{display:"flex",gap:16}}>
         <button onClick={(e)=>{e.stopPropagation();setShowPrivacy(true);}}
