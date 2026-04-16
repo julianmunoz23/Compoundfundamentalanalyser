@@ -3117,10 +3117,12 @@ function RebalanceDCA({positions,totalValue,savedProfile,callAI,lang="en"}){
       return`${p.ticker}: ${w}% weight, P&L ${p.pnlPct!=null?p.pnlPct.toFixed(1)+"%":"unknown"}`;
     }).join(" | ");
     try{
-      const r=await callAI(`You are a portfolio rebalancing advisor. Investor profile: ${profileLabel}. 
+      const r=await callAI(`You are a portfolio rebalancing advisor. Investor profile: ${profileLabel}.
+${lang==="es"?"IMPORTANT: All text fields (summary, reason, urgency label) must be in SPANISH. Keep JSON keys in English.":""}
 Current portfolio: ${summary}. Total value: $${Math.round(totalValue).toLocaleString()}.
+Urgency values must be: ${lang==="es"?"Urgente|Moderado|Bajo":"Urgent|Moderate|Low"}
 Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
-{"actions":[{"ticker":"<ticker>","action":"<Reduce|Increase|Hold|Exit>","currentPct":<number>,"targetPct":<number>,"reason":"<1 sentence>"}],"summary":"<2 sentences overall rebalancing rationale>","urgency":"<Urgent|Moderate|Low>"}`);
+{"actions":[{"ticker":"<ticker>","action":"<Reduce|Increase|Hold|Exit>","currentPct":<number>,"targetPct":<number>,"reason":"<1 sentence in ${lang==="es"?"Spanish":"English"}>"}],"summary":"<2 sentences>","urgency":"<${lang==="es"?"Urgente|Moderado|Bajo":"Urgent|Moderate|Low"}>"}`);
       setRebalance(r);incRebCount();
     }catch(e){setErr("Rebalance error: "+e.message);}
     setLoadingReb(false);
@@ -3144,6 +3146,7 @@ Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
     }).join("\n");
     try{
       const r=await callAI(`You are an expert DCA investment advisor using Buffett/Munger principles. Investor profile: ${profileLabel}.
+${lang==="es"?"IMPORTANT: All text fields (summary, reason, topPick, action labels) must be in SPANISH. Keep JSON keys and action values in English.":""}
 
 CURRENT PORTFOLIO:
 ${dcaSummary}
