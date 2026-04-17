@@ -280,7 +280,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       icon:"🎯",
       title:isEs?"Ya viste el potencial. Ahora actúa.":"You've seen the potential. Now act on it.",
       sub:isEs?<>Usaste tus <span style={{color:T.text,fontWeight:600}}>3 análisis gratis</span>. Actualiza para seguir analizando acciones con consenso Wall Street, score de calidad y valuación DCF — sin límite.</>:<>You've used your <span style={{color:T.text,fontWeight:600}}>3 free analyses</span>. Upgrade to keep analyzing stocks with live Wall Street consensus, moat scoring, and DCF valuation — unlimited.</>,
-      features:isEs?["Análisis IA de Acciones Ilimitados","Dashboard de Ciclo de Mercado","Consenso Wall Street en Tiempo Real","Objetivos de Precio de Analistas","Análisis FCF Growth Rate","Score Buffett/Munger","Valuación DCF Inline"]:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Wall Street Consensus Live","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Buffett/Munger Quality Score","Inline DCF Valuation"],
+      features:isEs?["Análisis IA de Acciones Ilimitados","Dashboard de Ciclo de Mercado","Consenso Wall Street en Tiempo Real","Objetivos de Precio de Analistas","Análisis FCF Growth Rate","Score de Calidad — 8 Filtros","Valuación DCF Inline"]:["Unlimited AI Stock Analyses","Market Cycle Dashboard","Wall Street Consensus Live","Analyst Price Targets & Upside","FCF Growth Rate Analysis","Score de Calidad — 8 Filtros","Inline DCF Valuation"],
       price:"$7.99/mo",
       trial:isEs?"7 días gratis · Cancela cuando quieras":"7-day free trial · Cancel anytime",
       cta:isEs?"🎯 Desbloquear Análisis Ilimitados":"🎯 Unlock Unlimited Analysis",
@@ -304,7 +304,7 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
       price:"$12.99/mo",
       trial:isEs?"7 días gratis · Cancela cuando quieras":"7-day free trial · Cancel anytime",
       cta:isEs?"🚀 Construir Mi Portafolio IA":"🚀 Build My AI Portfolio",
-      proof:isEs?"El portafolio que Buffett construiría para tu perfil":"The portfolio Buffett would build for your risk profile",
+      proof:isEs?"El portafolio que el inversor paciente construiría para tu perfil":"The portfolio a patient investor would build for your risk profile",
     },
   };
   const c=configs[context]||configs.stock;
@@ -403,7 +403,7 @@ function sm(c,v){if(c.invert){if(v<=c.threshold)return 100;if(v>=c.max)return 0;
 function calcScore(m,moat){let tw=0,ts=0;Object.values(CRITERIA).flat().forEach(c=>{const s=sm(c,m[c.key]||0);ts+=s*c.weight;tw+=c.weight;});const moatAvg=Object.values(moat).reduce((a,v)=>a+v,0)/(MOAT_KEYS.length*5)*100;ts+=moatAvg*10;tw+=10;return Math.round(ts/tw);}
 function grade(s,lang="en"){
   const isEs=lang==="es";
-  if(s>=85)return{l:"A+",c:T.green,label:isEs?"Elite Compounder":"Elite Compounder"};
+  if(s>=85)return{l:"A+",c:T.green,label:isEs?"Negocio Excepcional":"Elite Compounder"};
   if(s>=75)return{l:"A",c:T.green,label:isEs?"Alta Calidad":"High Quality"};
   if(s>=65)return{l:"B+",c:T.gold,label:isEs?"Buen Negocio":"Good Business"};
   if(s>=55)return{l:"B",c:T.gold,label:isEs?"Prometedor":"Promising"};
@@ -580,10 +580,10 @@ const LANG = {
     tab_portfolio: "My Portfolio",
     tab_strategy: "My Strategy",
     tab_ret: "📐 Expected Return",
-    hero_badge: "✦ Trusted by investors worldwide · Buffett & Munger principles",
+    hero_badge: "✦ El Método del Inversor Paciente · inversoria.lat",
     hero_h1a: "Invest like",
-    hero_h1b: "Buffett & Munger.",
-    hero_h1c: "Powered by AI.",
+    hero_h1b: "el Inversor Paciente.",
+    hero_h1c: "Con IA.",
     hero_sub: "The only platform combining compound interest modeling, AI stock analysis, risk profiling, and live portfolio tracking — built for serious long-term investors.",
     hero_social: "Free to start · No credit card · Used by investors in 30+ countries",
     hero_cta1: "💰 Start Free — Compound Calculator",
@@ -612,9 +612,9 @@ const LANG = {
     tab_portfolio: "Mi Portafolio",
     tab_strategy: "Mi Estrategia",
     tab_ret: "📐 Retorno Esperado",
-    hero_badge: "✦ Invierte con los principios de Buffett & Munger · Con IA",
+    hero_badge: "✦ El Método del Inversor Paciente · inversoria.lat",
     hero_h1a: "Invierte como",
-    hero_h1b: "Buffett & Munger.",
+    hero_h1b: "el Inversor Paciente.",
     hero_h1c: "Con el poder de la IA.",
     hero_sub: "La única plataforma que combina calculadora de interés compuesto, análisis AI de acciones, perfil de riesgo y seguimiento de portafolio — diseñada para el inversor serio de largo plazo.",
     hero_social: "Gratis para empezar · Sin tarjeta de crédito · Inversores en 30+ países",
@@ -643,7 +643,7 @@ const LANG = {
     whatif_multiplier: "veces tu inversión inicial",
     whatif_chart: "📈 Tu Trayectoria de Crecimiento",
     // Score Tab
-    score_label: "🎯 Analizador de Acciones IA — Análisis Buffett/Munger + consenso Wall Street · 3 análisis gratis",
+    score_label: "🎯 Analizador de Acciones — Los 8 Filtros del Inversor Paciente · Consenso Wall Street · 3 análisis gratis",
     score_build_portfolio: "Armar mi portafolio →",
     score_input_label: "Ticker o Nombre de Empresa",
     score_input_placeholder: "NVDA, Apple, Google, Tesla, Costco...",
@@ -904,6 +904,266 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
 }
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
+
+// ── FEATURES SHOWCASE — El Método del Inversor Paciente ──────────────────────
+function MiniChartFS() {
+  return (
+    <svg width="100%" height="62" viewBox="0 0 204 62" preserveAspectRatio="none"
+      style={{display:"block",margin:"10px 0 11px"}}>
+      <defs>
+        <linearGradient id="fs-cg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={T.gold} stopOpacity="0.22"/>
+          <stop offset="100%" stopColor={T.gold} stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d="M0 52 C16 48,28 42,44 38 S66 24,82 20 S106 28,122 18 S148 4,168 2 S190 6,204 0"
+        fill="none" stroke={T.gold} strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M0 52 C16 48,28 42,44 38 S66 24,82 20 S106 28,122 18 S148 4,168 2 S190 6,204 0 V62 H0Z"
+        fill="url(#fs-cg)"/>
+    </svg>
+  );
+}
+
+function DonutChartFS() {
+  return (
+    <svg width="88" height="88" viewBox="0 0 88 88" style={{display:"block",margin:"0 auto 11px"}}>
+      <circle cx="44" cy="44" r="33" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11"/>
+      <circle cx="44" cy="44" r="33" fill="none" stroke={T.gold} strokeWidth="11"
+        strokeDasharray="77 130" strokeDashoffset="-9" strokeLinecap="round"/>
+      <circle cx="44" cy="44" r="33" fill="none" stroke={T.blue} strokeWidth="11"
+        strokeDasharray="40 130" strokeDashoffset="-89" strokeLinecap="round"/>
+      <circle cx="44" cy="44" r="33" fill="none" stroke={T.green} strokeWidth="11"
+        strokeDasharray="26 130" strokeDashoffset="-132" strokeLinecap="round"/>
+      <circle cx="44" cy="44" r="33" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="11"
+        strokeDasharray="19 130" strokeDashoffset="-160" strokeLinecap="round"/>
+      <text x="44" y="40" textAnchor="middle" fontSize="8" fill="rgba(240,238,255,0.45)"
+        style={{fontFamily:"'DM Sans',sans-serif"}}>Retorno</text>
+      <text x="44" y="52" textAnchor="middle" fontSize="11" fill={T.gold} fontWeight="700"
+        style={{fontFamily:"'Playfair Display',serif"}}>+7.2%</text>
+    </svg>
+  );
+}
+
+function PhoneFrame({children}){
+  return(
+    <div style={{width:"100%",maxWidth:224,background:T.surface,borderRadius:34,
+      border:`1.5px solid rgba(167,139,250,0.16)`,
+      boxShadow:`0 28px 56px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.04) inset`,
+      overflow:"hidden",position:"relative"}}>
+      <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",
+        width:66,height:20,background:"#000",borderRadius:"0 0 12px 12px",zIndex:10}}/>
+      <div style={{padding:"26px 11px 14px"}}>{children}</div>
+    </div>
+  );
+}
+
+function FSScreen1(){
+  return<>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:9}}>
+      <div>
+        <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Análisis de Valor</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,color:T.text,fontWeight:700}}>NVDA</div>
+      </div>
+      <span style={{fontSize:8,fontWeight:600,padding:"2px 7px",borderRadius:6,background:"rgba(167,139,250,0.12)",
+        color:T.gold,border:"1px solid rgba(167,139,250,0.22)",marginTop:2,display:"inline-block"}}>NASDAQ</span>
+    </div>
+    <div style={{fontFamily:"'DM Mono',monospace",fontSize:21,color:T.text,fontWeight:500,lineHeight:1}}>$875.40</div>
+    <div style={{fontSize:9.5,color:T.green,fontWeight:500,marginTop:2}}>▲ +3.21% hoy</div>
+    <MiniChartFS/>
+    <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.13),rgba(167,139,250,0.06))",
+      border:"1px solid rgba(167,139,250,0.2)",borderRadius:10,padding:"9px 10px",marginBottom:8}}>
+      <div style={{fontSize:7.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.gold,fontWeight:600,marginBottom:5}}>
+        ✦ Score de Calidad — Los 8 Filtros
+      </div>
+      <div style={{display:"flex",alignItems:"baseline",gap:7,marginBottom:5}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.green,fontWeight:700,lineHeight:1}}>A+</div>
+        <div style={{fontSize:9,color:T.green,fontWeight:500}}>Negocio Excepcional</div>
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:T.muted,marginLeft:"auto"}}>87/100</div>
+      </div>
+      {[{l:"📈 Crecimiento",p:92,c:T.gold},{l:"💎 Rentabilidad",p:88,c:T.blue},{l:"💵 Flujo Caja",p:84,c:T.green},{l:"🏰 La Fosa",p:90,c:"#f59e0b"}].map(({l,p,c})=>(
+        <div key={l} style={{display:"grid",gridTemplateColumns:"52px 1fr 22px",alignItems:"center",gap:4,marginBottom:4}}>
+          <span style={{fontSize:7.5,color:T.muted}}>{l}</span>
+          <div style={{height:3,background:T.border,borderRadius:2,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${p}%`,background:c,borderRadius:2}}/>
+          </div>
+          <span style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,color:T.text,textAlign:"right"}}>{p}%</span>
+        </div>
+      ))}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:8}}>
+      {[{t:"✓ ROIC 28% ≥ 20%",c:T.green},{t:"✓ FCF Margen 22%",c:T.green},{t:"✓ Ingresos +56%",c:T.green},{t:"⚠ Deuda 2.1x",c:"#f59e0b"}]
+        .map(({t,c})=><div key={t} style={{fontSize:7.5,color:c}}>{t}</div>)}
+    </div>
+    <div style={{background:"rgba(52,211,153,0.07)",border:"1px solid rgba(52,211,153,0.18)",borderRadius:8,padding:"7px 9px"}}>
+      <div style={{fontSize:7,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3,fontWeight:600}}>
+        Consenso Wall Street · 42 analistas
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:12,color:T.green,fontWeight:700}}>Compra Fuerte</div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.gold,fontWeight:500}}>Obj. $940</div>
+          <div style={{fontSize:8,color:T.green}}>+7.4% upside</div>
+        </div>
+      </div>
+    </div>
+  </>;
+}
+
+function FSScreen2(){
+  const holdings=[
+    {ticker:"NVDA",alloc:37,val:"$4,617",chg:"+12.4%",up:true,color:T.gold},
+    {ticker:"AAPL",alloc:25,val:"$3,120",chg:"+4.1%",up:true,color:T.blue},
+    {ticker:"MELI",alloc:16,val:"$1,997",chg:"-2.3%",up:false,color:T.green},
+    {ticker:"Otros",alloc:22,val:"$2,746",chg:"+1.8%",up:true,color:"rgba(255,255,255,0.15)"},
+  ];
+  return<>
+    <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mi Portafolio</div>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:23,color:T.text,fontWeight:700,lineHeight:1}}>$12,480</div>
+    <div style={{fontSize:9.5,color:T.green,fontWeight:500,marginTop:3,marginBottom:11}}>▲ +$840 · +7.2% este mes</div>
+    <DonutChartFS/>
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      {holdings.map(({ticker,alloc,val,chg,up,color})=>(
+        <div key={ticker}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:7,height:7,borderRadius:2,background:color,flexShrink:0}}/>
+              <div>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,fontWeight:500,color:T.text}}>{ticker}</div>
+                <div style={{fontSize:8,color:T.muted}}>{alloc}%</div>
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9.5,color:T.text}}>{val}</div>
+              <div style={{fontSize:8.5,fontWeight:500,color:up?T.green:T.red}}>{chg}</div>
+            </div>
+          </div>
+          <div style={{height:2.5,background:T.border,borderRadius:2,marginTop:2,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${alloc}%`,background:color,borderRadius:2}}/>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div style={{marginTop:9,padding:"7px 9px",background:"rgba(167,139,250,0.08)",
+      border:"1px solid rgba(167,139,250,0.18)",borderRadius:8,
+      display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div>
+        <div style={{fontSize:7.5,color:T.muted}}>🤖 Diagnóstico IA</div>
+        <div style={{fontSize:8,color:T.muted,marginTop:1}}>Concentración alta en tech</div>
+      </div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,fontWeight:700}}>B+</div>
+    </div>
+  </>;
+}
+
+function FSScreen3(){
+  const news=[
+    {src:"Reuters · 2h",type:"pos",badge:"POSITIVO",body:"Fed mantiene tasas; mercados reaccionan con alza en tech.",tags:"$SPY · $QQQ · $NVDA"},
+    {src:"Bloomberg · 4h",type:"neg",badge:"NEGATIVO",body:"MercadoLibre reporta caída en márgenes en Brasil.",tags:"$MELI · $B3SA3"},
+    {src:"El Economista · 6h",type:"neu",badge:"NEUTRO",body:"Banxico revisa proyecciones de crecimiento para 2025.",tags:"$BMXN · $EWW"},
+  ];
+  const borderColor={pos:T.green,neg:T.red,neu:T.border};
+  const badgeBg={pos:"rgba(52,211,153,0.14)",neg:"rgba(248,113,113,0.14)",neu:"rgba(255,255,255,0.06)"};
+  const badgeColor={pos:T.green,neg:T.red,neu:T.muted};
+  return<>
+    <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mercado hoy</div>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.text,fontWeight:700,marginBottom:10}}>Noticias & Sentimiento</div>
+    <div style={{display:"flex",height:5,borderRadius:3,overflow:"hidden",gap:2,marginBottom:5}}>
+      <div style={{flex:5.8,background:"linear-gradient(90deg,#34d399,#22c87a)",borderRadius:"3px 0 0 3px"}}/>
+      <div style={{flex:2.4,background:"rgba(255,255,255,0.09)"}}/>
+      <div style={{flex:1.8,background:"linear-gradient(90deg,#f87171,#ef5050)",borderRadius:"0 3px 3px 0"}}/>
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",fontSize:7.5,marginBottom:10}}>
+      <span style={{color:T.green,fontWeight:600}}>58% Positivo</span>
+      <span style={{color:T.muted}}>24% Neutro</span>
+      <span style={{color:T.red,fontWeight:600}}>18% Neg.</span>
+    </div>
+    {news.map(({src,type,badge,body,tags})=>(
+      <div key={src} style={{background:T.accent,borderRadius:8,padding:"8px 9px",marginBottom:6,borderLeft:`2px solid ${borderColor[type]}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+          <span style={{fontSize:7.5,color:T.muted}}>{src}</span>
+          <span style={{fontSize:7,padding:"1.5px 5px",borderRadius:4,fontWeight:600,background:badgeBg[type],color:badgeColor[type]}}>{badge}</span>
+        </div>
+        <div style={{fontSize:9,color:T.text,lineHeight:1.45}}>{body}</div>
+        <div style={{fontSize:7.5,color:T.blue,marginTop:2,fontWeight:500}}>{tags}</div>
+      </div>
+    ))}
+    <div style={{marginTop:8,padding:"7px 9px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:7}}>
+      <div style={{fontSize:7,color:T.gold,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3}}>✦ Resumen del inversor paciente</div>
+      <div style={{fontSize:8.5,color:T.muted,lineHeight:1.5}}>Tech lidera el rebote. Cautela en LATAM por datos macro de Brasil y México.</div>
+    </div>
+  </>;
+}
+
+function FeaturesShowcase({onStart,lang="es"}){
+  const features=[
+    {num:"01 — Análisis de Valor",title:"Los 8 Filtros del Inversor Paciente",
+     desc:"Score de Calidad con ROIC, FCF, La Fosa del Negocio y consenso de Wall Street en tiempo real.",
+     pill:"🎯 3 análisis gratis · Sin cuenta",tab:"score",screen:<FSScreen1/>},
+    {num:"02 — Mi Portafolio",title:"P&G en Tiempo Real",
+     desc:"Tus posiciones con precios en vivo. La IA evalúa si tu portafolio coincide con tu perfil.",
+     pill:"📁 Hasta 5 acciones gratis",tab:"portfolio",screen:<FSScreen2/>},
+    {num:"03 — Noticias",title:"El Mercado Filtrado para Ti",
+     desc:"La IA clasifica cada noticia por sentimiento y genera el resumen que el inversor paciente necesita leer.",
+     pill:"📰 Actualización diaria",tab:"score",screen:<FSScreen3/>},
+  ];
+  const bottomTags=[
+    {text:"✓ 3 análisis gratis · Sin tarjeta",bg:"rgba(52,211,153,0.08)",border:"rgba(52,211,153,0.2)",color:T.green},
+    {text:"★ 500+ inversores en LATAM",bg:"rgba(167,139,250,0.08)",border:"rgba(167,139,250,0.2)",color:T.gold},
+    {text:"🇨🇴 🇲🇽 🇦🇷 🇨🇱 🇧🇷 · Tu moneda local",bg:"rgba(96,165,250,0.08)",border:"rgba(96,165,250,0.2)",color:T.blue},
+  ];
+  return(
+    <div style={{background:T.bg,padding:"60px 20px 68px",fontFamily:"'DM Sans',sans-serif",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",width:700,height:320,
+        background:"radial-gradient(ellipse,rgba(124,58,237,0.1) 0%,transparent 70%)",pointerEvents:"none"}}/>
+      {/* Header */}
+      <p style={{textAlign:"center",fontSize:9.5,fontWeight:600,letterSpacing:"0.18em",textTransform:"uppercase",color:T.gold,marginBottom:14}}>
+        ✦ inversoria.lat — plataforma de inversiones con IA para LATAM
+      </p>
+      <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,40px)",fontWeight:700,color:T.text,
+        textAlign:"center",lineHeight:1.15,margin:"0 auto 6px",maxWidth:600}}>
+        Todo lo que necesitas para{" "}
+        <span style={{color:T.gold}}>invertir con inteligencia</span>
+      </h2>
+      <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(13px,2vw,18px)",fontWeight:700,
+        color:T.muted,textAlign:"center",lineHeight:1.3,margin:"0 auto 14px",maxWidth:580}}>
+        ¿Es este negocio lo suficientemente{" "}
+        <span style={{color:T.goldDim}}>bueno para tu dinero?</span>
+      </p>
+      <p style={{textAlign:"center",fontSize:13,color:T.muted,maxWidth:460,margin:"0 auto 48px",lineHeight:1.65}}>
+        Los mejores inversores no buscan acciones baratas. Buscan negocios extraordinarios. Inversoria aplica los 8 filtros del inversor paciente a cualquier acción — en 30 segundos.
+      </p>
+      {/* Phones grid */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:880,margin:"0 auto",alignItems:"start"}}>
+        {features.map(({num,title,desc,pill,tab,screen},i)=>(
+          <div key={num} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:20,marginTop:i===1?-22:0}}>
+            <PhoneFrame>{screen}</PhoneFrame>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.14em",color:T.goldDim,textTransform:"uppercase",marginBottom:5}}>{num}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.text,fontWeight:700,marginBottom:5}}>{title}</div>
+              <div style={{fontSize:11,color:T.muted,lineHeight:1.55,maxWidth:185,margin:"0 auto"}}>{desc}</div>
+              <div onClick={()=>onStart&&onStart(tab)}
+                style={{display:"inline-flex",alignItems:"center",gap:5,marginTop:8,
+                  background:"rgba(167,139,250,0.1)",border:"1px solid rgba(167,139,250,0.2)",
+                  borderRadius:20,padding:"3px 10px",fontSize:9,color:T.gold,fontWeight:600,cursor:"pointer"}}>
+                {pill}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Bottom tags */}
+      <div style={{maxWidth:880,margin:"38px auto 0",display:"flex",alignItems:"center",justifyContent:"center",gap:10,flexWrap:"wrap"}}>
+        {bottomTags.map(({text,bg,border,color})=>(
+          <div key={text} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 13px",borderRadius:20,
+            background:bg,border:`1px solid ${border}`,fontSize:10.5,fontWeight:500,color}}>
+            {text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Hero({onStart,lang="en"}){
   const L=LANG[lang]||LANG.en;
   const isEs=lang==="es";
@@ -1014,6 +1274,9 @@ function Hero({onStart,lang="en"}){
         ))}
       </div>
     </div>
+
+    {/* ── FEATURES SHOWCASE ── */}
+    <FeaturesShowcase onStart={onStart} lang={lang}/>
 
     {/* ── STATS STRIP ── */}
     <div style={{borderTop:`1px solid ${T.border}22`,borderBottom:`1px solid ${T.border}22`,background:`${T.accent}88`,padding:"20px 28px",marginBottom:0}}>
@@ -1348,7 +1611,7 @@ function CompoundTab({onGoToTab,lang="en"}){
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:860,margin:"0 auto"}}>
         {[
           {icon:"🧬",title:"Discover Your Investor DNA",desc:"Take our 8-question quiz and get a Conservative, Moderate, or Aggressive profile with a personalized AI portfolio.",cta:lang==="es"?"Tomar el Quiz →":"Take the Quiz →",tab:"profile",color:T.purple},
-          {icon:"🎯",title:"Analyze a Specific Stock",desc:"Enter any ticker — NVDA, AAPL, COST — and get a Buffett/Munger quality score, moat analysis, and Wall Street consensus.",cta:"Analyze a Stock →",tab:"score",color:T.gold},
+          {icon:"🎯",title:"Analyze a Specific Stock",desc:"Enter any ticker — NVDA, AAPL, COST — and get a quality score, moat analysis (La Fosa del Negocio), and Wall Street consensus.",cta:"Analyze a Stock →",tab:"score",color:T.gold},
           {icon:"📁",title:"Audit Your Portfolio",desc:"Already invested? Upload your positions and our AI will tell you what to hold, buy more, or sell — with live prices.",cta:"Analyze Portfolio →",tab:"portfolio",color:T.green},
         ].map(({icon,title,desc,cta,tab,color})=>(
           <div key={tab} onClick={()=>onGoToTab(tab)}
@@ -1909,7 +2172,7 @@ Respond ONLY with valid JSON, no markdown:
   "commoditiesNote":"<1 sentence>",
   "interestRates":"<Rising|Stable|Falling>",
   "ratesImpact":"<1 sentence on what rising/falling rates mean now>",
-  "portfolioImplication":"<2 sentences: what this cycle means for long-term Buffett/Munger investors>",
+  "portfolioImplication":"<2 sentences: what this cycle means for long-term patient investors focused on quality businesses>",
   "tickerCycleNote":"<if ticker provided: 1 sentence on how this cycle affects that specific stock/sector, else empty string>",
   "nextCycleSignals":["<what to watch for to detect a phase change>","<signal 2>"],
   "timeHorizon":"<estimated months until next potential phase change>"
@@ -2127,7 +2390,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const tickerToUse=resolvedTicker;
       const [fhResult,aiResult]=await Promise.allSettled([
         callFinnhub(tickerToUse),
-        callAI(`You are a Buffett/Munger investment analyst. Analyze "${tickerToUse}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
+        callAI(`You are a value investing analyst using the patient investor method (quality businesses, competitive advantages, long-term compounding). Analyze "${tickerToUse}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
       ]);
       let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
       // If Finnhub has no analyst data, use AI to estimate consensus
@@ -2165,7 +2428,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",padding:"12px 16px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}55`,borderRadius:8}}>
-      <span style={{fontSize:12,color:T.gold}}>{lang==="es"?LS.score_label:"🎯 AI Stock Analyzer — Buffett/Munger fundamental analysis + Wall Street consensus · 3 free analyses"}</span>
+      <span style={{fontSize:12,color:T.gold}}>{lang==="es"?LS.score_label:"🎯 Analizador de Acciones — Los 8 Filtros del Inversor Paciente · Consenso Wall Street · 3 análisis gratis"}</span>
       <button onClick={()=>onGoToProfile&&onGoToProfile()} style={{background:`${T.purple}20`,border:`1px solid ${T.purple}55`,borderRadius:8,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
         <span style={{fontSize:12}}>🧬</span>
         <span style={{fontSize:11,color:T.purple,fontWeight:600}}>{lang==="es"?LS.score_build_portfolio:"Build me a portfolio →"}</span>
@@ -2199,7 +2462,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:T.gold,flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span style={{fontSize:10,color:T.muted,lineHeight:1.5}}>
           {lang==="es"
-            ?"Este análisis es educativo y no constituye asesoría financiera certificada. Toda inversión implica riesgo de pérdida. Consulta un asesor antes de invertir."
+            ?"Este análisis es educativo y no constituye asesoría financiera certificada. Toda inversión implica riesgo de pérdida. Consulta un asesor antes de invertir. Inversoria no tiene afiliación con ningún inversor, fondo o entidad financiera mencionada como referencia metodológica."
             :"This analysis is educational and does not constitute certified financial advice. All investments involve risk of loss. Consult an advisor before investing."}
         </span>
       </div>
@@ -2269,7 +2532,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
 
       <div className="score-card-grid" style={{display:"grid",gridTemplateColumns:"180px 1fr",gap:16,alignItems:"start"}}>
         <Card s={{textAlign:"center",padding:18}}>
-          <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Quality Score</div>
+          <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:4}}>Score de Calidad</div>
           <ScoreRing score={score} size={110} lang={lang}/>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:g.c,marginTop:4}}>{g.label}</div>
           <div style={{fontSize:11,color:T.muted,marginTop:6}}>{checklist.filter(c=>c.p).length}/8 criteria</div>
@@ -2322,7 +2585,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {Object.entries(CRITERIA).map(([cat,cs])=><Card key={cat}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold}}>{cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow (Growth)":"🏦 Balance Sheet"}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold}}>{cat==="growth"?"📈 Crecimiento":cat==="profitability"?"💎 Rentabilidad":cat==="cashflow"?"💵 Flujo de Caja":"🏦 Balance General"}</div>
             {locked&&<span style={{fontSize:9,color:T.muted,background:T.accent,padding:"2px 6px",borderRadius:4}}>🔒 locked</span>}
           </div>
           {cs.map(c=><MRow key={c.key} c={c} value={m[c.key]||0} onChange={(k,v)=>setM(p=>({...p,[k]:v}))} locked={locked} lang={lang}/>)}
@@ -2330,7 +2593,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🏰 Moat Analysis</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🏰 La Fosa del Negocio</div>
           <div style={{height:200}}><ResponsiveContainer width="100%" height="100%"><RadarChart data={radarD}><PolarGrid stroke={T.border}/><PolarAngleAxis dataKey="subject" tick={{fill:T.muted,fontSize:10}}/><Radar dataKey="value" stroke={T.gold} fill={T.gold} fillOpacity={0.15}/></RadarChart></ResponsiveContainer></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
             {MOAT_KEYS.map(k=><div key={k}>
@@ -2340,7 +2603,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           </div>
         </Card>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>{lang==="es"?"📋 Checklist Buffett / Munger":"📋 Buffett / Munger Checklist"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>{lang==="es"?"📋 Los 8 Filtros del Inversor Paciente":"📋 The 8 Filters of the Patient Investor"}</div>
           {checklist.map(({l,p},ci)=>{
             const lText=typeof l==="object"?l[lang]||l.en:l;
             return<div key={ci} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.border}22`}}>
@@ -3174,7 +3437,7 @@ Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
       return`${p.ticker}: ${w}% weight | avg cost: $${p.avgCost.toFixed(2)}${priceStr?` | ${priceStr}`:""} | ${pnlStr} | value: $${Math.round(p.currentValue||p.totalCostBasis).toLocaleString()}`;
     }).join("\n");
     try{
-      const r=await callAI(`You are an expert DCA investment advisor using Buffett/Munger principles. Investor profile: ${profileLabel}.
+      const r=await callAI(`You are an expert DCA investment advisor using patient investor principles (quality businesses at reasonable prices, long-term compounding). Investor profile: ${profileLabel}.
 ${lang==="es"?"IMPORTANT: All text fields (summary, reason, topPick, action labels) must be in SPANISH. Keep JSON keys and action values in English.":""}
 
 CURRENT PORTFOLIO:
@@ -3861,7 +4124,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const portfolioRes=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,messages:[{role:"user",content:`You are a Buffett/Munger portfolio analyst. Analyze this investor's portfolio:
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment). Analyze this investor's portfolio:
 ${summary}
 Total positions: ${positions.length}
 Investor Risk Profile: ${profileCtx}
@@ -4167,7 +4430,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           ?<Card s={{textAlign:"center",padding:48,background:`${T.gold}06`,border:`1px dashed ${T.goldDim}44`}}>
             <div style={{fontSize:36,marginBottom:12}}>📁</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:8}}>Your portfolio is empty</div>
-            <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a Buffett/Munger assessment.</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a quality score assessment.</div>
           </Card>
           :<>
             {/* ── PREMIUM OVERLAY if >3 positions and not admin ── */}
@@ -4706,8 +4969,8 @@ function MethodologyModal({onClose,lang="en"}){
             icon:"🧠",
             title:isEs?"Metodología de análisis":"Analysis methodology",
             body:isEs
-              ?"Nuestro modelo de análisis sigue los principios de Warren Buffett y Charlie Munger: evaluamos el foso económico (moat), la calidad del negocio, el crecimiento de FCF, el retorno sobre capital invertido (ROIC), la deuda y el margen operativo. La IA sintetiza estos factores con datos de mercado para producir una puntuación de calidad."
-              :"Our analysis model follows Warren Buffett and Charlie Munger principles: we evaluate economic moat, business quality, FCF growth, return on invested capital (ROIC), debt levels and operating margin. The AI synthesizes these factors with market data to produce a quality score."
+              ?"Nuestro modelo de análisis sigue el Método del Inversor Paciente: evaluamos la fosa del negocio, la calidad del negocio, el crecimiento de FCF, el retorno sobre capital invertido (ROIC), la deuda y el margen operativo. La IA sintetiza estos factores con datos de mercado para producir una puntuación de calidad."
+              :"Our analysis model follows the Patient Investor Method: we evaluate the business moat, business quality, FCF growth, return on invested capital (ROIC), debt levels and operating margin. The AI synthesizes these factors with market data to produce a quality score."
           },
           {
             icon:"🤖",
@@ -4872,7 +5135,7 @@ function TermsOfService({onClose,lang="en"}){
         <div style={{fontSize:12,color:T.muted,marginBottom:32}}>Última actualización: {new Date().toLocaleDateString("es-CO",{year:"numeric",month:"long",day:"numeric"})}</div>
         {[
           {t:"1. Aceptación de los Términos",b:`Al acceder y usar Inversoria (la "Plataforma"), aceptas estar vinculado por estos Términos de Uso. Si no estás de acuerdo con alguna parte de estos términos, no debes usar la Plataforma.\n\nEl uso de la Plataforma está disponible para personas mayores de 18 años con capacidad legal para celebrar contratos.`},
-          {t:"2. Descripción del Servicio",b:`Inversoria es una plataforma educativa de análisis de inversiones que ofrece:\n\n• Calculadora de interés compuesto.\n• Análisis de acciones mediante inteligencia artificial (framework Buffett/Munger).\n• Quiz de perfil de riesgo de inversor.\n• Seguimiento de portafolio con precios de mercado.\n• Herramientas de planificación DCA y rebalanceo.\n• Dashboard de ciclos de mercado.\n\nEl servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
+          {t:"2. Descripción del Servicio",b:`Inversoria es una plataforma educativa de análisis de inversiones que ofrece:\n\n• Calculadora de interés compuesto.\n• Análisis de acciones mediante inteligencia artificial (El Método del Inversor Paciente).\n• Quiz de perfil de riesgo de inversor.\n• Seguimiento de portafolio con precios de mercado.\n• Herramientas de planificación DCA y rebalanceo.\n• Dashboard de ciclos de mercado.\n\nEl servicio se ofrece en modalidades gratuita y de pago (suscripción mensual).`},
           {t:"3. AVISO IMPORTANTE — No es Asesoría Financiera",b:`TODO EL CONTENIDO DE COMPOUNDER ANALYST ES EXCLUSIVAMENTE EDUCATIVO E INFORMATIVO.\n\n• No somos una firma de asesoría de inversiones registrada.\n• Los análisis generados por IA son estimaciones educativas, NO recomendaciones de inversión.\n• Los scores de calidad, análisis de moat y proyecciones DCF son herramientas de aprendizaje.\n• Los consensos de analistas provienen de fuentes públicas y pueden no estar actualizados.\n• Las rentabilidades pasadas no garantizan rentabilidades futuras.\n\nSiempre consulta con un asesor financiero certificado antes de tomar decisiones de inversión. Invertir conlleva riesgos, incluyendo la pérdida total del capital invertido.`},
           {t:"4. Planes y Pagos",b:`La Plataforma ofrece:\n\n• Plan Gratuito: Acceso limitado a funciones básicas (3 análisis, 5 acciones en portafolio, 2 planes DCA).\n• Plan Basic ($9.99/mes): Análisis ilimitados, portafolio ilimitado, ciclo de mercado.\n• Plan Premium ($19.99/mes): Todas las funciones incluyendo portafolio IA y estrategia avanzada.\n\nLos pagos se procesan de forma segura a través de Stripe. Las suscripciones se renuevan automáticamente. Puedes cancelar en cualquier momento desde tu cuenta.`},
           {t:"5. Política de Reembolsos",b:`• Puedes solicitar reembolso completo dentro de los primeros 7 días de tu primera suscripción.\n• No aplicamos reembolsos proporcionales por cancelaciones a mitad del período.\n• Para solicitar un reembolso: hola@inversoria.lat\n• Los reembolsos se procesan en 5-10 días hábiles.`},
