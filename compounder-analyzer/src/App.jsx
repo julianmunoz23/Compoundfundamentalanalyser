@@ -3573,6 +3573,159 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 
+
+// ── TRANSACTION ENGINE ───────────────────────────────────────────────────────
+function calcPositionsFromTxns(transactions){
+  const posMap={};
+  const sorted=[...transactions].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  for(const txn of sorted){
+    if(!posMap[txn.ticker])posMap[txn.ticker]={ticker:txn.ticker,totalShares:0,avgCost:0,totalCostBasis:0,realizedPnL:0,entries:[]};
+    const pos=posMap[txn.ticker];
+    pos.entries.push(txn);
+    if(txn.type==='sell'){
+      const soldCost=txn.shares*pos.avgCost;
+      pos.realizedPnL+=(txn.shares*txn.price)-soldCost;
+      pos.totalShares=Math.max(0,pos.totalShares-txn.shares);
+      pos.totalCostBasis=pos.totalShares*pos.avgCost;
+    } else {
+      const newTotalCost=pos.totalCostBasis+(txn.shares*(txn.price||txn.buyPrice||0));
+      const newShares=pos.totalShares+txn.shares;
+      pos.avgCost=newShares>0?newTotalCost/newShares:0;
+      pos.totalShares=newShares;
+      pos.totalCostBasis=newTotalCost;
+    }
+  }
+  return Object.values(posMap);
+}
+
+// ── SELL MODAL ───────────────────────────────────────────────────────────────
+function SellModal({position,onClose,onSell,lang="es"}){
+  const [shares,setShares]=useState("");
+  const [price,setPrice]=useState(position.currentPrice?position.currentPrice.toFixed(2):"");
+  const [date,setDate]=useState(new Date().toISOString().split("T")[0]);
+  const [err,setErr]=useState("");
+  const isEs=lang==="es";
+  const maxShares=position.totalShares;
+  const proceeds=parseFloat(shares)*parseFloat(price)||0;
+  const costBasis=parseFloat(shares)*position.avgCost||0;
+  const realizedPnL=proceeds-costBasis;
+  const pct=costBasis>0?((realizedPnL/costBasis)*100):0;
+  const handleSell=()=>{
+    const s=parseFloat(shares);const p=parseFloat(price);
+    if(!s||s<=0){setErr(isEs?"Ingresa un número válido de acciones.":"Enter valid share count.");return;}
+    if(s>maxShares+0.0001){setErr(isEs?`Máximo ${maxShares.toFixed(3)} acciones disponibles.`:`Max ${maxShares.toFixed(3)} shares available.`);return;}
+    if(!p||p<=0){setErr(isEs?"Ingresa un precio de venta válido.":"Enter a valid sell price.");return;}
+    onSell({shares:Math.min(s,maxShares),price:p,date});onClose();
+  };
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:16,padding:"28px 32px",maxWidth:420,width:"100%",position:"relative"}}>
+        <button onClick={onClose} style={{position:"absolute",top:14,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:18}}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:4}}>
+          {isEs?"Registrar Venta":"Register Sale"} — <span style={{color:T.text}}>{position.ticker}</span>
+        </div>
+        <div style={{fontSize:11,color:T.muted,marginBottom:20}}>
+          {isEs?"Disponibles:":"Available:"} <span style={{color:T.text,fontFamily:"'DM Mono',monospace"}}>{maxShares.toFixed(3)}</span> {isEs?"acciones":"shares"} · {isEs?"Costo prom.":"Avg cost:"} <span style={{color:T.gold,fontFamily:"'DM Mono',monospace"}}>${position.avgCost.toFixed(2)}</span>
+        </div>
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:11,color:T.muted,marginBottom:5}}>{isEs?"Número de acciones a vender":"Shares to sell"}</div>
+          <div style={{display:"flex",gap:8}}>
+            <input type="number" value={shares} onChange={e=>setShares(e.target.value)} placeholder={`ej: ${(maxShares/2).toFixed(3)}`} min={0.001} max={maxShares} step={0.001} style={{fontWeight:700,fontSize:15}}/>
+            <button className="seg" onClick={()=>setShares(maxShares.toFixed(3))} style={{whiteSpace:"nowrap",fontSize:11,flexShrink:0}}>{isEs?"Vender todo":"Sell all"}</button>
+          </div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <div style={{fontSize:11,color:T.muted,marginBottom:5}}>{isEs?"Precio de venta por acción (USD)":"Sell price per share (USD)"}</div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span>
+            <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="0.00" min={0.01} step={0.01} style={{fontWeight:700,fontSize:15}}/>
+          </div>
+        </div>
+        <div style={{marginBottom:18}}>
+          <div style={{fontSize:11,color:T.muted,marginBottom:5}}>{isEs?"Fecha de la venta":"Sale date"}</div>
+          <input type="date" value={date} onChange={e=>setDate(e.target.value)}/>
+        </div>
+        {parseFloat(shares)>0&&parseFloat(price)>0&&(
+          <div style={{padding:"12px 14px",background:realizedPnL>=0?`${T.green}10`:`${T.red}10`,border:`1px solid ${realizedPnL>=0?T.green:T.red}33`,borderRadius:10,marginBottom:16}}>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:8}}>{isEs?"Vista previa":"Trade preview"}</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[
+                {l:isEs?"Ingresos":"Proceeds",v:`$${proceeds.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:T.text},
+                {l:isEs?"Costo base":"Cost basis",v:`$${costBasis.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:T.muted},
+                {l:"P&G Realizado",v:`${realizedPnL>=0?"+":""}$${Math.abs(realizedPnL).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}`,c:realizedPnL>=0?T.green:T.red},
+                {l:"% Retorno",v:`${pct>=0?"+":""}${pct.toFixed(2)}%`,c:realizedPnL>=0?T.green:T.red},
+              ].map(({l,v,c})=>(
+                <div key={l} style={{background:T.accent,borderRadius:8,padding:"8px 10px"}}>
+                  <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",marginBottom:3}}>{l}</div>
+                  <div style={{fontFamily:"'DM Mono',monospace",fontSize:13,color:c,fontWeight:600}}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {err&&<div style={{padding:"8px 12px",background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,marginBottom:12,border:`1px solid ${T.red}33`}}>{err}</div>}
+        <button className="btn btn-gold" onClick={handleSell}
+          style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10,background:realizedPnL>=0?T.green:T.red,color:"#0e0e1a"}}>
+          ✅ {isEs?`Confirmar — ${parseFloat(shares)||"?"} acciones a $${parseFloat(price)||"?"}`:`Confirm — ${parseFloat(shares)||"?"} shares at $${parseFloat(price)||"?"}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── TRANSACTION HISTORY ───────────────────────────────────────────────────────
+function TxnHistory({entries,avgCost,lang="es"}){
+  const [open,setOpen]=useState(false);
+  const isEs=lang==="es";
+  const sells=entries.filter(e=>e.type==='sell');
+  const buys=entries.filter(e=>e.type!=='sell');
+  if(!entries.length)return null;
+  return(
+    <div style={{marginTop:4}}>
+      <button onClick={()=>setOpen(v=>!v)}
+        style={{background:"none",border:"none",cursor:"pointer",fontSize:10,color:T.muted,display:"flex",alignItems:"center",gap:4,padding:0}}>
+        <span style={{fontSize:9}}>{open?"▲":"▼"}</span>
+        {buys.length} {isEs?"compra":"buy"}{buys.length!==1?"s":""}{sells.length>0?` · ${sells.length} ${isEs?"venta":"sale"}${sells.length!==1?"s":""}` : ""}
+      </button>
+      {open&&(
+        <div style={{marginTop:6,background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
+            <thead><tr style={{background:T.surface}}>
+              {["Tipo","Acciones","Precio","Fecha","P&G"].map(h=>(
+                <th key={h} style={{padding:"5px 8px",textAlign:"right",fontSize:8.5,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {[...entries].sort((a,b)=>new Date(b.date)-new Date(a.date)).map((e,i)=>{
+                const isSell=e.type==='sell';
+                const entryPrice=e.price||e.buyPrice||0;
+                const pnl=isSell?(e.shares*entryPrice)-(e.shares*avgCost):null;
+                return(
+                  <tr key={e.id||i} style={{borderBottom:`1px solid ${T.border}22`}}>
+                    <td style={{padding:"5px 8px",textAlign:"right"}}>
+                      <span style={{fontSize:9,padding:"1px 6px",borderRadius:4,fontWeight:600,background:isSell?`${T.red}18`:`${T.green}18`,color:isSell?T.red:T.green}}>
+                        {isSell?(isEs?"VENTA":"SELL"):(isEs?"COMPRA":"BUY")}
+                      </span>
+                    </td>
+                    <td style={{padding:"5px 8px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:T.text}}>{e.shares.toFixed(3)}</td>
+                    <td style={{padding:"5px 8px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:T.gold}}>${entryPrice.toFixed(2)}</td>
+                    <td style={{padding:"5px 8px",textAlign:"right",color:T.muted}}>{e.date||"—"}</td>
+                    <td style={{padding:"5px 8px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:pnl!=null?(pnl>=0?T.green:T.red):T.muted}}>
+                      {pnl!=null?`${pnl>=0?"+":""}$${Math.abs(pnl).toFixed(2)}`:"—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── PORTFOLIO DASHBOARD ───────────────────────────────────────────────────────
 function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,aiAnalysis,lang,isPremium,onShowPaywall}){
   const isEs=lang==="es";
@@ -3859,7 +4012,9 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("inversoria_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
-  const [positions,setPositions]=useState([]);
+  const [positions,setPositions]=useState([]); // legacy — kept for CSV/paste compat
+  const [transactions,setTransactions]=useState([]);
+  const [sellTarget,setSellTarget]=useState(null);
   const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:""});
   const [prices,setPrices]=useState({});
   const [loadingPrices,setLoadingPrices]=useState(false);
@@ -3889,8 +4044,9 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       parsed.push({id:Date.now()+Math.random(),ticker,shares,buyPrice:price,date});
     }
     if(!parsed.length){setImportErr("Could not parse any rows. Check format: Ticker | Shares | Buy Price");return;}
-    const updated=[...positions,...parsed];
-    setPositions(updated);save(updated);
+    const newTxns=parsed.map(p=>({id:p.id,ticker:p.ticker,type:"buy",shares:p.shares,price:p.buyPrice,date:p.date}));
+    const updated=[...transactions,...newTxns];
+    setTransactions(updated);saveTxns(updated);
     setPasteText("");setImportMode("manual");
     setImportErr(`✅ Imported ${parsed.length} position${parsed.length>1?"s":""} successfully!`);
   };
@@ -4022,8 +4178,9 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         return;
       }
 
-      const updated=[...positions,...parsed];
-      setPositions(updated);save(updated);
+      const newTxns=parsed.map(p=>({id:p.id,ticker:p.ticker,type:"buy",shares:p.shares,price:p.buyPrice,date:p.date}));
+      const updated=[...transactions,...newTxns];
+      setTransactions(updated);saveTxns(updated);
       const brokerName=broker==="ibkr"?"Interactive Brokers":broker==="xtb"?"XTB":"generic";
       setImportErr(`✅ ${lang==="es"?"Importadas":"Imported"} ${parsed.length} ${lang==="es"?"posiciones":"positions"} ${broker!=="generic"?`(${brokerName} ${lang==="es"?"detectado":"detected"})`:""}.${skipped>0?` ${skipped} ${lang==="es"?"ventas omitidas":"sells skipped"}.`:""}`);
       setImportMode("manual");
@@ -4035,17 +4192,35 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   useEffect(()=>{
     const load=async()=>{
       try{
-        const saved=await cloudLoad("user_data","inversoria_portfolio",user?.id);
-        if(saved&&Array.isArray(saved))setPositions(saved);
-        else{
-          const local=localStorage.getItem("inversoria_portfolio");
-          if(local)setPositions(JSON.parse(local));
+        // Load transactions (new format)
+        const savedTxns=await cloudLoad("user_data","inversoria_transactions",user?.id);
+        if(savedTxns&&Array.isArray(savedTxns)&&savedTxns.length>0){
+          setTransactions(savedTxns);
+        } else {
+          // Try localStorage transactions first
+          const localTxns=localStorage.getItem("inversoria_transactions");
+          if(localTxns){
+            const parsed=JSON.parse(localTxns);
+            if(parsed&&parsed.length>0){setTransactions(parsed);return;}
+          }
+          // Migrate old positions → buy transactions
+          const saved=await cloudLoad("user_data","inversoria_portfolio",user?.id);
+          const raw=saved||(()=>{try{const v=localStorage.getItem("inversoria_portfolio");return v?JSON.parse(v):null;}catch{return null;}})();
+          if(raw&&Array.isArray(raw)&&raw.length>0){
+            const migrated=raw.map(p=>({id:p.id||Date.now()+Math.random(),ticker:p.ticker,type:"buy",shares:p.shares,price:p.buyPrice||p.price||0,date:p.date||new Date().toISOString().split("T")[0]}));
+            setTransactions(migrated);
+            saveTxns(migrated);
+          }
         }
       }catch(e){}
     };
     load();
   },[user?.id]);
 
+  const saveTxns=(txns)=>{
+    try{localStorage.setItem("inversoria_transactions",JSON.stringify(txns));}catch(e){}
+    cloudSave("user_data","inversoria_transactions",txns,user?.id).catch(()=>{});
+  };
   const save=(pos)=>{
     try{localStorage.setItem("inversoria_portfolio",JSON.stringify(pos));}catch(e){}
     cloudSave("user_data","inversoria_portfolio",pos,user?.id).catch(()=>{});
@@ -4058,29 +4233,36 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     if(!form.ticker||!form.shares||!form.buyPrice){setErr("Fill in ticker, shares and buy price.");return;}
     const ticker=form.ticker.toUpperCase();
     // Count unique tickers already in portfolio
-    const existingTickers=new Set(positions.map(p=>p.ticker));
-    const isNew=!existingTickers.has(ticker);
-    if(isNew&&existingTickers.size>=FREE_POSITION_LIMIT&&!isAdmin()){
+    const activePos=calcPositionsFromTxns(transactions).filter(p=>p.totalShares>0.0001);
+    const activeTickers=new Set(activePos.map(p=>p.ticker));
+    const isNew=!activeTickers.has(ticker);
+    if(isNew&&activeTickers.size>=FREE_POSITION_LIMIT&&!isAdmin()){
       setShowPortfolioPaywall(true);return;
     }
-    const newPos={id:Date.now(),ticker,shares:parseFloat(form.shares),buyPrice:parseFloat(form.buyPrice),date:form.date||new Date().toISOString().split("T")[0]};
-    const updated=[...positions,newPos];
-    setPositions(updated);save(updated);
+    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:parseFloat(form.buyPrice),date:form.date||new Date().toISOString().split("T")[0]};
+    const updated=[...transactions,newTxn];
+    setTransactions(updated);saveTxns(updated);
     setForm({ticker:"",shares:"",buyPrice:"",date:""});setErr("");
   };
 
-  const removePosition=(id)=>{
-    const updated=positions.filter(p=>p.id!==id);
-    setPositions(updated);save(updated);
+  const removePosition=(tickerToRemove)=>{
+    const updated=transactions.filter(t=>t.ticker!==tickerToRemove);
+    setTransactions(updated);saveTxns(updated);
+  };
+
+  const registerSell=(position,saleData)=>{
+    const newTxn={id:Date.now(),ticker:position.ticker,type:"sell",shares:saleData.shares,price:saleData.price,date:saleData.date};
+    const updated=[...transactions,newTxn];
+    setTransactions(updated);saveTxns(updated);
   };
 
   // Fetch live prices from Finnhub — sequential with delay to avoid rate limits
   const fetchPrices=async()=>{
-    if(!positions.length)return;
+    if(!transactions.length)return;
     setLoadingPrices(true);
     const key=import.meta.env.VITE_FINNHUB_KEY;
     const results={};
-    const tickers=[...new Set(positions.map(p=>p.ticker))];
+    const tickers=[...new Set(transactions.map(t=>t.ticker))];
     for(const ticker of tickers){
       try{
         await new Promise(r=>setTimeout(r,250)); // 250ms between calls
@@ -4094,21 +4276,13 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
 
   // AI portfolio analysis — premium only
   const analyzePortfolio=async()=>{
-    if(!positions.length){setErr("Add at least one position first.");return;}
+    if(!grouped.length){setErr("Add at least one position first.");return;}
     if(!isAdmin()){onShowPaywall("portfolio");return;}
-    // Group for summary (use grouped tickers)
-    const grp=Object.values(positions.reduce((acc,p)=>{
-      if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCost:0};}
-      acc[p.ticker].totalShares+=p.shares;
-      acc[p.ticker].totalCost+=p.shares*p.buyPrice;
-      return acc;
-    },{})).map(g=>({...g,avgCost:g.totalCost/g.totalShares}));
     setLoadingAI(true);setErr("");setAiAnalysis(null);
-    const summary=grp.map(p=>{
-      const lp=prices[p.ticker];
-      const current=lp?lp.price:p.avgCost;
+    const summary=enriched.map(p=>{
+      const current=p.currentPrice||p.avgCost;
       const pnl=((current-p.avgCost)/p.avgCost*100).toFixed(1);
-      return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%`;
+      return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%, Realized P&G: $${p.realizedPnL.toFixed(2)}`;
     }).join(" | ");
     try{
       const profileCtx=savedProfile?`Risk Profile: ${typeof savedProfile.label==="object"?savedProfile.label.en:savedProfile.label}. ${typeof savedProfile.desc==="object"?savedProfile.desc.en:savedProfile.desc}`:"No risk profile.";
@@ -4118,7 +4292,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment). Analyze this investor's portfolio:
 ${summary}
-Total positions: ${positions.length}
+Total positions: ${grouped.length}
 Investor Risk Profile: ${profileCtx}
 ${lang==="es"?"IMPORTANT: Respond ENTIRELY in SPANISH. All text fields (summary, profileMatchReason, suggestions, verdict reasons, overallGrade) must be in Spanish. Keep JSON keys in English.":""}
 Provide a concise but actionable analysis. If a risk profile is available, explicitly state if the portfolio matches it or not, and which positions are misaligned. Respond ONLY with valid JSON, no markdown:
@@ -4147,32 +4321,26 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     setLoadingAI(false);
   };
 
-  // ── FIX 2: Group positions by ticker — avg cost basis ──
+  // ── Positions from transaction history ──────────────────────────────────────
   const FREE_PORTFOLIO_LIMIT=5;
-  const grouped=Object.values(
-    positions.reduce((acc,p)=>{
-      if(!acc[p.ticker]){acc[p.ticker]={ticker:p.ticker,totalShares:0,totalCostBasis:0,entries:[]};}
-      acc[p.ticker].totalShares+=p.shares;
-      acc[p.ticker].totalCostBasis+=p.shares*p.buyPrice;
-      acc[p.ticker].entries.push(p);
-      return acc;
-    },{})
-  ).map(g=>({...g,avgCost:g.totalCostBasis/g.totalShares}));
+  const allPositions=calcPositionsFromTxns(transactions);
+  const grouped=allPositions.filter(p=>p.totalShares>0.0001);
 
-  // Enrich with live prices
   const enriched=grouped.map(g=>{
     const lp=prices[g.ticker];
     const currentPrice=lp?lp.price:null;
     const currentValue=currentPrice?g.totalShares*currentPrice:null;
-    const pnlDollar=currentValue?currentValue-g.totalCostBasis:null;
-    const pnlPct=pnlDollar?((pnlDollar/g.totalCostBasis)*100):null;
-    return{...g,currentPrice,currentValue,pnlDollar,pnlPct,change:lp?.change,changePct:lp?.changePct};
+    const unrealizedPnL=currentValue!=null?currentValue-g.totalCostBasis:null;
+    const unrealizedPct=unrealizedPnL!=null&&g.totalCostBasis>0?((unrealizedPnL/g.totalCostBasis)*100):null;
+    return{...g,currentPrice,currentValue,pnlDollar:unrealizedPnL,pnlPct:unrealizedPct,change:lp?.change,changePct:lp?.changePct};
   });
 
+  const totalRealizedPnL=allPositions.reduce((a,p)=>a+p.realizedPnL,0);
   const totalCost=enriched.reduce((a,p)=>a+p.totalCostBasis,0);
   const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCostBasis),0);
-  const totalPnL=totalValue-totalCost;
-  const totalPnLPct=totalCost>0?(totalPnL/totalCost*100):0;
+  const totalUnrealizedPnL=totalValue-totalCost;
+  const totalPnL=totalUnrealizedPnL+totalRealizedPnL;
+  const totalPnLPct=(totalCost+Math.max(0,totalRealizedPnL))>0?(totalPnL/(totalCost+Math.max(0,totalRealizedPnL))*100):0;
   const verdictColor=v=>v==="Hold"||v==="Buy More"||v==="Comprar Más"?T.green:v==="Watch"||v==="Ver"?T.gold:v==="Consider Selling"||v==="Considerar Venta"?T.red:T.muted;
 
   // ── PIE CHART data ──
@@ -4187,19 +4355,19 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
   // AI Analysis paywall wrapper
   const handleAIAnalysis=()=>{
-    const uniqueTickers=new Set(positions.map(p=>p.ticker)).size;
-    if(uniqueTickers>FREE_POSITION_LIMIT&&!isAdmin()){setShowPortfolioPaywall(true);return;}
+    if(grouped.length>FREE_POSITION_LIMIT&&!isAdmin()){setShowPortfolioPaywall(true);return;}
     analyzePortfolio();
   };
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     {/* Portfolio paywall modal */}
     {showPortfolioPaywall&&<PaywallModal context="portfolio" onClose={()=>setShowPortfolioPaywall(false)}/>}
+    {sellTarget&&<SellModal position={sellTarget} lang={lang} onClose={()=>setSellTarget(null)} onSell={(d)=>{registerSell(sellTarget,d);setSellTarget(null);}}/>}
 
     {/* Free plan banner */}
     {!isAdmin()&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 14px",background:`${T.gold}08`,border:`1px solid ${T.goldDim}33`,borderRadius:8}}>
       <span style={{fontSize:11,color:T.muted}}>
-        📁 Free plan: <span style={{color:T.gold,fontWeight:600}}>{Math.min(new Set(positions.map(p=>p.ticker)).size,FREE_POSITION_LIMIT)}/{FREE_POSITION_LIMIT} stocks</span> tracked · AI Analysis included for up to {FREE_POSITION_LIMIT} stocks
+        📁 Free plan: <span style={{color:T.gold,fontWeight:600}}>{Math.min(grouped.length,FREE_POSITION_LIMIT)}/{FREE_POSITION_LIMIT} acciones</span> · Historial de transacciones incluido
       </span>
       <button className="seg" onClick={()=>setShowPortfolioPaywall(true)} style={{color:T.gold,borderColor:T.goldDim,fontSize:10}}>🚀 Upgrade</button>
     </div>}
@@ -4228,10 +4396,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         </div>
       </div>}
       <div style={{display:"flex",gap:10}}>
-        <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
+        <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!transactions.length} style={{fontSize:12,padding:"8px 16px"}}>
           {loadingPrices?<><span className="sp">⟳</span> Actualizando...</>:<>{lang==="es"?"🔄 Actualizar Precios":"🔄 Refresh Prices"}</>}
         </button>
-        <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!positions.length} style={{fontSize:12,padding:"8px 16px"}}>
+        <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!grouped.length} style={{fontSize:12,padding:"8px 16px"}}>
           {loadingAI?<><span className="sp">⟳</span> Analizando...</>:<>{lang==="es"?"🤖 Análisis IA":"🤖 AI Analysis"}</>}
         </button>
       </div>
@@ -4240,25 +4408,37 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`}}>{err}</div>}
 
     {/* Market Cycle Banner */}
-    <MarketCycleBanner portfolioTickers={[...new Set(positions.map(p=>p.ticker))]} lang={lang} canAnalyze={canAnalyze}/>
+    <MarketCycleBanner portfolioTickers={grouped.map(g=>g.ticker)} lang={lang} canAnalyze={canAnalyze}/>
 
     {/* KPI Cards */}
-    {positions.length>0&&<div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
+    {grouped.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
       {[
-        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵"},
-        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊"},
-        {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"📈"},
-        {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯"},
-      ].map(({l,v,c,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
+        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵",sub:lang==="es"?"posiciones abiertas":"open positions"},
+        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊",sub:lang==="es"?"precio de mercado":"market price"},
+        {l:lang==="es"?"P&G No Realizado":"Unrealized P&L",v:`${totalUnrealizedPnL>=0?"+":""}${fmt(Math.abs(totalUnrealizedPnL))}`,c:totalUnrealizedPnL>=0?T.green:T.red,icon:"📈",sub:`${totalUnrealizedPnL>=0?"+":""}${totalCost>0?((totalUnrealizedPnL/totalCost)*100).toFixed(2):"0.00"}%`},
+      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
         <Lbl>{l}</Lbl>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
+        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
+      </Card>)}
+    </div>}
+    {(grouped.length>0||totalRealizedPnL!==0)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+      {[
+        {l:lang==="es"?"P&G Realizado":"Realized P&L",v:`${totalRealizedPnL>=0?"+":""}${fmt(Math.abs(totalRealizedPnL))}`,c:totalRealizedPnL>0?T.green:totalRealizedPnL<0?T.red:T.muted,icon:"💰",sub:lang==="es"?"de ventas cerradas":"from closed trades"},
+        {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"🏆",sub:lang==="es"?"realizado + no realizado":"realized + unrealized"},
+        {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯",sub:lang==="es"?"sobre capital invertido":"on invested capital"},
+      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
+        <Lbl>{l}</Lbl>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
+        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
       </Card>)}
     </div>}
 
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
-    {positions.length>0&&(
+    {grouped.length>0&&(
       <PortfolioDashboard
         enriched={enriched}
         totalCost={totalCost}
@@ -4418,7 +4598,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
       {/* Positions Table + Pie Chart */}
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
-        {positions.length===0
+        {transactions.length===0
           ?<Card s={{textAlign:"center",padding:48,background:`${T.gold}06`,border:`1px dashed ${T.goldDim}44`}}>
             <div style={{fontSize:36,marginBottom:12}}>📁</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:8}}>Your portfolio is empty</div>
@@ -4464,15 +4644,15 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             <Card s={{padding:0,overflow:"hidden"}}>
               <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
-                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{grouped.length} Stock{grouped.length!==1?"s":""} · {positions.length} Entr{positions.length!==1?"ies":"y"}</div>
+                  <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{grouped.length} Stock{grouped.length!==1?"s":""} · {transactions.length} Transacci{transactions.length!==1?"ones":"ón"}</div>
                   <div style={{fontSize:10,color:T.muted,marginTop:2}}>Multiple buys of the same stock are grouped with average cost basis</div>
                 </div>
-                {!prices[positions[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ Click "Refresh Prices" for live data</div>}
+                {grouped.length>0&&!prices[grouped[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ {lang==="es"?"Actualiza precios para ver datos en vivo":"Click Refresh Prices for live data"}</div>}
               </div>
               <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
-                    {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price",lang==="es"?"Costo Total":"Total Cost",lang==="es"?"Valor Actual":"Current Value","P&L $","P&L %",lang==="es"?"Hoy":"Today",lang==="es"?"Veredicto IA":"AI Verdict",""].map((h,i)=>(
+                    {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price","P&G No Real.","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
                       <th key={i} style={{padding:"10px 12px",textAlign:i<=1||i===11?"center":"right",fontSize:9,color:h==="P&L $"||h==="P&L %"?T.green:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
                     ))}
                   </tr></thead>
@@ -4487,49 +4667,54 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                         <td style={{padding:"10px 8px",textAlign:"center"}}>
                           <div style={{width:8,height:8,borderRadius:"50%",background:pc?.color||T.muted,margin:"0 auto"}}/>
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"center"}}>
-                          <div style={{fontWeight:700,fontSize:14,color:T.text,fontFamily:"'DM Mono',monospace"}}>{p.ticker}</div>
-                          {p.entries?.length>1&&<div style={{fontSize:9,color:T.muted}}>{p.entries.length} buys</div>}
+                        <td style={{padding:"8px 12px",textAlign:"center",minWidth:90}}>
+                          <div style={{fontWeight:700,fontSize:13,color:T.text,fontFamily:"'DM Mono',monospace"}}>{p.ticker}</div>
+                          {p.realizedPnL!==0&&<div style={{fontSize:8,color:p.realizedPnL>=0?T.green:T.red,marginTop:1}}>Real: {p.realizedPnL>=0?"+":""}${Math.abs(p.realizedPnL).toFixed(0)}</div>}
+                          <TxnHistory entries={p.entries||[]} avgCost={p.avgCost} lang={lang}/>
                         </td>
                         <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12}>{p.totalShares.toFixed(3)}</Mn></td>
                         <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.avgCost.toFixed(2)}</Mn></td>
                         <td style={{padding:"10px 12px",textAlign:"right"}}>
                           {p.currentPrice?<Mn sz={13} c={T.gold} s={{fontWeight:700}}>${p.currentPrice.toFixed(2)}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.blue}>${p.totalCostBasis.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
                         <td style={{padding:"10px 12px",textAlign:"right"}}>
-                          {p.currentValue?<Mn sz={12} c={T.gold}>${p.currentValue.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
-                        </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}>
-                          {p.pnlDollar!=null?<Mn sz={13} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                          {p.pnlDollar!=null?<Mn sz={12} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
                         <td style={{padding:"10px 12px",textAlign:"right"}}>
                           {p.pnlPct!=null?<span style={{fontSize:12,padding:"2px 8px",borderRadius:20,background:p.pnlPct>=0?`${T.green}18`:`${T.red}18`,color:p.pnlPct>=0?T.green:T.red,fontWeight:600}}>{p.pnlPct>=0?"+":""}{p.pnlPct.toFixed(2)}%</span>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
                         <td style={{padding:"10px 12px",textAlign:"right"}}>
-                          {p.changePct!=null?<span style={{fontSize:11,color:p.changePct>=0?T.green:T.red}}>{p.changePct>=0?"+":""}{p.changePct.toFixed(2)}%</span>:<span style={{fontSize:11,color:T.muted}}>—</span>}
-                        </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}>
                           {verdict?<span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:`${verdictColor(verdict.verdict)}18`,color:verdictColor(verdict.verdict),border:`1px solid ${verdictColor(verdict.verdict)}33`,fontWeight:600,whiteSpace:"nowrap"}}>{verdict.verdict}</span>:<span style={{fontSize:11,color:T.muted}}>{lang==="es"?"Analizar":"Run AI"}</span>}
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"center"}}>
-                          <button onClick={()=>{const updated=positions.filter(pos=>pos.ticker!==p.ticker);setPositions(updated);save(updated);}}
-                            style={{background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:14,padding:"2px 6px"}}
-                            onMouseEnter={e=>e.currentTarget.style.color=T.red}
-                            onMouseLeave={e=>e.currentTarget.style.color=T.muted}
-                            title="Remove all entries for this ticker"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        <td style={{padding:"8px 10px",textAlign:"right"}}>
+                          <div style={{display:"flex",gap:5,justifyContent:"flex-end",alignItems:"center"}}>
+                            <button onClick={()=>setSellTarget({...p,currentPrice:prices[p.ticker]?.price||null})}
+                              style={{background:`${T.green}18`,border:`1px solid ${T.green}33`,borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:10,color:T.green,fontWeight:600,whiteSpace:"nowrap"}}
+                              onMouseEnter={e=>{e.currentTarget.style.background=`${T.green}30`}}
+                              onMouseLeave={e=>{e.currentTarget.style.background=`${T.green}18`}}>
+                              {lang==="es"?"Vender":"Sell"}
+                            </button>
+                            <button onClick={()=>removePosition(p.ticker)}
+                              style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"2px 4px"}}
+                              onMouseEnter={e=>e.currentTarget.style.color=T.red}
+                              onMouseLeave={e=>e.currentTarget.style.color=T.muted}
+                              title="Eliminar">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>;
                     })}
                   </tbody>
                   <tfoot><tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
                     <td colSpan={2} style={{padding:"12px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
-                    <td colSpan={3}/>
-                    <td style={{padding:"12px",textAlign:"right"}}><Mn sz={13} c={T.blue} s={{fontWeight:700}}>${totalCost.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
+                    <td colSpan={2}/>
+                    <td style={{padding:"12px",textAlign:"right",fontSize:10,color:T.muted}}>{lang==="es"?"Valor actual":"Current value"}</td>
                     <td style={{padding:"12px",textAlign:"right"}}><Mn sz={13} c={T.gold} s={{fontWeight:700}}>${totalValue.toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
-                    <td style={{padding:"12px",textAlign:"right"}}><Mn sz={13} c={totalPnL>=0?T.green:T.red} s={{fontWeight:700}}>{totalPnL>=0?"+":""}${Math.abs(totalPnL).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn></td>
-                    <td style={{padding:"12px",textAlign:"right"}}><span style={{fontSize:13,padding:"3px 10px",borderRadius:20,background:totalPnLPct>=0?`${T.green}18`:`${T.red}18`,color:totalPnLPct>=0?T.green:T.red,fontWeight:700}}>{totalPnLPct>=0?"+":""}{totalPnLPct.toFixed(2)}%</span></td>
-                    <td colSpan={3}/>
+                    <td style={{padding:"12px",textAlign:"right"}}><span style={{fontSize:12,padding:"2px 8px",borderRadius:20,background:totalUnrealizedPnL>=0?`${T.green}18`:`${T.red}18`,color:totalUnrealizedPnL>=0?T.green:T.red,fontWeight:700}}>{totalUnrealizedPnL>=0?"+":""}{totalCost>0?((totalUnrealizedPnL/totalCost)*100).toFixed(2):"0.00"}%</span></td>
+                    <td colSpan={2} style={{padding:"12px",textAlign:"right"}}>
+                      {totalRealizedPnL!==0&&<div style={{fontSize:11,color:totalRealizedPnL>=0?T.green:T.red,fontWeight:600}}>Real: {totalRealizedPnL>=0?"+":""}${Math.abs(totalRealizedPnL).toLocaleString("en-US",{maximumFractionDigits:0})}</div>}
+                    </td>
                   </tr></tfoot>
                 </table>
               </div>
