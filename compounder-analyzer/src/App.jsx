@@ -4336,8 +4336,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   });
 
   const totalRealizedPnL=allPositions.reduce((a,p)=>a+p.realizedPnL,0);
-  useEffect(()=>{if(onBalanceChange&&totalCost>0)onBalanceChange(totalCost);},[totalCost]);
   const totalCost=enriched.reduce((a,p)=>a+p.totalCostBasis,0);
+  useEffect(()=>{if(onBalanceChange&&totalCost>0)onBalanceChange(totalCost);},[totalCost,onBalanceChange]);
   const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCostBasis),0);
   const totalUnrealizedPnL=totalValue-totalCost;
   const totalPnL=totalUnrealizedPnL+totalRealizedPnL;
