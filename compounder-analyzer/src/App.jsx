@@ -1347,17 +1347,17 @@ function calcYearsTo1M(startAge,monthly=200,annualRate=10){
   return {years:months/12, reachAge:Math.round(startAge+months/12)};
 }
 
-function CompoundTab({onGoToTab,lang="en"}){
+function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
   const L2=LANG[lang]||LANG.en;
   // Currency-aware slider limits — scale USD maxes by live exchange rate
-  const sMaxInitial=Math.round(5000000*_exRate);   // $5M USD equiv
-  const sStepInitial=Math.round(1000*_exRate);
-  const sMaxContrib=Math.round(20000*_exRate);      // $20K USD/mo equiv
-  const sStepContrib=Math.round(50*_exRate);
-  const sMaxGoal=Math.round(5000000*_exRate);       // $5M USD equiv for goal
-  const sStepGoal=Math.round(50000*_exRate);
-  const [draft,setDraft]=useState({initial:Math.round(10000*_exRate),rate:10,rateType:"annual",contrib:Math.round(500*_exRate),contribFreq:"monthly",years:10});
-  const [cfg,setCfg]=useState({initial:Math.round(10000*_exRate),rate:10,rateType:"annual",contrib:Math.round(500*_exRate),contribFreq:"monthly",years:10});
+  const sMaxInitial=5000000;
+  const sStepInitial=100;
+  const sMaxContrib=20000;
+  const sStepContrib=10;
+  const sMaxGoal=5000000;
+  const sStepGoal=10000;
+  const [draft,setDraft]=useState({initial:portfolioBalance>0?Math.round(portfolioBalance):10000,rate:10,rateType:"annual",contrib:500,contribFreq:"monthly",years:10});
+  const [cfg,setCfg]=useState({initial:portfolioBalance>0?Math.round(portfolioBalance):10000,rate:10,rateType:"annual",contrib:500,contribFreq:"monthly",years:10});
   const [showTable,setShowTable]=useState(true);
   const setD=(k,v)=>setDraft(p=>({...p,[k]:v}));
 
@@ -1419,8 +1419,8 @@ function CompoundTab({onGoToTab,lang="en"}){
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:18}}>⚙️ Your Scenario</div>
-          <Lbl>Initial Investment</Lbl>
-          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>{_currency.symbol}</span><input type="number" value={draft.initial} min={0} step={sStepInitial} onChange={e=>setD("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/></div>
+          <Lbl>Initial Investment (USD){portfolioBalance>0&&<span style={{fontSize:9,color:T.green,marginLeft:6}}>★ {lang==="es"?"de tu portafolio":"from your portfolio"}</span>}</Lbl>
+          <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>$</span><input type="number" value={draft.initial} min={0} step={sStepInitial} onChange={e=>setD("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/></div>
           <input type="range" min={0} max={sMaxInitial} step={sStepInitial} value={draft.initial} onChange={e=>setD("initial",parseFloat(e.target.value))} style={{marginBottom:16}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <Lbl s={{marginBottom:0}}>Annual Rate</Lbl>
@@ -1433,7 +1433,7 @@ function CompoundTab({onGoToTab,lang="en"}){
             :<div style={{fontSize:10,color:T.muted,marginBottom:12}}>≡ {(draft.rate/12).toFixed(3)}% per month (compounded monthly)</div>}
           <div style={{marginBottom:8}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-            <Lbl s={{marginBottom:0}}>Contributions (DCA)</Lbl>
+            <Lbl s={{marginBottom:0}}>Contributions DCA (USD)</Lbl>
             <div style={{display:"flex",gap:4}}>{["monthly","annual"].map(t=><button key={t} className={`seg ${draft.contribFreq===t?"seg-on":""}`} onClick={()=>setD("contribFreq",t)}>{t==="monthly"?"Mo":"Yr"}</button>)}</div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace",fontSize:14}}>{_currency.symbol}</span><input type="number" value={draft.contrib} min={0} max={sMaxContrib} step={sStepContrib} onChange={e=>setD("contrib",parseFloat(e.target.value)||0)} style={{fontWeight:700,fontSize:14}}/><span style={{color:T.muted,fontSize:11}}>/{draft.contribFreq==="monthly"?"month":"year"}</span></div>
@@ -1679,7 +1679,7 @@ function MillionGoalSection({lang="en"}){
           <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"🎯 Tu meta de riqueza":"🎯 Your wealth goal"}</span>
           <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{goalFmt(goal)}</Mn>
         </div>
-        <input type="range" min={Math.round(100000*_exRate)} max={Math.round(5000000*_exRate)} step={Math.round(50000*_exRate)} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
+        <input type="range" min={100000} max={5000000} step={50000} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
           <span>$100K</span><span>$1M</span><span>$5M</span>
         </div>
@@ -1776,7 +1776,7 @@ function WhatIfTab({lang="en"}){
   const customData=Array.from({length:custom.years},(_,i)=>({y:`Y${i+1}`,v:Math.round(custom.initial*Math.pow(1+custom.cagr/100,i+1))}));
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:20}}>
     <div style={{textAlign:"center",padding:"10px 0 6px"}}>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:6}}>{LW.whatif_title} <span style={{color:T.gold}}>{fmt(10000*_exRate)}</span>...</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,marginBottom:6}}>{LW.whatif_title} <span style={{color:T.gold}}>$10,000 USD</span>...</div>
       <div style={{fontSize:13,color:T.muted}}>{LW.whatif_sub}</div>
     </div>
     <AdBanner size="leaderboard"/>
@@ -1784,13 +1784,13 @@ function WhatIfTab({lang="en"}){
       {SCENARIOS.map(s=><Card key={s.ticker}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
           <div><div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.text,marginBottom:2}}>{s.name}</div><div style={{fontSize:10,color:T.muted}}>{s.ticker} · since {s.year}</div></div>
-          <div style={{textAlign:"right"}}><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:s.color,fontWeight:700}}>{fmt(s.finalValue)}</div><div style={{fontSize:10,color:s.color}}>CAGR ~{s.cagr}%</div></div>
+          <div style={{textAlign:"right"}}><div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:s.color,fontWeight:700}}>{fmtUSD(s.finalValue)}</div><div style={{fontSize:10,color:s.color}}>CAGR ~{s.cagr}%</div></div>
         </div>
         <div style={{height:3,background:T.border,borderRadius:2,marginBottom:8}}><div style={{height:"100%",width:`${Math.min((s.finalValue/4000000)*100,100)}%`,background:s.color,borderRadius:2}}/></div>
         <div style={{fontSize:11,color:T.muted,lineHeight:1.5}}>{typeof s.desc==="object"?s.desc[lang]||s.desc.en:s.desc}</div>
         <div style={{marginTop:10,padding:"6px 10px",background:T.accent,borderRadius:6,display:"flex",justifyContent:"space-between"}}>
-          <span style={{fontSize:11,color:T.muted}}>$10,000 invested</span>
-          <Mn sz={11} c={s.color} s={{fontWeight:700}}>→ {fmt(s.finalValue)}</Mn>
+          <span style={{fontSize:11,color:T.muted}}>$10,000 USD invested</span>
+          <Mn sz={11} c={s.color} s={{fontWeight:700}}>→ {fmtUSD(s.finalValue)}</Mn>
         </div>
       </Card>)}
     </div>
@@ -1799,7 +1799,7 @@ function WhatIfTab({lang="en"}){
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:16}}>{LW.whatif_custom}</div>
         <Lbl>{LW.whatif_capital}</Lbl>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><span style={{color:T.muted,fontFamily:"monospace"}}>$</span><input type="number" value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value)||0)} style={{fontWeight:700}}/></div>
-        <input type="range" min={Math.round(1000*_exRate)} max={Math.round(1000000*_exRate)} step={Math.round(1000*_exRate)} value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value))} style={{marginBottom:14}}/>
+        <input type="range" min={1000} max={1000000} step={1000} value={custom.initial} onChange={e=>sc("initial",parseFloat(e.target.value))} style={{marginBottom:14}}/>
         <Lbl>{LW.whatif_cagr}</Lbl>
         <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}><input type="number" value={custom.cagr} onChange={e=>sc("cagr",parseFloat(e.target.value)||0)} style={{fontWeight:700}}/><span style={{color:T.muted,fontSize:12}}>% per year</span></div>
         <input type="range" min={1} max={100} step={0.5} value={custom.cagr} onChange={e=>sc("cagr",parseFloat(e.target.value))} style={{marginBottom:14}}/>
@@ -4008,7 +4008,7 @@ function PieChart({data,stockCount,size=220}){
   </svg>;
 }
 
-function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free"}){
+function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("inversoria_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
@@ -4336,6 +4336,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   });
 
   const totalRealizedPnL=allPositions.reduce((a,p)=>a+p.realizedPnL,0);
+  useEffect(()=>{if(onBalanceChange&&totalCost>0)onBalanceChange(totalCost);},[totalCost]);
   const totalCost=enriched.reduce((a,p)=>a+p.totalCostBasis,0);
   const totalValue=enriched.reduce((a,p)=>a+(p.currentValue||p.totalCostBasis),0);
   const totalUnrealizedPnL=totalValue-totalCost;
@@ -5339,12 +5340,12 @@ function TermsOfService({onClose,lang="en"}){
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 const TABS=[
-  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
-  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
   {id:"score",es:"Analizar Acción",en:"Analyze Stock",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
   {id:"profile",es:"Perfil de Riesgo",en:"Risk Profile",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
   {id:"portfolio",es:"Mi Portafolio",en:"My Portfolio",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>},
   {id:"strategy",es:"Mi Estrategia",en:"My Strategy",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
+  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
 ];
 const FREE_LIMIT=3;
 
@@ -5568,12 +5569,12 @@ export default function App(){
             </svg>
           </div>
           {[
-            {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
-            {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
             {id:"score",l:L.tab_score,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
             {id:"profile",l:L.tab_profile,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
             {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
             {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+            {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
+            {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
           ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
             style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
               {t.icon&&<span style={{opacity:tab===t.id?1:0.6,display:"flex",alignItems:"center"}}>{t.icon}</span>}{t.l}</button>)}
@@ -5582,11 +5583,11 @@ export default function App(){
     </div>
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
-      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang}/>}
+      {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang} portfolioBalance={portfolioBalance}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user} userPlan={userPlan}/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user} userPlan={userPlan} onBalanceChange={(bal)=>setPortfolioBalance(bal)}/>}
       {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
   ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
   :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
