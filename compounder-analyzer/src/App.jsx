@@ -5339,12 +5339,12 @@ function TermsOfService({onClose,lang="en"}){
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 const TABS=[
-  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
-  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
   {id:"score",es:"Analizar Acción",en:"Analyze Stock",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
   {id:"profile",es:"Perfil de Riesgo",en:"Risk Profile",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
   {id:"portfolio",es:"Mi Portafolio",en:"My Portfolio",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>},
   {id:"strategy",es:"Mi Estrategia",en:"My Strategy",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
+  {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
+  {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
 ];
 const FREE_LIMIT=3;
 
@@ -5402,6 +5402,7 @@ export default function App(){
   const [sector,setSector]=useState("Technology");
   const [showPaywall,setShowPaywall]=useState(false);
   const [paywallContext,setPaywallContext]=useState("stock");
+  const [prevTab,setPrevTab]=useState(null); // tab antes del paywall
   const [adminMode,setAdminMode]=useState(isAdmin());
   const [showPrivacy,setShowPrivacy]=useState(false);
   const [showTerms,setShowTerms]=useState(false);
@@ -5420,12 +5421,22 @@ export default function App(){
     if(!supabase)return;
     // Get current session on mount
     supabase.auth.getSession().then(({data:{session}})=>{
-      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+      if(session?.user){
+        setUser(session.user);
+        syncUserPlan(session.user.id);
+        // Usuario logueado → va directo al portafolio
+        setTab("portfolio");
+      }
     });
     // Listen for auth changes
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
-      if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
-      else{setUser(null);setUserPlan("free");}
+      if(session?.user){
+        setUser(session.user);
+        syncUserPlan(session.user.id);
+        // Al hacer login → directo al portafolio
+        setTab(t=>t===null?"portfolio":t);
+      }
+      else{setUser(null);setUserPlan("free");setTab(null);}
     });
     return()=>subscription.unsubscribe();
   },[]);
@@ -5445,9 +5456,9 @@ export default function App(){
   const isPremium=()=>isAdmin()||userPlan==="basic"||userPlan==="premium";
   const isPro=()=>isAdmin()||userPlan==="premium";
 
-  const canAnalyze=(ctx="stock")=>{if(isPremium())return true;const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setShowPaywall(true);return false;}return true;};
+  const canAnalyze=(ctx="stock")=>{if(isPremium())return true;const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setPrevTab(tab);setShowPaywall(true);return false;}return true;};
   const onAnalysis=()=>{incCount();};
-  const handleStart=(targetTab="compound",ticker="")=>{setTab(targetTab||"compound");if(ticker)setCompany(ticker);};
+  const handleStart=(targetTab="score",ticker="")=>{setTab(targetTab||"score");if(ticker)setCompany(ticker);};
 
   return<ErrorBoundary>
   <div style={{minHeight:"100vh",background:T.bg}} onClick={()=>showCurrMenu&&setShowCurrMenu(false)}>
@@ -5455,7 +5466,7 @@ export default function App(){
     {showPrivacy&&<PrivacyPolicy onClose={()=>setShowPrivacy(false)} lang={lang}/>}
     {showTerms&&<TermsOfService onClose={()=>setShowTerms(false)} lang={lang}/>}
     {showMethodology&&<MethodologyModal onClose={()=>setShowMethodology(false)} lang={lang}/>}
-    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab("compound");}} context={paywallContext} lang={lang}
+    {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab(prevTab||"score");setPrevTab(null);}} context={paywallContext} lang={lang}
       onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
     {showAuth&&<AuthModal lang={lang} initialMode={authMode}
       onClose={()=>setShowAuth(false)}
@@ -5585,7 +5596,7 @@ export default function App(){
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
+      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user}/>}
       {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
   ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
   :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
