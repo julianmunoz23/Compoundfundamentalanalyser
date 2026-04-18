@@ -3113,7 +3113,7 @@ Respond ONLY with valid JSON, no markdown:
       </div>
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
         <button className="btn btn-gold" onClick={getPortfolio} disabled={loading} style={{fontSize:15,padding:"14px 32px",borderRadius:12}}>
-          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:<>{isEs?"🤖 Obtener Mi Portafolio IA":"🤖 Get My AI Portfolio"} <span style={{fontSize:12,opacity:0.8}}>{isEs?"— Premium":"— Premium"}</span></>}
+          {loading?<><span className="sp">⟳</span> Building your portfolio...</>:<>{lang==="es"?"🤖 Obtener Mi Portafolio IA":"🤖 Get My AI Portfolio"} <span style={{fontSize:12,opacity:0.8}}>{"— Premium"}</span></>}
         </button>
         <button className="btn btn-outline" onClick={reset} style={{padding:"14px 20px",borderRadius:12}}>{lang==="es"?"Volver al Quiz":"Retake Quiz"}</button>
       </div>
@@ -5403,7 +5403,8 @@ export default function App(){
   const [sector,setSector]=useState("Technology");
   const [showPaywall,setShowPaywall]=useState(false);
   const [paywallContext,setPaywallContext]=useState("stock");
-  const [prevTab,setPrevTab]=useState(null);
+  const [prevTab,setPrevTab]=useState(null); // tab antes del paywall
+  const [portfolioBalance,setPortfolioBalance]=useState(0); // total invested en portafolio
   const [adminMode,setAdminMode]=useState(isAdmin());
   const [showPrivacy,setShowPrivacy]=useState(false);
   const [showTerms,setShowTerms]=useState(false);
