@@ -5363,6 +5363,141 @@ function getRebCount(){try{if(isAdmin())return 0;return parseInt(localStorage.ge
 function incRebCount(){try{if(isAdmin())return 0;const n=getRebCount()+1;localStorage.setItem("inversoria_reb_count",String(n));return n;}catch{return 999;}}
 function canUseRebFree(){return isAdmin()||getRebCount()<REB_FREE_LIMIT;}
 
+
+// ── ONBOARDING TOUR ──────────────────────────────────────────────────────────
+const TOUR_KEY = "inversoria_toured_v1";
+
+function OnboardingTour({lang="es", onFinish}){
+  const [step, setStep] = useState(0);
+  const [pos, setPos] = useState(null);
+  const isEs = lang === "es";
+
+  const STEPS = [
+    { target: null,            icon:"👋", title: isEs?"Bienvenido a Inversoria":"Welcome to Inversoria",    body: isEs?"En 2 minutos te mostramos todo lo que puedes hacer aquí.":"In 2 minutes we'll show you everything you can do here.", cta: isEs?"Sí, mostrarme →":"Yes, show me →" },
+    { target:"tour-score",     icon:"🎯", title: isEs?"Analiza cualquier acción":"Analyze any stock",         body: isEs?"Escribe NVDA, Apple o Ecopetrol — en 30 segundos obtienes un score de calidad con los 8 filtros del inversor paciente.":"Type NVDA, Apple or any company — in 30 seconds you get a quality score with 8 patient investor filters.", cta: isEs?"Siguiente →":"Next →" },
+    { target:"tour-profile",   icon:"🧬", title: isEs?"Descubre tu perfil de riesgo":"Find your risk profile",  body: isEs?"8 preguntas para saber si eres Conservador, Moderado o Agresivo. La IA arma un portafolio personalizado para ti.":"8 questions to find if you're Conservative, Moderate or Aggressive. AI builds your personal portfolio.", cta: isEs?"Siguiente →":"Next →" },
+    { target:"tour-portfolio", icon:"📁", title: isEs?"Sigue tu dinero en tiempo real":"Track your money live",  body: isEs?"Agrega tus acciones y ve tu P&G al instante. Registra compras y ventas — el costo promedio se calcula solo.":"Add your stocks and see P&L instantly. Log buys and sells — avg cost is calculated automatically.", cta: isEs?"Siguiente →":"Next →" },
+    { target:"tour-compound",  icon:"📈", title: isEs?"Calcula tu meta de riqueza":"Calculate your wealth goal", body: isEs?"¿Cuánto ahorrar para llegar a $1M? La calculadora de interés compuesto te dice exactamente cuándo y cuánto.":"How much to save to reach $1M? The compound calculator tells you exactly when and how much.", cta: isEs?"¡Entendido, empezar! 🚀":"Got it, let's start! 🚀" },
+  ];
+
+  const current = STEPS[step];
+  const total = STEPS.length;
+
+  useEffect(()=>{
+    if(!current.target){setPos(null);return;}
+    const el=document.querySelector(`[data-tour="${current.target}"]`);
+    if(!el){setPos(null);return;}
+    const r=el.getBoundingClientRect();
+    setPos({top:r.bottom+14, centerX:r.left+r.width/2, rect:r});
+  },[step]);
+
+  const finish=()=>{
+    try{localStorage.setItem(TOUR_KEY,"1");}catch(e){}
+    onFinish();
+  };
+
+  const next=()=>{ step<total-1?setStep(s=>s+1):finish(); };
+
+  const Dots=()=><div style={{display:"flex",gap:5,marginBottom:16}}>
+    {STEPS.map((_,i)=><div key={i} style={{height:4,borderRadius:2,transition:"all 0.35s ease",
+      background:i===step?"#a78bfa":i<step?"#5b4d8a":"#252548",
+      width:i===step?20:6}}/>)}
+  </div>;
+
+  const cardStyle={
+    background:"linear-gradient(145deg,#1a1540,#13102e)",
+    border:"1px solid #5b4d8a",
+    borderRadius:18,
+    padding:"22px 20px",
+    boxShadow:"0 24px 64px rgba(0,0,0,0.65),inset 0 1px 0 rgba(167,139,250,0.12)",
+  };
+
+  const BtnPrimary=({onClick,children})=>(
+    <button onClick={onClick} style={{width:"100%",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:10,padding:"11px 0",fontSize:13,fontWeight:600,cursor:"pointer",letterSpacing:"0.02em"}}>
+      {children}
+    </button>
+  );
+
+  const BtnSkip=()=>(
+    <button onClick={finish} style={{background:"none",border:"none",color:"#8888aa",fontSize:11,cursor:"pointer",textAlign:"center",padding:"4px 0",marginTop:2,width:"100%"}}>
+      {isEs?"Saltar tour":"Skip tour"}
+    </button>
+  );
+
+  // Welcome modal (step 0)
+  if(!current.target) return(
+    <div style={{position:"fixed",inset:0,zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{position:"absolute",inset:0,background:"rgba(5,3,20,0.85)",backdropFilter:"blur(3px)"}} onClick={e=>e.stopPropagation()}/>
+      <div style={{position:"relative",zIndex:1,width:"100%",maxWidth:300,animation:"fadeIn 0.25s ease both"}}>
+        <div style={{...cardStyle,textAlign:"center",padding:"28px 24px"}}>
+          <Dots/>
+          <div style={{display:"inline-flex",alignItems:"center",gap:5,background:"rgba(52,211,153,0.1)",border:"1px solid rgba(52,211,153,0.25)",borderRadius:20,padding:"4px 12px",fontSize:10,color:"#34d399",marginBottom:16,letterSpacing:"0.05em"}}>
+            ✦ {isEs?"Primera visita":"First visit"}
+          </div>
+          <div style={{fontSize:32,marginBottom:12}}>👋</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:"#f0eeff",fontWeight:700,marginBottom:10,lineHeight:1.25}}>
+            {isEs?"Bienvenido a Inversoria":"Welcome to Inversoria"}
+          </div>
+          <div style={{fontSize:13,color:"#8888aa",lineHeight:1.7,marginBottom:22}}>
+            {isEs?"En 2 minutos te mostramos todo lo que puedes hacer aquí.":"In 2 minutes we'll show you everything you can do here."}
+          </div>
+          <BtnPrimary onClick={next}>{isEs?"Sí, mostrarme →":"Yes, show me →"}</BtnPrimary>
+          <BtnSkip/>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Tooltip steps (1-4)
+  const TT_WIDTH = 300;
+  const viewW = typeof window!=="undefined"?window.innerWidth:1200;
+  const viewH = typeof window!=="undefined"?window.innerHeight:800;
+  const ttLeft = pos ? Math.max(12, Math.min(pos.centerX - TT_WIDTH/2, viewW - TT_WIDTH - 12)) : viewW/2 - TT_WIDTH/2;
+  const ttTop  = pos ? Math.min(pos.top, viewH - 320) : viewH/2 - 160;
+  const arrowLeft = pos ? Math.max(14, Math.min(pos.centerX - ttLeft - 8, TT_WIDTH - 30)) : TT_WIDTH/2 - 8;
+  const spotRect = pos?.rect;
+
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:3000}} onClick={e=>e.stopPropagation()}>
+      {/* Overlay */}
+      <div style={{position:"absolute",inset:0,background:"rgba(5,3,20,0.82)",backdropFilter:"blur(2px)"}}/>
+
+      {/* Spotlight ring */}
+      {spotRect&&<div style={{
+        position:"absolute",
+        top: spotRect.top - 6,
+        left: spotRect.left - 8,
+        width: spotRect.width + 16,
+        height: spotRect.height + 12,
+        borderRadius:10,
+        boxShadow:`0 0 0 9999px rgba(5,3,20,0.82), 0 0 0 2px #a78bfa, 0 0 20px rgba(167,139,250,0.4)`,
+        pointerEvents:"none",
+        zIndex:1,
+        transition:"all 0.35s cubic-bezier(.4,0,.2,1)",
+      }}/>}
+
+      {/* Tooltip */}
+      <div style={{position:"absolute",top:ttTop,left:ttLeft,width:TT_WIDTH,zIndex:2,animation:"fadeIn 0.22s ease both"}}>
+        {/* Arrow */}
+        <div style={{position:"absolute",top:-8,left:arrowLeft,width:0,height:0,borderLeft:"8px solid transparent",borderRight:"8px solid transparent",borderBottom:"8px solid #5b4d8a"}}>
+          <div style={{position:"absolute",top:2,left:-7,width:0,height:0,borderLeft:"7px solid transparent",borderRight:"7px solid transparent",borderBottom:"7px solid #1a1540"}}/>
+        </div>
+        <div style={cardStyle}>
+          <Dots/>
+          <div style={{fontSize:10,color:"#5b4d8a",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>
+            {isEs?`Paso ${step} de ${total-1}`:`Step ${step} of ${total-1}`}
+          </div>
+          <div style={{fontSize:24,marginBottom:10}}>{current.icon}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:"#f0eeff",fontWeight:700,marginBottom:8,lineHeight:1.3}}>{current.title}</div>
+          <div style={{fontSize:12,color:"#8888aa",lineHeight:1.75,marginBottom:18}}>{current.body}</div>
+          <BtnPrimary onClick={next}>{current.cta}</BtnPrimary>
+          <BtnSkip/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App(){
   const [tab,setTab]=useState(null);
   const [user,setUser]=useState(null);          // Supabase user object
@@ -5404,6 +5539,9 @@ export default function App(){
   const [showPaywall,setShowPaywall]=useState(false);
   const [paywallContext,setPaywallContext]=useState("stock");
   const [prevTab,setPrevTab]=useState(null); // tab antes del paywall
+  const [showTour,setShowTour]=useState(()=>{
+    try{return !localStorage.getItem(TOUR_KEY);}catch{return false;}
+  });
   const [portfolioBalance,setPortfolioBalance]=useState(0); // total invested en portafolio
   const [adminMode,setAdminMode]=useState(isAdmin());
   const [showPrivacy,setShowPrivacy]=useState(false);
@@ -5576,13 +5714,15 @@ export default function App(){
             {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
             {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
             {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
-          ].map(t=><button key={t.id} className="tbtn" onClick={()=>setTab(t.id)}
+          ].map(t=><button key={t.id} className="tbtn" data-tour={`tour-${t.id}`} onClick={()=>setTab(t.id)}
             style={{color:tab===t.id?T.gold:T.muted,borderBottom:tab===t.id?`2px solid ${T.gold}`:"2px solid transparent",paddingBottom:8,fontSize:11,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:5}}>
               {t.icon&&<span style={{opacity:tab===t.id?1:0.6,display:"flex",alignItems:"center"}}>{t.icon}</span>}{t.l}</button>)}
         </div>}
       </div>
     </div>
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
+    {showTour&&!user&&<OnboardingTour lang={lang} onFinish={()=>setShowTour(false)}
+      onGoToTab={(t)=>{setTab(t);setShowTour(false);}}/>}
     {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang} portfolioBalance={portfolioBalance}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
