@@ -4618,6 +4618,41 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     </div>}
 
 
+
+    {/* ── BROKER IMPORT BANNER ────────────────────────────────────────────── */}
+    {grouped.length<3&&<div style={{
+      background:`linear-gradient(135deg,${T.card},${T.accent})`,
+      border:`1px solid ${T.goldDim}55`,
+      borderRadius:14,
+      padding:"14px 18px",
+      display:"flex",
+      alignItems:"center",
+      justifyContent:"space-between",
+      flexWrap:"wrap",
+      gap:12,
+    }}>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{fontSize:24,lineHeight:1}}>📲</div>
+        <div>
+          <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:3}}>
+            {lang==="es"?"¿Tienes acciones en Trii, HAPI o XTB?":"Do you have stocks in Trii, HAPI or XTB?"}
+          </div>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            {["🇨🇴 Trii","🇲🇽 HAPI","🌎 XTB","🇺🇸 IBKR"].map(b=>(
+              <span key={b} style={{fontSize:10,padding:"2px 8px",borderRadius:12,background:T.accent,border:`1px solid ${T.border}`,color:T.muted}}>{b}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button
+        className="btn btn-gold"
+        onClick={()=>{setImportMode("csv");setTimeout(()=>{document.getElementById("add-position-card")?.scrollIntoView({behavior:"smooth",block:"start"});},100);}}
+        style={{fontSize:12,padding:"9px 18px",borderRadius:10,whiteSpace:"nowrap"}}
+      >
+        {lang==="es"?"📂 Importar mi portafolio →":"📂 Import my portfolio →"}
+      </button>
+    </div>}
+
     {/* ── PORTFOLIO VS S&P 500 ── */}
     {grouped.length>0&&transactions.length>0&&(
       <PortfolioGrowthChart transactions={transactions} prices={prices} lang={lang} fmt={fmt} fmtShort={fmtShort}/>
@@ -4641,7 +4676,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
-      <Card>
+      <Card s={{}} id="add-position-card">
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:14}}>➕ Add Position</div>
 
         {/* Mode tabs */}
