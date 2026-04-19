@@ -3729,7 +3729,7 @@ function TxnHistory({entries,avgCost,lang="es"}){
 
 // ── PORTFOLIO GROWTH CHART ───────────────────────────────────────────────────
 // Uses transactions + current prices — no extra API calls needed
-function PortfolioGrowthChart({transactions,prices,lang="es"}){
+function PortfolioGrowthChart({transactions,prices,lang="es",fmt,fmtShort}){
   const isEs=lang==="es";
   const [period,setPeriod]=useState("all");
 
@@ -3797,16 +3797,16 @@ function PortfolioGrowthChart({transactions,prices,lang="es"}){
       <div style={{fontSize:10,color:T.muted,marginBottom:6}}>{p.label}{p.isToday&&<span style={{color:T.green,marginLeft:6}}>● hoy</span>}</div>
       <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,marginBottom:3}}>
         <span style={{color:T.muted}}>{isEs?"Valor":"Value"}</span>
-        <span style={{color:T.gold,fontFamily:"'DM Mono',monospace",fontWeight:700}}>${p.value.toLocaleString("en-US")}</span>
+        <span style={{color:T.gold,fontFamily:"'DM Mono',monospace",fontWeight:700}}>{fmt?fmt(p.value):`$${p.value.toLocaleString("en-US")}`}</span>
       </div>
       <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,marginBottom:3}}>
         <span style={{color:T.muted}}>{isEs?"Invertido":"Invested"}</span>
-        <span style={{color:T.muted,fontFamily:"'DM Mono',monospace"}}>${p.invested.toLocaleString("en-US")}</span>
+        <span style={{color:T.muted,fontFamily:"'DM Mono',monospace"}}>{fmt?fmt(p.invested):`$${p.invested.toLocaleString("en-US")}`}</span>
       </div>
       <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,borderTop:`1px solid ${T.border}22`,paddingTop:4,marginTop:4}}>
         <span style={{color:T.muted}}>P&G</span>
         <span style={{color:gain>=0?T.green:T.red,fontFamily:"'DM Mono',monospace",fontWeight:700}}>
-          {gain>=0?"+":""}${Math.abs(gain).toLocaleString("en-US")} ({pct>=0?"+":""}{pct.toFixed(1)}%)
+          {fmt?fmt(Math.abs(gain)):`$${Math.abs(gain).toLocaleString("en-US")}`} ({pct>=0?"+":""}{pct.toFixed(1)}%)
         </span>
       </div>
     </div>;
@@ -3831,8 +3831,8 @@ function PortfolioGrowthChart({transactions,prices,lang="es"}){
     <div style={{padding:"16px 20px"}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
         {[
-          {l:isEs?"Valor actual":"Current value",    v:`$${(last?.value||0).toLocaleString("en-US")}`,   c:T.gold},
-          {l:isEs?"Total invertido":"Total invested",v:`$${(last?.invested||0).toLocaleString("en-US")}`,c:T.muted},
+          {l:isEs?"Valor actual":"Current value",    v:fmt?fmt(last?.value||0):`$${(last?.value||0).toLocaleString("en-US")}`,   c:T.gold},
+          {l:isEs?"Total invertido":"Total invested",v:fmt?fmt(last?.invested||0):`$${(last?.invested||0).toLocaleString("en-US")}`,c:T.muted},
           {l:isEs?"Retorno total":"Total return",    v:`${isPos?"+":""}${totalReturn.toFixed(1)}%`,       c:lineColor},
         ].map(({l,v,c})=>(
           <div key={l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px"}}>
@@ -3859,7 +3859,7 @@ function PortfolioGrowthChart({transactions,prices,lang="es"}){
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
             <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval="preserveStartEnd"/>
-            <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>v>=1000?`$${Math.round(v/1000)}K`:`$${v}`} width={54}/>
+            <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort?fmtShort(v):(v>=1000?`$${Math.round(v/1000)}K`:`$${v}`)} width={54}/>
             <Tooltip content={<CustomTooltip/>}/>
             <Area type="monotone" dataKey="invested" stroke={T.blue}    strokeWidth={1}   strokeDasharray="4 3" fill="url(#gInvested)" name="invested"/>
             <Area type="monotone" dataKey="value"    stroke={lineColor} strokeWidth={2.5} fill="url(#gGrowth)"  name="value"/>
@@ -3878,7 +3878,7 @@ function PortfolioGrowthChart({transactions,prices,lang="es"}){
           </div>
         </div>
         {totalGain!==0&&<div style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:`${lineColor}15`,color:lineColor,fontWeight:600}}>
-          {isPos?"✓":"↓"} {isEs?"Ganancia:":"Gain:"} {totalGain>=0?"+":""}${Math.abs(totalGain).toLocaleString("en-US")}
+          {isPos?"✓":"↓"} {isEs?"Ganancia:":"Gain:"} {totalGain>=0?"+":""}{fmt?fmt(Math.abs(totalGain)):`$${Math.abs(totalGain).toLocaleString("en-US")}`}
         </div>}
       </div>
     </div>
@@ -4620,7 +4620,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
     {/* ── PORTFOLIO VS S&P 500 ── */}
     {grouped.length>0&&transactions.length>0&&(
-      <PortfolioGrowthChart transactions={transactions} prices={prices} lang={lang}/>
+      <PortfolioGrowthChart transactions={transactions} prices={prices} lang={lang} fmt={fmt} fmtShort={fmtShort}/>
     )}
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
