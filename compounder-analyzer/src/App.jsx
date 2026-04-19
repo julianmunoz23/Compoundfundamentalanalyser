@@ -412,7 +412,7 @@ function grade(s,lang="en"){
 }
 
 // ── SHARED ────────────────────────────────────────────────────────────────────
-const Card=({children,s,onClick})=><div onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
+const Card=({children,s,onClick,id})=><div id={id} onClick={onClick} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...s}}>{children}</div>;
 const Lbl=({children,s})=><div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,fontWeight:500,marginBottom:5,...s}}>{children}</div>;
 const Mn=({children,sz=14,c=T.text,s})=><span style={{fontFamily:"'DM Mono',monospace",fontSize:sz,color:c,...s}}>{children}</span>;
 
@@ -3727,6 +3727,358 @@ function TxnHistory({entries,avgCost,lang="es"}){
 }
 
 
+// ── BROKER IMPORT WIZARD ─────────────────────────────────────────────────────
+const BROKERS = [
+  {id:"trii",  flag:"🇨🇴", name:"Trii",   hasCsv:false},
+  {id:"hapi",  flag:"🇲🇽", name:"HAPI",   hasCsv:false},
+  {id:"xtb",   flag:"🌎",  name:"XTB",    hasCsv:true},
+  {id:"ibkr",  flag:"🇺🇸", name:"IBKR",   hasCsv:true},
+  {id:"other", flag:"📋",  name:"Otro",   hasCsv:true},
+];
+
+function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportErr,
+  previewData,setPreviewData,parseCSV,parsePaste,confirmImport,
+  pasteText,setPasteText,transactions,setTransactions,saveTxns}){
+  const isEs=lang==="es";
+  const [broker,setBroker]=useState(null);
+  const [aiMode,setAiMode]=useState("screenshot"); // screenshot | paste | manual
+  const [aiLoading,setAiLoading]=useState(false);
+  const [aiErr,setAiErr]=useState("");
+
+  // ── AI Screenshot reader ──────────────────────────────────────────────────
+  const readScreenshot=async(e)=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    setAiLoading(true);setAiErr("");setPreviewData(null);
+    try{
+      const b64=await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(r.result.split(",")[1]);
+        r.onerror=rej;
+        r.readAsDataURL(file);
+      });
+      const mediaType=file.type||"image/jpeg";
+      const resp=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          messages:[{role:"user",content:[
+            {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
+            {type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI Mexico":"broker app"}).
+Extract each stock position and return ONLY a valid JSON array, no markdown, no explanation:
+[{"ticker":"AAPL","shares":10,"price":150.50,"date":"2024-01-15"},...]
+Rules:
+- ticker: use standard US stock symbol (e.g. AAPL not Apple). For Colombian stocks use their symbol (EC, PFBCOLOM, etc)
+- shares: number of shares/units held
+- price: average cost/purchase price per share in USD (convert if shown in COP using ~4200 COP/USD, in MXN use ~17 MXN/USD)
+- date: purchase date in YYYY-MM-DD, or today if unknown
+- Skip cash, funds, or rows without a clear ticker
+Return ONLY the JSON array.`}
+          ]}]
+        })
+      });
+      const data=await resp.json();
+      const text=data.content?.[0]?.text||"";
+      const clean=text.replace(/```json|```/g,"").trim();
+      const parsed=JSON.parse(clean);
+      if(!Array.isArray(parsed)||!parsed.length)throw new Error(isEs?"No se detectaron posiciones en la imagen":"No positions detected in image");
+      const valid=parsed.filter(p=>p.ticker&&p.shares>0&&p.price>0);
+      if(!valid.length)throw new Error(isEs?"No se pudieron extraer posiciones válidas":"Could not extract valid positions");
+      setPreviewData({parsed:valid,skipped:parsed.length-valid.length,broker});
+    }catch(e){
+      setAiErr(isEs?"Error leyendo la imagen: "+e.message:"Error reading image: "+e.message);
+    }
+    setAiLoading(false);
+  };
+
+  // ── XTB/IBKR steps ──────────────────────────────────────────────────────
+  const XTB_STEPS = isEs?[
+    "Abre xStation 5 (web o app)",
+    "Clic en \"Historial de la cuenta\" (parte superior)",
+    "Clic en \"Exportar\" → selecciona rango de fechas \"Todo\"",
+    "Tipo: \"Informe completo\" · Formato: Excel o CSV",
+    "Sube el archivo descargado aquí ↓",
+  ]:[
+    "Open xStation 5 (web or app)",
+    "Click \"Account history\" (top bar)",
+    "Click \"Export\" → select date range \"All\"",
+    "Type: \"Full report\" · Format: Excel or CSV",
+    "Upload the downloaded file here ↓",
+  ];
+  const IBKR_STEPS = isEs?[
+    "Entra a Client Portal → Reportes",
+    "Flex Query → Activity Statement",
+    "Formato: CSV · Período: Custom",
+    "Descarga y sube el archivo aquí ↓",
+  ]:[
+    "Go to Client Portal → Reports",
+    "Flex Query → Activity Statement",
+    "Format: CSV · Period: Custom",
+    "Download and upload the file here ↓",
+  ];
+
+  // ── Broker not selected yet ──────────────────────────────────────────────
+  if(!broker)return<>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:12}}>
+      ➕ {isEs?"Agregar posiciones":"Add positions"}
+    </div>
+    <div style={{fontSize:11,color:T.muted,marginBottom:14}}>
+      {isEs?"¿Desde dónde quieres importar?":"Where do you want to import from?"}
+    </div>
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+      {BROKERS.map(b=>(
+        <button key={b.id} onClick={()=>{setBroker(b.id);setImportMode(b.hasCsv?"csv":"manual");}}
+          style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"11px 12px",
+            cursor:"pointer",display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
+          <span style={{fontSize:18}}>{b.flag}</span>
+          <div>
+            <div style={{fontSize:12,color:T.text,fontWeight:600}}>{b.name}</div>
+            <div style={{fontSize:10,color:T.muted}}>{b.hasCsv?(isEs?"Exportar CSV":"Export CSV"):(isEs?"Foto o manual":"Photo or manual")}</div>
+          </div>
+        </button>
+      ))}
+    </div>
+    <div style={{borderTop:`1px solid ${T.border}`,paddingTop:12,marginTop:4}}>
+      <button onClick={()=>{setBroker("other");setImportMode("manual");}}
+        style={{background:"none",border:"none",color:T.muted,fontSize:11,cursor:"pointer",textDecoration:"underline"}}>
+        ✏️ {isEs?"Ingresar manualmente sin broker":"Enter manually without broker"}
+      </button>
+    </div>
+  </>;
+
+  // ── Trii / HAPI flow ────────────────────────────────────────────────────
+  if(broker==="trii"||broker==="hapi"){
+    const bName=broker==="trii"?"Trii 🇨🇴":"HAPI 🇲🇽";
+    return<>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+        <button onClick={()=>{setBroker(null);setPreviewData(null);setAiErr("");}}
+          style={{background:"none",border:"none",color:T.muted,fontSize:18,cursor:"pointer",padding:0}}>←</button>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>
+          Importar desde {bName}
+        </div>
+      </div>
+
+      {/* Sub-mode selector */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:16}}>
+        {[
+          {id:"screenshot",icon:"📷",l:isEs?"Captura de pantalla":"Screenshot"},
+          {id:"paste",     icon:"📋",l:isEs?"Pegar texto":"Paste text"},
+          {id:"manual",    icon:"✏️",l:isEs?"Manual":"Manual"},
+        ].map(m=>(
+          <button key={m.id} className={`seg ${aiMode===m.id?"seg-on":""}`}
+            onClick={()=>{setAiMode(m.id);setAiErr("");setPreviewData(null);}}
+            style={{fontSize:10,padding:"7px 4px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+            <span style={{fontSize:14}}>{m.icon}</span>{m.l}
+          </button>
+        ))}
+      </div>
+
+      {/* Screenshot mode — AI reader */}
+      {aiMode==="screenshot"&&!previewData&&<>
+        <div style={{padding:"10px 12px",background:`${T.blue}10`,border:`1px solid ${T.blue}22`,borderRadius:8,marginBottom:12,fontSize:11,color:T.muted,lineHeight:1.7}}>
+          <div style={{color:T.blue,fontWeight:600,marginBottom:4}}>
+            📷 {isEs?"Cómo tomar la captura:":"How to take the screenshot:"}
+          </div>
+          {broker==="trii"?<>
+            1. {isEs?"Abre Trii → toca \"Portafolio\"":"Open Trii → tap \"Portfolio\""}<br/>
+            2. {isEs?"Haz scroll hasta ver todas tus acciones":"Scroll until you see all your stocks"}<br/>
+            3. {isEs?"Toma una captura de pantalla (o varias si tienes muchas)":"Take a screenshot (or several if you have many stocks)"}<br/>
+            4. {isEs?"Sube la imagen aquí abajo":"Upload the image below"}
+          </>:<>
+            1. {isEs?"Abre HAPI → \"Mi portafolio\"":"Open HAPI → \"My portfolio\""}<br/>
+            2. {isEs?"Captura la pantalla con tus posiciones":"Screenshot the screen with your positions"}<br/>
+            3. {isEs?"Sube la imagen abajo":"Upload the image below"}
+          </>}
+        </div>
+        {aiErr&&<div style={{padding:"8px 12px",background:`${T.red}15`,border:`1px solid ${T.red}33`,borderRadius:8,fontSize:12,color:T.red,marginBottom:10}}>{aiErr}</div>}
+        {aiLoading?<div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:T.gold}}>
+          <span className="sp">⟳</span> {isEs?" IA leyendo tu portafolio...":" AI reading your portfolio..."}
+        </div>:<label style={{display:"block",cursor:"pointer"}}>
+          <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"22px 16px",textAlign:"center",background:`${T.gold}05`,marginBottom:8}}>
+            <div style={{fontSize:28,marginBottom:6}}>📷</div>
+            <div style={{fontSize:13,color:T.gold,marginBottom:3}}>{isEs?"Sube tu captura de pantalla":"Upload your screenshot"}</div>
+            <div style={{fontSize:10,color:T.muted}}>{isEs?"La IA detecta tickers, acciones y costo promedio automáticamente":"AI auto-detects tickers, shares and avg cost"}</div>
+          </div>
+          <input type="file" accept="image/*" onChange={readScreenshot} style={{display:"none"}}/>
+        </label>}
+      </>}
+
+      {/* Paste mode */}
+      {aiMode==="paste"&&!previewData&&<>
+        <div style={{padding:"10px 12px",background:`${T.blue}10`,border:`1px solid ${T.blue}22`,borderRadius:8,marginBottom:12,fontSize:11,color:T.muted,lineHeight:1.7}}>
+          <div style={{color:T.blue,fontWeight:600,marginBottom:4}}>📋 {isEs?"Formato esperado:":"Expected format:"}</div>
+          <div style={{fontFamily:"'DM Mono',monospace",background:T.accent,padding:"6px 8px",borderRadius:6,fontSize:10}}>
+            AAPL{"\t"}10{"\t"}185.50<br/>
+            EC{"\t"}50{"\t"}9.20<br/>
+            NVDA{"\t"}5{"\t"}450.00
+          </div>
+          <div style={{marginTop:6}}>{isEs?"Columnas: Ticker · Acciones · Precio promedio":"Columns: Ticker · Shares · Avg Price"}</div>
+        </div>
+        <textarea value={pasteText} onChange={e=>setPasteText(e.target.value)}
+          placeholder={"AAPL\t10\t185.50\nEC\t50\t9.20"}
+          style={{width:"100%",minHeight:120,background:T.accent,border:`1px solid ${T.border}`,color:T.text,
+            borderRadius:8,padding:10,fontFamily:"'DM Mono',monospace",fontSize:12,outline:"none",
+            resize:"vertical",marginBottom:10,lineHeight:1.6}}/>
+        <button className="btn btn-gold" onClick={parsePaste} disabled={!pasteText.trim()}
+          style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:10}}>
+          📋 {isEs?"Importar texto pegado":"Import pasted text"}
+        </button>
+      </>}
+
+      {/* Manual mode — reuse existing form via setImportMode */}
+      {aiMode==="manual"&&<>
+        <div style={{fontSize:11,color:T.muted,marginBottom:10,padding:"8px 12px",background:`${T.accent}`,borderRadius:8,lineHeight:1.6}}>
+          💡 {isEs?`En ${bName.split(" ")[0]}: Portafolio → toca cada acción → anota Ticker, Cantidad y Costo Promedio`:`In ${bName.split(" ")[0]}: Portfolio → tap each stock → note Ticker, Shares and Avg Cost`}
+        </div>
+        {/* Delegate to existing manual form */}
+        {(()=>{setImportMode("manual");return null;})()}
+      </>}
+
+      {/* Preview table — shared */}
+      {previewData&&<>
+        <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:12,color:T.green,fontWeight:600}}>
+              ✓ {previewData.parsed.length} {isEs?"posiciones detectadas":"positions detected"}
+            </div>
+            <div style={{fontSize:10,color:T.muted,marginTop:2}}>
+              {isEs?"Revisa y confirma antes de importar":"Review and confirm before importing"}
+            </div>
+          </div>
+          <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>
+            {isEs?"Cambiar":"Change"}
+          </button>
+        </div>
+        <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:12,maxHeight:200,overflowY:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+            <thead><tr style={{background:T.surface}}>
+              {["Ticker","Acciones","Precio","Fecha"].map(h=>(
+                <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,
+                  textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,
+                  borderBottom:`1px solid ${T.border}`}}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {previewData.parsed.map((p,i)=>(
+                <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
+                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
+                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
+                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${p.price}</td>
+                  <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button className="btn btn-gold" onClick={confirmImport}
+          style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
+          ✅ {isEs?`Confirmar — ${previewData.parsed.length} posiciones`:`Confirm — ${previewData.parsed.length} positions`}
+        </button>
+      </>}
+
+      {importErr&&<div style={{padding:"8px 12px",borderRadius:8,fontSize:12,marginTop:10,
+        background:importErr.startsWith("✅")?`${T.green}15`:`${T.red}15`,
+        color:importErr.startsWith("✅")?T.green:T.red,
+        border:`1px solid ${importErr.startsWith("✅")?T.green:T.red}33`}}>{importErr}</div>}
+    </>;
+  }
+
+  // ── XTB / IBKR / Other — CSV flow ─────────────────────────────────────
+  const steps=broker==="xtb"?XTB_STEPS:broker==="ibkr"?IBKR_STEPS:null;
+  const bLabel=BROKERS.find(b=>b.id===broker);
+
+  return<>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+      <button onClick={()=>{setBroker(null);setPreviewData(null);setImportErr("");}}
+        style={{background:"none",border:"none",color:T.muted,fontSize:18,cursor:"pointer",padding:0}}>←</button>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>
+        {bLabel?`${bLabel.flag} ${bLabel.name}`:(isEs?"Importar CSV":"Import CSV")}
+      </div>
+    </div>
+
+    {steps&&!previewData&&<div style={{marginBottom:14}}>
+      {steps.map((s,i)=>(
+        <div key={i} style={{display:"flex",gap:10,fontSize:11,color:i===steps.length-1?T.gold:T.muted,
+          marginBottom:8,padding:"7px 10px",borderRadius:8,
+          background:i===steps.length-1?`${T.gold}08`:T.accent,
+          border:`1px solid ${i===steps.length-1?T.goldDim+"44":T.border}`}}>
+          <span style={{color:T.goldDim,fontWeight:700,flexShrink:0}}>{i+1}.</span>
+          <span style={{lineHeight:1.5}}>{s}</span>
+        </div>
+      ))}
+    </div>}
+
+    {importErr&&<div style={{padding:"8px 12px",borderRadius:8,fontSize:12,marginBottom:12,
+      background:importErr.startsWith("✅")?`${T.green}15`:`${T.red}15`,
+      color:importErr.startsWith("✅")?T.green:T.red,
+      border:`1px solid ${importErr.startsWith("✅")?T.green:T.red}33`}}>{importErr}</div>}
+
+    {!previewData?<>
+      <label style={{display:"block",cursor:"pointer"}}>
+        <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"22px 16px",
+          textAlign:"center",background:`${T.gold}05`,marginBottom:8}}>
+          <div style={{fontSize:24,marginBottom:6}}>📂</div>
+          <div style={{fontSize:13,color:T.gold,marginBottom:3}}>
+            {isEs?"Sube tu archivo":"Upload your file"}
+          </div>
+          <div style={{fontSize:10,color:T.muted}}>
+            {broker==="xtb"?"xStation5 → Historial → Exportar (.xlsx / .csv)":
+             broker==="ibkr"?"Client Portal → Flex Query (.csv)":
+             "CSV · TXT · Excel"}
+          </div>
+        </div>
+        <input type="file" accept=".csv,.txt,.xlsx,.xls" onChange={parseCSV} style={{display:"none"}}/>
+      </label>
+    </>:<>
+      <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontSize:12,color:T.green,fontWeight:600}}>
+            ✓ {previewData.parsed.length} {isEs?"posiciones listas":"positions ready"}
+          </div>
+          <div style={{fontSize:10,color:T.muted,marginTop:2}}>
+            {previewData.skipped>0?`${previewData.skipped} ${isEs?"ventas omitidas":"sells skipped"}`:""}
+          </div>
+        </div>
+        <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>
+          {isEs?"Cambiar archivo":"Change file"}
+        </button>
+      </div>
+      <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:12,maxHeight:200,overflowY:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+          <thead><tr style={{background:T.surface}}>
+            {["Ticker","Acciones","Precio","Fecha"].map(h=>(
+              <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,
+                textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,
+                borderBottom:`1px solid ${T.border}`}}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {previewData.parsed.slice(0,8).map((p,i)=>(
+              <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
+                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
+                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
+                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${p.price}</td>
+                <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
+              </tr>
+            ))}
+            {previewData.parsed.length>8&&<tr>
+              <td colSpan={4} style={{padding:"5px 10px",fontSize:10,color:T.muted,textAlign:"center"}}>
+                +{previewData.parsed.length-8} {isEs?"filas más":"more rows"}...
+              </td>
+            </tr>}
+          </tbody>
+        </table>
+      </div>
+      <button className="btn btn-gold" onClick={confirmImport}
+        style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
+        ✅ {isEs?`Confirmar importación — ${previewData.parsed.length} posiciones`:`Confirm import — ${previewData.parsed.length} positions`}
+      </button>
+    </>}
+  </>;
+}
+
 // ── PORTFOLIO GROWTH CHART ───────────────────────────────────────────────────
 // Uses transactions + current prices — no extra API calls needed
 function PortfolioGrowthChart({transactions,prices,lang="es",fmt,fmtShort}){
@@ -4620,7 +4972,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       </div>
       <button
         className="btn btn-gold"
-        onClick={()=>{setImportMode("csv");setTimeout(()=>{document.getElementById("add-position-card")?.scrollIntoView({behavior:"smooth",block:"start"});},100);}}
+        onClick={()=>{setImportMode("csv");setTimeout(()=>{document.getElementById("import-form")?.scrollIntoView({behavior:"smooth",block:"start"});},150);}}
         style={{fontSize:12,padding:"9px 18px",borderRadius:10,whiteSpace:"nowrap"}}
       >
         {lang==="es"?"📂 Importar mi portafolio →":"📂 Import my portfolio →"}
@@ -4676,25 +5028,12 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       />
     )}
 
+        <div id="import-form"/>
         <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
       <Card s={{}} id="add-position-card">
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,marginBottom:14}}>➕ Add Position</div>
-
-        {/* Mode tabs */}
-        <div style={{display:"flex",gap:6,marginBottom:16}}>
-          {[
-            {id:"manual",l:"✏️ Manual"},
-            {id:"paste",l:lang==="es"?"📋 Pegar de Excel":"📋 Paste from Excel"},
-            {id:"csv",l:lang==="es"?"📂 Importar CSV":"📂 Import CSV"},
-          ].map(({id,l})=>(
-            <button key={id} className={`seg ${importMode===id?"seg-on":""}`} onClick={()=>{setImportMode(id);setImportErr("");}}>
-              {l}
-            </button>
-          ))}
-        </div>
-
+        <div style={{f        <BrokerImportWizard lang={lang} importMode={importMode} setImportMode={setImportMode} importErr={importErr} setImportErr={setImportErr} previewData={previewData} setPreviewData={setPreviewData} parseCSV={parseCSV} parsePaste={parsePaste} confirmImport={confirmImport} pasteText={pasteText} setPasteText={setPasteText} transactions={transactions} setTransactions={setTransactions} saveTxns={saveTxns}/>
         {importErr&&<div style={{padding:"8px 12px",borderRadius:8,fontSize:12,marginBottom:12,
           background:importErr.startsWith("✅")?`${T.green}15`:`${T.red}15`,
           color:importErr.startsWith("✅")?T.green:T.red,
