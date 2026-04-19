@@ -3782,8 +3782,8 @@ function PortfolioGrowthChart({transactions,prices,lang="es"}){
   });
   const data=filtered.length>=2?filtered:allData;
   const first=data[0],last=data[data.length-1];
-  const totalReturn=first&&last&&first.invested>0?((last.value-first.invested)/first.invested*100):0;
-  const totalGain=last&&first?last.value-first.invested:0;
+  const totalReturn=last&&last.invested>0?((last.value-last.invested)/last.invested*100):0;
+  const totalGain=last?last.value-last.invested:0;
   const isPos=totalReturn>=0;
   const lineColor=isPos?T.green:T.red;
 
@@ -4184,6 +4184,8 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   const [importMode,setImportMode]=useState("manual"); // manual | paste | csv
   const [pasteText,setPasteText]=useState("");
   const [importErr,setImportErr]=useState("");
+  const [previewData,setPreviewData]=useState(null); // rows to preview before import
+  const [detectedBroker,setDetectedBroker]=useState("");
   const setF=(k,v)=>setForm(p=>({...p,[k]:v}));
 
   // Parse pasted text from Excel / Google Sheets
@@ -4215,12 +4217,11 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
     reader.onload=(ev)=>{
+      setImportErr("");setPreviewData(null);
       const raw=ev.target.result.trim();
       const lines=raw.split(/\r?\n/).filter(l=>l.trim());
       if(lines.length<2){setImportErr(lang==="es"?"El archivo está vacío o solo tiene encabezados.":"File is empty or has only headers.");return;}
 
-      // ── SMART COLUMN DETECTOR ──────────────────────────────────────────
-      // Splits a CSV line respecting quoted fields
       const splitCSV=(line)=>{
         const cols=[];let cur="";let inQ=false;
         for(let i=0;i<line.length;i++){
@@ -4235,7 +4236,6 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
 
       const headers=splitCSV(lines[0]).map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,""));
 
-      // Map header names to column indices for each broker
       const findCol=(...names)=>{
         for(const n of names){
           const idx=headers.findIndex(h=>h.includes(n.replace(/[^a-z0-9]/g,"")));
@@ -4244,38 +4244,57 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         return -1;
       };
 
-      // Detect broker format
+      // ── BROKER DETECTION ──────────────────────────────────────────────────
       let broker="generic";
-      if(headers.some(h=>h.includes("ibcommission")||h.includes("trademoney")))broker="ibkr";
-      else if(headers.some(h=>h.includes("symbol")&&h.includes("opentime")||h.includes("openingrate")))broker="xtb";
-      else if(headers.some(h=>h.includes("assetcategory")||h.includes("buysell")))broker="ibkr";
-      else if(headers.some(h=>h.includes("instrument")&&headers.some(h2=>h2.includes("openingrate"))))broker="xtb";
-      else if(headers.some(h=>h.includes("averageopen")||h.includes("openrate")))broker="xtb";
 
-      // Column mappings per broker
+      // Interactive Brokers
+      if(headers.some(h=>h.includes("ibcommission")||h.includes("trademoney")))broker="ibkr";
+      else if(headers.some(h=>h.includes("assetcategory")||h.includes("buysell")))broker="ibkr";
+      // XTB
+      else if(headers.some(h=>h.includes("openingrate")||h.includes("openrate")))broker="xtb";
+      else if(headers.some(h=>h.includes("symbol")&&h.includes("opentime")))broker="xtb";
+      else if(headers.some(h=>h.includes("instrument")&&headers.some(h2=>h2.includes("openingrate"))))broker="xtb";
+      // Trii (Colombia) — exports "Historial de transacciones"
+      else if(headers.some(h=>h.includes("accion")||h.includes("preciopromedio")||h.includes("preciopromediocompra")))broker="trii";
+      else if(headers.some(h=>h.includes("activo")&&headers.some(h2=>h2.includes("cantidadtotal")||h2.includes("unidades"))))broker="trii";
+      // HAPI (México)
+      else if(headers.some(h=>h.includes("instrumento")&&headers.some(h2=>h2.includes("preciopromedio")||h2.includes("preciodecompra"))))broker="hapi";
+      else if(headers.some(h=>h.includes("emisora")||h.includes("claveinstrumento")))broker="hapi";
+
+      setDetectedBroker(broker);
+
+      // ── COLUMN MAPPING ───────────────────────────────────────────────────
       let tickerCol,sharesCol,priceCol,dateCol;
 
       if(broker==="ibkr"){
-        // Interactive Brokers Flex Query format
         tickerCol=findCol("symbol","ticker");
         sharesCol=findCol("quantity","qty","shares");
         priceCol=findCol("tradeprice","price","avgprice","averageprice");
         dateCol=findCol("tradedate","date","datetime","settledate");
       } else if(broker==="xtb"){
-        // XTB Account History format
         tickerCol=findCol("symbol","instrument","position");
         sharesCol=findCol("volume","quantity","lots","shares");
         priceCol=findCol("openingrate","openrate","openprice","price","rate");
         dateCol=findCol("openingtime","opentime","date","time");
+      } else if(broker==="trii"){
+        // Trii Colombia: Acción | Cantidad | Precio Promedio | Fecha
+        tickerCol=findCol("accion","ticker","simbolo","activo","codigo","stock");
+        sharesCol=findCol("cantidad","cantidadtotal","unidades","acciones","shares","cuotas");
+        priceCol=findCol("preciopromedio","preciopromediocompra","preciocompra","precio","price","costopromedio");
+        dateCol=findCol("fecha","fechacompra","fechatransaccion","date","timestamp");
+      } else if(broker==="hapi"){
+        // HAPI México: Emisora | Unidades | Precio Promedio de Compra | Fecha
+        tickerCol=findCol("emisora","claveinstrumento","instrumento","ticker","simbolo");
+        sharesCol=findCol("unidades","cantidad","shares","volumen","posicion");
+        priceCol=findCol("preciopromedio","preciopromediocompra","preciocompra","precio","price","costopromedio");
+        dateCol=findCol("fecha","fechacompra","date","timestamp");
       } else {
-        // Generic / Inversoria native format
-        tickerCol=findCol("ticker","symbol","stock","accion","activo","instrumento","codigo");
-        sharesCol=findCol("shares","quantity","cantidad","acciones","qty","volume","participaciones");
-        priceCol=findCol("buyprice","price","precio","preciocompra","openingprice","avgcost","costopromedio","costbase","open");
-        dateCol=findCol("date","fecha","tradedate","openingtime","purchasedate");
+        tickerCol=findCol("ticker","symbol","stock","accion","activo","instrumento","codigo","emisora");
+        sharesCol=findCol("shares","quantity","cantidad","acciones","qty","volume","participaciones","unidades","cuotas");
+        priceCol=findCol("buyprice","price","precio","preciocompra","openingprice","avgcost","costopromedio","costbase","open","preciopromedio");
+        dateCol=findCol("date","fecha","tradedate","openingtime","purchasedate","fechacompra");
       }
 
-      // Fallback to positional columns if not found
       if(tickerCol<0)tickerCol=0;
       if(sharesCol<0)sharesCol=1;
       if(priceCol<0)priceCol=2;
@@ -4289,11 +4308,9 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         const cols=splitCSV(lines[i]);
         if(cols.length<3)continue;
 
-        // Extract raw values
         let rawTicker=(cols[tickerCol]||"").toUpperCase().replace(/[^A-Z0-9.]/g,"");
-        // IB uses format like "NVDA" or "NVDA(US)" — clean it
         rawTicker=rawTicker.replace(/\(.*\)/g,"").replace(/\.[A-Z]+$/,"");
-        // Resolve known ticker names
+        // Trii/HAPI sometimes use company names — try KNOWN_TICKERS first
         const ticker=KNOWN_TICKERS[rawTicker]||rawTicker;
 
         const rawShares=(cols[sharesCol]||"").replace(/[$,\s]/g,"");
@@ -4302,52 +4319,57 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         const rawPrice=(cols[priceCol]||"").replace(/[$,\s]/g,"");
         const price=parseFloat(rawPrice);
 
-        // Parse date — handle multiple formats
         let date=today;
         if(cols[dateCol]){
           const d=cols[dateCol].replace(/['"]/g,"").trim();
-          // yyyyMMdd → yyyy-MM-dd
           if(/^\d{8}$/.test(d))date=`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
-          // dd/MM/yyyy or MM/dd/yyyy
           else if(/\d{1,2}\/\d{1,2}\/\d{4}/.test(d)){
             const parts=d.split("/");
-            date=`${parts[2]}-${parts[0].padStart(2,"0")}-${parts[1].padStart(2,"0")}`;
+            // Try to detect dd/mm vs mm/dd based on values
+            const first=parseInt(parts[0]),second=parseInt(parts[1]);
+            if(first>12){date=`${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`;} // dd/mm/yyyy
+            else{date=`${parts[2]}-${parts[0].padStart(2,"0")}-${parts[1].padStart(2,"0")}`;}
           }
-          // yyyy-MM-dd already OK
           else if(/\d{4}-\d{2}-\d{2}/.test(d))date=d.slice(0,10);
-          // IB datetime: "2024-01-15;09:30:00"
           else if(d.includes(";"))date=d.split(";")[0];
+          else if(d.includes(" "))date=d.split(" ")[0]; // "2024-01-15 09:30:00"
         }
 
-        // Skip sells (negative quantity in IB), invalid rows, or non-buy entries
         const isSell=parseFloat(rawShares)<0;
-        const buySellCol=findCol("buysell","type","side","operacion");
-        const isSellLabel=buySellCol>=0&&(cols[buySellCol]||"").toUpperCase().includes("SELL");
+        const buySellCol=findCol("buysell","type","side","operacion","tipomovimiento","tipo");
+        const isSellLabel=buySellCol>=0&&(cols[buySellCol]||"").toUpperCase().match(/SELL|VENTA|S$/);
         if(isSell||isSellLabel){skipped++;continue;}
 
         if(!ticker||ticker.length<1||ticker.length>6||isNaN(shares)||isNaN(price)||shares<=0||price<=0){skipped++;continue;}
 
-        parsed.push({id:Date.now()+Math.random(),ticker,shares,buyPrice:price,date});
+        parsed.push({id:Date.now()+Math.random(),ticker,shares,price,date});
       }
 
       if(!parsed.length){
         setImportErr(lang==="es"
-          ?`No se pudieron importar posiciones. ${skipped>0?`${skipped} filas omitidas (ventas o formato incorrecto).`:""} Verifica que el archivo tenga columnas de Ticker, Cantidad y Precio.`
-          :`Could not import positions. ${skipped>0?`${skipped} rows skipped (sells or bad format).`:""} Verify the file has Ticker, Quantity and Price columns.`);
+          ?`No se pudieron detectar posiciones. ${skipped>0?`${skipped} filas omitidas.`:""} Verifica que el archivo tenga columnas de Ticker, Cantidad y Precio.`
+          :`Could not detect positions. ${skipped>0?`${skipped} rows skipped.`:""} Verify Ticker, Quantity and Price columns.`);
         return;
       }
 
-      const newTxns=parsed.map(p=>({id:p.id,ticker:p.ticker,type:"buy",shares:p.shares,price:p.buyPrice,date:p.date}));
-      const updated=[...transactions,...newTxns];
-      setTransactions(updated);saveTxns(updated);
-      const brokerName=broker==="ibkr"?"Interactive Brokers":broker==="xtb"?"XTB":"generic";
-      setImportErr(`✅ ${lang==="es"?"Importadas":"Imported"} ${parsed.length} ${lang==="es"?"posiciones":"positions"} ${broker!=="generic"?`(${brokerName} ${lang==="es"?"detectado":"detected"})`:""}.${skipped>0?` ${skipped} ${lang==="es"?"ventas omitidas":"sells skipped"}.`:""}`);
-      setImportMode("manual");
+      // Show preview instead of importing directly
+      setPreviewData({parsed,skipped,broker});
     };
     reader.readAsText(file);
   };
 
+  const confirmImport=()=>{
+    if(!previewData)return;
+    const newTxns=previewData.parsed.map(p=>({id:p.id,ticker:p.ticker,type:"buy",shares:p.shares,price:p.price,date:p.date}));
+    const updated=[...transactions,...newTxns];
+    setTransactions(updated);saveTxns(updated);
+    const bName={ibkr:"Interactive Brokers",xtb:"XTB",trii:"Trii",hapi:"HAPI"}[previewData.broker]||"genérico";
+    setImportErr(`✅ ${previewData.parsed.length} posiciones importadas${previewData.broker!=="generic"?` desde ${bName}`:""}${previewData.skipped>0?` · ${previewData.skipped} ventas omitidas`:""}.`);
+    setPreviewData(null);setImportMode("manual");
+  };
+
   // Load saved positions — cloud first, localStorage fallback
+ — cloud first, localStorage fallback
   useEffect(()=>{
     const load=async()=>{
       try{
@@ -4700,60 +4722,90 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           </button>
         </>}
 
-        {/* CSV UPLOAD */}
+        {/* CSV UPLOAD — Guided broker import */}
         {importMode==="csv"&&<>
-          <div style={{padding:12,background:`${T.gold}08`,borderRadius:8,border:`1px solid ${T.goldDim}33`,marginBottom:12}}>
-            <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:8}}>
-              {lang==="es"?"📂 Brokers compatibles — detección automática":"📂 Compatible brokers — auto-detected"}
-            </div>
-            {/* Broker badges */}
-            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:10}}>
+          {!previewData&&<>
+            {/* Broker cards */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
               {[
-                {name:"Interactive Brokers",flag:"🇺🇸"},
-                {name:"XTB",flag:"🌎"},
-                {name:"eToro",flag:"🌎"},
-                {name:"Trii",flag:"🇨🇴"},
-                {name:"HAPI",flag:"🇲🇽"},
-                {name:"Robinhood",flag:"🇺🇸"},
-                {name:"Fidelity",flag:"🇺🇸"},
-                {name:"TD Ameritrade",flag:"🇺🇸"},
-              ].map(({name,flag})=>(
-                <span key={name} style={{fontSize:10,padding:"2px 8px",borderRadius:20,background:T.accent,border:`1px solid ${T.border}`,color:T.text}}>
-                  {flag} {name}
-                </span>
+                {id:"trii",flag:"🇨🇴",name:"Trii",steps:lang==="es"?["Abre Trii → Portafolio","Toca cada acción y anota: ticker, cantidad y precio promedio","Crea un CSV con esas columnas y súbelo aquí"]:["Open Trii → Portfolio","Tap each stock, note: ticker, shares, avg cost","Create a CSV with those columns and upload here"]},
+                {id:"hapi",flag:"🇲🇽",name:"HAPI",steps:lang==="es"?["Abre HAPI → Mi portafolio","Exporta tu historial o anota emisora, unidades, precio promedio","Sube el archivo CSV aquí"]:["Open HAPI → My portfolio","Export history or note: ticker, units, avg price","Upload the CSV file here"]},
+                {id:"xtb",flag:"🌎",name:"XTB",steps:lang==="es"?["Plataforma XTB → Historia de trading","Exporta como CSV (icono de descarga)","Sube el archivo directamente — lo detectamos automáticamente"]:["XTB Platform → Trading History","Export as CSV (download icon)","Upload directly — we auto-detect the format"]},
+                {id:"ibkr",flag:"🇺🇸",name:"IBKR",steps:lang==="es"?["Client Portal → Reportes → Flex Query","Exporta Activity Statement en CSV","Sube el archivo aquí"]:["Client Portal → Reports → Flex Query","Export Activity Statement as CSV","Upload the file here"]},
+              ].map(({id,flag,name,steps})=>(
+                <div key={id} style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px"}}>
+                  <div style={{fontSize:12,color:T.text,fontWeight:600,marginBottom:6}}>{flag} {name}</div>
+                  {steps.map((s,i)=>(
+                    <div key={i} style={{display:"flex",gap:6,fontSize:10,color:T.muted,marginBottom:3,lineHeight:1.5}}>
+                      <span style={{color:T.goldDim,fontWeight:600,flexShrink:0}}>{i+1}.</span>{s}
+                    </div>
+                  ))}
+                </div>
               ))}
             </div>
-            <div style={{fontSize:10,color:T.muted,lineHeight:1.7}}>
-              {lang==="es"
-                ?"El sistema detecta automáticamente el formato de tu broker. También puedes usar el formato universal:"
-                :"System auto-detects your broker's format. You can also use the universal format:"}
+            {/* Universal format note */}
+            <div style={{padding:"8px 12px",background:`${T.blue}08`,border:`1px solid ${T.blue}22`,borderRadius:8,marginBottom:12}}>
+              <div style={{fontSize:10,color:T.blue,fontWeight:600,marginBottom:4}}>
+                {lang==="es"?"Formato universal (cualquier broker)":"Universal format (any broker)"}
+              </div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:T.muted}}>
+                Ticker,Shares,Buy Price,Date<br/>
+                NVDA,10,450.00,2024-01-15
+              </div>
             </div>
-            <div style={{marginTop:6,padding:"6px 10px",background:T.accent,borderRadius:6,fontSize:10,color:T.muted,fontFamily:"'DM Mono',monospace"}}>
-              Ticker,Shares,Buy Price,Date<br/>
-              NVDA,10,450.00,2024-01-15<br/>
-              EC,100,9.50,2024-06-01
+            {/* Upload zone */}
+            <label style={{display:"block",cursor:"pointer"}}>
+              <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"22px 16px",textAlign:"center",background:`${T.gold}05`,marginBottom:8}}>
+                <div style={{fontSize:24,marginBottom:6}}>📂</div>
+                <div style={{fontSize:13,color:T.gold,marginBottom:3}}>{lang==="es"?"Selecciona tu archivo CSV":"Select your CSV file"}</div>
+                <div style={{fontSize:10,color:T.muted}}>.csv · .txt · Trii · HAPI · XTB · IBKR</div>
+              </div>
+              <input type="file" accept=".csv,.txt" onChange={parseCSV} style={{display:"none"}}/>
+            </label>
+          </>}
+
+          {/* ── PREVIEW STEP ── */}
+          {previewData&&<>
+            <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontSize:12,color:T.green,fontWeight:600}}>
+                  {({ibkr:"Interactive Brokers",xtb:"XTB",trii:"🇨🇴 Trii",hapi:"🇲🇽 HAPI",generic:lang==="es"?"Genérico":"Generic"})[previewData.broker]||previewData.broker} {lang==="es"?"detectado":"detected"}
+                </div>
+                <div style={{fontSize:10,color:T.muted,marginTop:2}}>
+                  {previewData.parsed.length} {lang==="es"?"posiciones listas para importar":"positions ready to import"}{previewData.skipped>0?` · ${previewData.skipped} ${lang==="es"?"ventas omitidas":"sells skipped"}`:""}
+                </div>
+              </div>
+              <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>{lang==="es"?"Cambiar archivo":"Change file"}</button>
             </div>
-          </div>
-          {/* Step guide for Trii */}
-          <div style={{padding:"10px 12px",background:`${T.blue}08`,border:`1px solid ${T.blue}22`,borderRadius:8,marginBottom:10}}>
-            <div style={{fontSize:10,color:T.blue,fontWeight:600,marginBottom:4}}>
-              🇨🇴 {lang==="es"?"¿Usas Trii o HAPI? Ingresa tus posiciones manualmente:":"Using Trii or HAPI? Enter your positions manually:"}
+            {/* Preview table */}
+            <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:12,maxHeight:180,overflowY:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                <thead><tr style={{background:T.surface}}>
+                  {["Ticker","Acciones","Precio","Fecha"].map(h=>(
+                    <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {previewData.parsed.slice(0,8).map((p,i)=>(
+                    <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
+                      <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
+                      <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
+                      <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${p.price}</td>
+                      <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
+                    </tr>
+                  ))}
+                  {previewData.parsed.length>8&&<tr>
+                    <td colSpan={4} style={{padding:"5px 10px",fontSize:10,color:T.muted,textAlign:"center"}}>
+                      +{previewData.parsed.length-8} {lang==="es"?"filas más...":"more rows..."}
+                    </td>
+                  </tr>}
+                </tbody>
+              </table>
             </div>
-            <div style={{fontSize:10,color:T.muted,lineHeight:1.7}}>
-              {lang==="es"
-                ?"En la app de Trii ve a Portafolio → toca cada acción → anota el costo promedio y cantidad → ingrésalos en el formulario Manual."
-                :"In Trii app go to Portfolio → tap each stock → note avg cost and quantity → enter them in the Manual form."}
-            </div>
-          </div>
-          <label style={{display:"block",cursor:"pointer"}}>
-            <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"28px 20px",textAlign:"center",background:`${T.gold}05`,marginBottom:12}}>
-              <div style={{fontSize:28,marginBottom:8}}>📂</div>
-              <div style={{fontSize:13,color:T.gold,marginBottom:4}}>Click to select your CSV file</div>
-              <div style={{fontSize:11,color:T.muted}}>or drag and drop here</div>
-            </div>
-            <input type="file" accept=".csv,.txt" onChange={parseCSV} style={{display:"none"}}/>
-          </label>
-          <div style={{fontSize:11,color:T.muted,textAlign:"center"}}>Supported: .csv and .txt files from any broker</div>
+            <button className="btn btn-gold" onClick={confirmImport} style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
+              ✅ {lang==="es"?`Confirmar importación — ${previewData.parsed.length} posiciones`:`Confirm import — ${previewData.parsed.length} positions`}
+            </button>
+          </>}
         </>}
 
         <div style={{marginTop:12,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.7}}>
