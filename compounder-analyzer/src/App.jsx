@@ -3728,115 +3728,73 @@ function TxnHistory({entries,avgCost,lang="es"}){
 
 
 // ── PORTFOLIO GROWTH CHART ───────────────────────────────────────────────────
-function PortfolioGrowthChart({transactions,lang="es"}){
+// Uses transactions + current prices — no extra API calls needed
+function PortfolioGrowthChart({transactions,prices,lang="es"}){
   const isEs=lang==="es";
   const [period,setPeriod]=useState("all");
-  const [loading,setLoading]=useState(false);
-  const [data,setData]=useState(null);
-  const [err,setErr]=useState("");
 
-  const getPeriodDates=()=>{
-    const now=Math.floor(Date.now()/1000);
+  const buildTimeline=()=>{
+    if(!transactions.length)return[];
     const sorted=[...transactions].sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const firstTs=sorted.length>0?Math.floor(new Date(sorted[0].date).getTime()/1000):now-365*24*3600;
-    if(period==="ytd")return{from:Math.floor(new Date(new Date().getFullYear(),0,1).getTime()/1000),to:now};
-    if(period==="6m") return{from:now-180*24*3600,to:now};
-    if(period==="1y") return{from:now-365*24*3600,to:now};
-    return{from:firstTs,to:now};
-  };
-
-  const load=async()=>{
-    if(!transactions.length)return;
-    setLoading(true);setErr("");setData(null);
-    const key=import.meta.env.VITE_FINNHUB_KEY;
-    const {from,to}=getPeriodDates();
-    try{
-      // Fetch weekly candles for each ticker in portfolio
-      const tickers=[...new Set(transactions.map(t=>t.ticker))];
-      const stockCandles={};
-      let refTimestamps=null;
-
-      for(const ticker of tickers){
-        await new Promise(r=>setTimeout(r,220));
-        try{
-          const res=await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=W&from=${from}&to=${to}&token=${key}`);
-          const d=await res.json();
-          if(d.s==="ok"&&d.t&&d.t.length>1){
-            stockCandles[ticker]={t:d.t,c:d.c};
-            if(!refTimestamps||d.t.length>refTimestamps.length)refTimestamps=d.t;
-          }
-        }catch(e){}
+    const dateSet=new Set(sorted.map(t=>t.date));
+    dateSet.add(new Date().toISOString().split("T")[0]);
+    const dates=[...dateSet].sort();
+    return dates.map(date=>{
+      const isToday=date===new Date().toISOString().split("T")[0];
+      const shares={},avgCost={};
+      for(const txn of sorted){
+        if(txn.date>date)break;
+        const tk=txn.ticker;
+        if(!shares[tk]){shares[tk]=0;avgCost[tk]=0;}
+        if(txn.type==="sell"){
+          shares[tk]=Math.max(0,shares[tk]-txn.shares);
+        } else {
+          const prev=shares[tk],prevC=avgCost[tk],newS=prev+txn.shares;
+          avgCost[tk]=newS>0?(prevC*prev+txn.price*txn.shares)/newS:0;
+          shares[tk]=newS;
+        }
       }
-
-      if(!refTimestamps||refTimestamps.length<2)throw new Error(isEs?"No se obtuvieron datos históricos suficientes":"Not enough historical data");
-
-      // Reconstruct portfolio value at each weekly timestamp
-      const sortedTxns=[...transactions].sort((a,b)=>new Date(a.date)-new Date(b.date));
-
-      const timeline=refTimestamps.map((ts)=>{
-        const date=new Date(ts*1000);
-        const shares={};const avgCost={};
-
-        for(const txn of sortedTxns){
-          if(new Date(txn.date)>date)break;
-          const tk=txn.ticker;
-          if(!shares[tk]){shares[tk]=0;avgCost[tk]=0;}
-          if(txn.type==="sell"){
-            shares[tk]=Math.max(0,shares[tk]-txn.shares);
-          } else {
-            const prev=shares[tk],prevC=avgCost[tk],newS=prev+txn.shares;
-            avgCost[tk]=newS>0?(prevC*prev+txn.price*txn.shares)/newS:0;
-            shares[tk]=newS;
-          }
-        }
-
-        // Total invested at this point
-        const totalInvested=Object.entries(shares).reduce((a,[tk,sh])=>a+sh*(avgCost[tk]||0),0);
-
-        // Portfolio market value at this timestamp
-        let portVal=0;
-        for(const [tk,sh] of Object.entries(shares)){
-          if(sh<=0)continue;
-          const candles=stockCandles[tk];
-          if(!candles){portVal+=sh*(avgCost[tk]||0);}
-          else{
-            const idx=candles.t.findIndex(t=>t>=ts);
-            const price=idx>=0?candles.c[idx]:candles.c[candles.c.length-1];
-            portVal+=sh*(price||avgCost[tk]||0);
-          }
-        }
-        if(portVal===0)portVal=totalInvested;
-
-        return{
-          ts,
-          label:date.toLocaleDateString(isEs?"es-CO":"en-US",{month:"short",year:"2-digit"}),
-          value:Math.round(portVal),
-          invested:Math.round(totalInvested),
-        };
-      }).filter(p=>p.invested>0); // only show from first purchase
-
-      if(timeline.length<2)throw new Error(isEs?"Período demasiado corto para graficar":"Period too short to chart");
-
-      setData(timeline);
-    }catch(e){setErr(isEs?"Error al cargar datos: "+e.message:"Error loading data: "+e.message);}
-    setLoading(false);
+      const invested=Object.entries(shares).reduce((a,[tk,sh])=>a+sh*(avgCost[tk]||0),0);
+      if(invested===0)return null;
+      let value=0;
+      for(const [tk,sh] of Object.entries(shares)){
+        if(sh<=0)continue;
+        value+=sh*(isToday&&prices[tk]?.price?prices[tk].price:(avgCost[tk]||0));
+      }
+      const d=new Date(date);
+      return{
+        date,isToday,
+        label:d.toLocaleDateString(isEs?"es-CO":"en-US",{month:"short",day:"numeric",year:"2-digit"}),
+        value:Math.round(value),
+        invested:Math.round(invested),
+      };
+    }).filter(Boolean);
   };
 
-  const first=data?.[0];
-  const last=data?.[data.length-1];
-  const totalReturn=first&&last?((last.value-first.invested)/first.invested*100):null;
-  const totalGain=last&&first?last.value-first.invested:null;
-  const isPos=totalReturn!==null&&totalReturn>=0;
+  const allData=buildTimeline();
+  const now=new Date();
+  const filtered=allData.filter(p=>{
+    const d=new Date(p.date);
+    if(period==="ytd")return d>=new Date(now.getFullYear(),0,1);
+    if(period==="6m") return d>=new Date(now-180*24*3600*1000);
+    if(period==="1y") return d>=new Date(now-365*24*3600*1000);
+    return true;
+  });
+  const data=filtered.length>=2?filtered:allData;
+  const first=data[0],last=data[data.length-1];
+  const totalReturn=first&&last&&first.invested>0?((last.value-first.invested)/first.invested*100):0;
+  const totalGain=last&&first?last.value-first.invested:0;
+  const isPos=totalReturn>=0;
   const lineColor=isPos?T.green:T.red;
 
-  const CustomTooltip=({active,payload,label})=>{
+  const CustomTooltip=({active,payload})=>{
     if(!active||!payload?.length)return null;
     const p=payload[0]?.payload;
     if(!p)return null;
     const gain=p.value-p.invested;
-    const pct=p.invested>0?((gain/p.invested)*100):0;
-    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",minWidth:160}}>
-      <div style={{fontSize:11,color:T.muted,marginBottom:6}}>{label}</div>
+    const pct=p.invested>0?(gain/p.invested*100):0;
+    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",minWidth:168}}>
+      <div style={{fontSize:10,color:T.muted,marginBottom:6}}>{p.label}{p.isToday&&<span style={{color:T.green,marginLeft:6}}>● hoy</span>}</div>
       <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,marginBottom:3}}>
         <span style={{color:T.muted}}>{isEs?"Valor":"Value"}</span>
         <span style={{color:T.gold,fontFamily:"'DM Mono',monospace",fontWeight:700}}>${p.value.toLocaleString("en-US")}</span>
@@ -3854,94 +3812,75 @@ function PortfolioGrowthChart({transactions,lang="es"}){
     </div>;
   };
 
+  if(!allData.length)return null;
+
   return<Card s={{padding:0,overflow:"hidden",border:`1px solid ${T.border}`}}>
-    {/* Header */}
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:`1px solid ${T.border}`,flexWrap:"wrap",gap:10}}>
       <div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>
-          {isEs?"📈 Crecimiento del Portafolio":"📈 Portfolio Growth"}
-        </div>
-        <div style={{fontSize:10,color:T.muted,marginTop:2}}>
-          {isEs?"Valor de mercado semana a semana":"Market value week by week"}
-        </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>{isEs?"📈 Crecimiento del Portafolio":"📈 Portfolio Growth"}</div>
+        <div style={{fontSize:10,color:T.muted,marginTop:2}}>{isEs?"Evolución del valor de tu inversión":"Evolution of your investment value"}</div>
       </div>
       <div style={{display:"flex",gap:4}}>
         {["ytd","6m","1y","all"].map(p=>(
-          <button key={p} className={`seg ${period===p?"seg-on":""}`}
-            onClick={()=>{setPeriod(p);setData(null);}}
-            style={{fontSize:10,padding:"4px 10px"}}>
+          <button key={p} className={`seg ${period===p?"seg-on":""}`} onClick={()=>setPeriod(p)} style={{fontSize:10,padding:"4px 10px"}}>
             {p==="ytd"?"YTD":p==="6m"?"6M":p==="1y"?"1A":isEs?"Todo":"All"}
           </button>
         ))}
       </div>
     </div>
-
     <div style={{padding:"16px 20px"}}>
-      {/* KPIs when data loaded */}
-      {data&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
         {[
-          {l:isEs?"Valor actual":"Current value",  v:`$${(last?.value||0).toLocaleString("en-US")}`,           c:T.gold},
-          {l:isEs?"Total invertido":"Total invested",v:`$${(last?.invested||0).toLocaleString("en-US")}`,       c:T.muted},
-          {l:isEs?"Retorno del período":"Period return",v:`${isPos?"+":""}${(totalReturn||0).toFixed(1)}%`,     c:lineColor},
+          {l:isEs?"Valor actual":"Current value",    v:`$${(last?.value||0).toLocaleString("en-US")}`,   c:T.gold},
+          {l:isEs?"Total invertido":"Total invested",v:`$${(last?.invested||0).toLocaleString("en-US")}`,c:T.muted},
+          {l:isEs?"Retorno total":"Total return",    v:`${isPos?"+":""}${totalReturn.toFixed(1)}%`,       c:lineColor},
         ].map(({l,v,c})=>(
           <div key={l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px"}}>
             <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{l}</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:c,fontWeight:700}}>{v}</div>
           </div>
         ))}
+      </div>
+      {data.length<=3&&<div style={{padding:"8px 12px",background:`${T.blue}10`,border:`1px solid ${T.blue}22`,borderRadius:8,fontSize:11,color:T.muted,marginBottom:14,lineHeight:1.6}}>
+        💡 {isEs?"El gráfico mejora con más transacciones. Cada compra o venta agrega un punto.":"Chart improves with more transactions. Each buy or sell adds a data point."}
       </div>}
-
-      {/* Load CTA */}
-      {!data&&!loading&&<div style={{textAlign:"center",padding:"24px 0"}}>
-        <button className="btn btn-gold" onClick={load} style={{fontSize:13,padding:"11px 28px",borderRadius:10}}>
-          📈 {isEs?"Ver crecimiento del portafolio":"View portfolio growth"}
-        </button>
-        <div style={{fontSize:11,color:T.muted,marginTop:8}}>
-          {isEs?"Datos históricos reales · Finnhub":"Real historical data · Finnhub"}
-        </div>
-      </div>}
-
-      {loading&&<div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:T.gold}}>
-        <span className="sp">⟳</span>{isEs?" Cargando datos históricos...":" Loading historical data..."}
-      </div>}
-
-      {err&&<div style={{padding:"10px 14px",background:`${T.red}15`,border:`1px solid ${T.red}33`,borderRadius:8,fontSize:12,color:T.red,lineHeight:1.6}}>{err}</div>}
-
-      {/* Chart */}
-      {data&&<div style={{height:220}}>
+      <div style={{height:210}}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{top:5,right:5,left:8,bottom:0}}>
             <defs>
               <linearGradient id="gGrowth" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={lineColor} stopOpacity={0.2}/>
+                <stop offset="5%"  stopColor={lineColor} stopOpacity={0.2}/>
                 <stop offset="95%" stopColor={lineColor} stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="gInvested" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={T.blue} stopOpacity={0.08}/>
+                <stop offset="5%"  stopColor={T.blue} stopOpacity={0.08}/>
                 <stop offset="95%" stopColor={T.blue} stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
             <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval="preserveStartEnd"/>
-            <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>v>=1000?`$${(v/1000).toFixed(0)}K`:`$${v}`} width={56}/>
+            <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>v>=1000?`$${Math.round(v/1000)}K`:`$${v}`} width={54}/>
             <Tooltip content={<CustomTooltip/>}/>
-            <Area type="monotone" dataKey="invested" stroke={T.blue} strokeWidth={1} strokeDasharray="4 3" fill="url(#gInvested)" name="invested"/>
-            <Area type="monotone" dataKey="value" stroke={lineColor} strokeWidth={2.5} fill="url(#gGrowth)" name="value"/>
+            <Area type="monotone" dataKey="invested" stroke={T.blue}    strokeWidth={1}   strokeDasharray="4 3" fill="url(#gInvested)" name="invested"/>
+            <Area type="monotone" dataKey="value"    stroke={lineColor} strokeWidth={2.5} fill="url(#gGrowth)"  name="value"/>
           </AreaChart>
         </ResponsiveContainer>
-      </div>}
-
-      {/* Legend */}
-      {data&&<div style={{display:"flex",gap:16,marginTop:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.muted}}>
-          <div style={{width:10,height:3,background:lineColor,borderRadius:1}}/>
-          {isEs?"Valor de mercado":"Market value"}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",gap:14}}>
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.muted}}>
+            <div style={{width:10,height:3,background:lineColor,borderRadius:1}}/>
+            {isEs?"Valor de mercado":"Market value"}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.muted}}>
+            <div style={{width:10,height:0,borderTop:`1.5px dashed ${T.blue}`}}/>
+            {isEs?"Capital invertido":"Invested capital"}
+          </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.muted}}>
-          <div style={{width:10,height:0,borderTop:`1.5px dashed ${T.blue}`}}/>
-          {isEs?"Capital invertido":"Invested capital"}
-        </div>
-      </div>}
+        {totalGain!==0&&<div style={{fontSize:11,padding:"3px 10px",borderRadius:20,background:`${lineColor}15`,color:lineColor,fontWeight:600}}>
+          {isPos?"✓":"↓"} {isEs?"Ganancia:":"Gain:"} {totalGain>=0?"+":""}${Math.abs(totalGain).toLocaleString("en-US")}
+        </div>}
+      </div>
     </div>
   </Card>;
 }
@@ -4660,7 +4599,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
     {/* ── PORTFOLIO VS S&P 500 ── */}
     {grouped.length>0&&transactions.length>0&&(
-      <PortfolioGrowthChart transactions={transactions} lang={lang}/>
+      <PortfolioGrowthChart transactions={transactions} prices={prices} lang={lang}/>
     )}
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
