@@ -4577,10 +4577,11 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         </div>
       </div>}
       <div style={{display:"flex",gap:10}}>
-        <button className="btn btn-outline" onClick={fetchPrices} disabled={loadingPrices||!transactions.length} style={{fontSize:12,padding:"8px 16px"}}>
+        <button className="btn" onClick={fetchPrices} disabled={loadingPrices||!transactions.length}
+          style={{background:`${T.blue}18`,border:`1.5px solid ${T.blue}66`,color:T.blue,borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}} style={{fontSize:12,padding:"8px 16px"}}>
           {loadingPrices?<><span className="sp">⟳</span> Actualizando...</>:<>{lang==="es"?"🔄 Actualizar Precios":"🔄 Refresh Prices"}</>}
         </button>
-        <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!grouped.length} style={{fontSize:12,padding:"8px 16px"}}>
+        <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!grouped.length} style={{fontSize:13,padding:"10px 20px",fontWeight:600,borderRadius:10,letterSpacing:"0.02em",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",border:"none",color:"#fff",boxShadow:"0 0 0 0px"}}>
           {loadingAI?<><span className="sp">⟳</span> Analizando...</>:<>{lang==="es"?"🤖 Análisis IA":"🤖 AI Analysis"}</>}
         </button>
       </div>
@@ -4590,33 +4591,6 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
     {/* Market Cycle Banner */}
     <MarketCycleBanner portfolioTickers={grouped.map(g=>g.ticker)} lang={lang} canAnalyze={canAnalyze}/>
-
-    {/* KPI Cards */}
-    {grouped.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-      {[
-        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵",sub:lang==="es"?"posiciones abiertas":"open positions"},
-        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊",sub:lang==="es"?"precio de mercado":"market price"},
-        {l:lang==="es"?"P&G No Realizado":"Unrealized P&L",v:`${totalUnrealizedPnL>=0?"+":""}${fmt(Math.abs(totalUnrealizedPnL))}`,c:totalUnrealizedPnL>=0?T.green:T.red,icon:"📈",sub:`${totalUnrealizedPnL>=0?"+":""}${totalCost>0?((totalUnrealizedPnL/totalCost)*100).toFixed(2):"0.00"}%`},
-      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
-        <Lbl>{l}</Lbl>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
-        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
-      </Card>)}
-    </div>}
-    {(grouped.length>0||totalRealizedPnL!==0)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-      {[
-        {l:lang==="es"?"P&G Realizado":"Realized P&L",v:`${totalRealizedPnL>=0?"+":""}${fmt(Math.abs(totalRealizedPnL))}`,c:totalRealizedPnL>0?T.green:totalRealizedPnL<0?T.red:T.muted,icon:"💰",sub:lang==="es"?"de ventas cerradas":"from closed trades"},
-        {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"🏆",sub:lang==="es"?"realizado + no realizado":"realized + unrealized"},
-        {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯",sub:lang==="es"?"sobre capital invertido":"on invested capital"},
-      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
-        <Lbl>{l}</Lbl>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
-        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
-      </Card>)}
-    </div>}
-
 
 
     {/* ── BROKER IMPORT BANNER ────────────────────────────────────────────── */}
@@ -4653,7 +4627,36 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       </button>
     </div>}
 
-    {/* ── PORTFOLIO VS S&P 500 ── */}
+
+    {/* KPI Cards */}
+    {grouped.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+      {[
+        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵",sub:lang==="es"?"posiciones abiertas":"open positions"},
+        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊",sub:lang==="es"?"precio de mercado":"market price"},
+        {l:lang==="es"?"P&G No Realizado":"Unrealized P&L",v:`${totalUnrealizedPnL>=0?"+":""}${fmt(Math.abs(totalUnrealizedPnL))}`,c:totalUnrealizedPnL>=0?T.green:T.red,icon:"📈",sub:`${totalUnrealizedPnL>=0?"+":""}${totalCost>0?((totalUnrealizedPnL/totalCost)*100).toFixed(2):"0.00"}%`},
+      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
+        <Lbl>{l}</Lbl>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
+        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
+      </Card>)}
+    </div>}
+    {(grouped.length>0||totalRealizedPnL!==0)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+      {[
+        {l:lang==="es"?"P&G Realizado":"Realized P&L",v:`${totalRealizedPnL>=0?"+":""}${fmt(Math.abs(totalRealizedPnL))}`,c:totalRealizedPnL>0?T.green:totalRealizedPnL<0?T.red:T.muted,icon:"💰",sub:lang==="es"?"de ventas cerradas":"from closed trades"},
+        {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"🏆",sub:lang==="es"?"realizado + no realizado":"realized + unrealized"},
+        {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯",sub:lang==="es"?"sobre capital invertido":"on invested capital"},
+      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
+        <Lbl>{l}</Lbl>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
+        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
+      </Card>)}
+    </div>}
+
+
+
+        {/* ── PORTFOLIO VS S&P 500 ── */}
     {grouped.length>0&&transactions.length>0&&(
       <PortfolioGrowthChart transactions={transactions} prices={prices} lang={lang} fmt={fmt} fmtShort={fmtShort}/>
     )}
