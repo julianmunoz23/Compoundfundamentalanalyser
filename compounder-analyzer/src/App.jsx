@@ -4369,7 +4369,6 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   };
 
   // Load saved positions — cloud first, localStorage fallback
- — cloud first, localStorage fallback
   useEffect(()=>{
     const load=async()=>{
       try{
