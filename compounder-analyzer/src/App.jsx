@@ -4690,7 +4690,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           <Lbl>Date Purchased (optional)</Lbl>
           <input type="date" value={form.date} onChange={e=>setF("date",e.target.value)} style={{marginBottom:16}}/>
           <button className="btn btn-gold" onClick={addPosition} style={{width:"100%",padding:"12px 0",fontSize:14,borderRadius:10}}>
-            ➕ Add to Portfolio
+            {lang==="es"?"➕ Agregar al Portafolio":"➕ Add to Portfolio"}
           </button>
         </>}
 
@@ -4808,7 +4808,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         </>}
 
         <div style={{marginTop:12,padding:10,background:T.accent,borderRadius:8,fontSize:11,color:T.muted,lineHeight:1.7}}>
-          💾 Positions save automatically. Click <span style={{color:T.gold}}>{lang==="es"?"Actualizar Precios":"Refresh Prices"}</span> for live data.
+          {lang==="es"?"💾 Las posiciones se guardan automáticamente. Toca ":"💾 Positions save automatically. Click "}<span style={{color:T.gold}}>{lang==="es"?"Actualizar Precios":"Refresh Prices"}</span>{lang==="es"?" para datos en vivo.":" for live data."}
         </div>
       </Card>
 
@@ -4818,7 +4818,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           ?<Card s={{textAlign:"center",padding:48,background:`${T.gold}06`,border:`1px dashed ${T.goldDim}44`}}>
             <div style={{fontSize:36,marginBottom:12}}>📁</div>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:8}}>Your portfolio is empty</div>
-            <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a quality score assessment.</div>
+            <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>{lang==="es"?<>Agrega tu primera posición usando el formulario.<br/>Luego toca <strong style={{color:T.gold}}>Actualizar Precios</strong> para datos en vivo y <strong style={{color:T.gold}}>Análisis IA</strong> para el score de calidad.</>:<>Add your first position using the form on the left.<br/>Then hit <strong style={{color:T.gold}}>Refresh Prices</strong> for live data and <strong style={{color:T.gold}}>AI Analysis</strong> for a quality score assessment.</>}</div>
           </Card>
           :<>
             {/* ── PREMIUM OVERLAY if >3 positions and not admin ── */}
@@ -4861,7 +4861,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div>
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{grouped.length} Stock{grouped.length!==1?"s":""} · {transactions.length} Transacci{transactions.length!==1?"ones":"ón"}</div>
-                  <div style={{fontSize:10,color:T.muted,marginTop:2}}>Multiple buys of the same stock are grouped with average cost basis</div>
+                  <div style={{fontSize:10,color:T.muted,marginTop:2}}>{lang==="es"?"Varias compras del mismo activo se agrupan con costo promedio":"Multiple buys of the same stock are grouped with average cost basis"}</div>
                 </div>
                 {grouped.length>0&&!prices[grouped[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ {lang==="es"?"Actualiza precios para ver datos en vivo":"Click Refresh Prices for live data"}</div>}
               </div>
