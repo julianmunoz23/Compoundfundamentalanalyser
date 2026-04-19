@@ -3727,8 +3727,8 @@ function TxnHistory({entries,avgCost,lang="es"}){
 }
 
 
-// ── PORTFOLIO VS S&P 500 ─────────────────────────────────────────────────────
-function PortfolioVsSP500({transactions,prices,lang="es"}){
+// ── PORTFOLIO GROWTH CHART ───────────────────────────────────────────────────
+function PortfolioGrowthChart({transactions,lang="es"}){
   const isEs=lang==="es";
   const [period,setPeriod]=useState("all");
   const [loading,setLoading]=useState(false);
@@ -3751,29 +3751,32 @@ function PortfolioVsSP500({transactions,prices,lang="es"}){
     const key=import.meta.env.VITE_FINNHUB_KEY;
     const {from,to}=getPeriodDates();
     try{
-      // Fetch SPY weekly candles
-      const spyRes=await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=SPY&resolution=W&from=${from}&to=${to}&token=${key}`);
-      const spyD=await spyRes.json();
-      if(!spyD.t||spyD.s!=="ok")throw new Error("No se obtuvieron datos del S&P 500");
-
-      // Fetch weekly candles for each ticker
+      // Fetch weekly candles for each ticker in portfolio
       const tickers=[...new Set(transactions.map(t=>t.ticker))];
       const stockCandles={};
+      let refTimestamps=null;
+
       for(const ticker of tickers){
         await new Promise(r=>setTimeout(r,220));
         try{
           const res=await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=W&from=${from}&to=${to}&token=${key}`);
           const d=await res.json();
-          if(d.s==="ok"&&d.t)stockCandles[ticker]={t:d.t,c:d.c};
+          if(d.s==="ok"&&d.t&&d.t.length>1){
+            stockCandles[ticker]={t:d.t,c:d.c};
+            if(!refTimestamps||d.t.length>refTimestamps.length)refTimestamps=d.t;
+          }
         }catch(e){}
       }
 
-      // Build normalized timeline
+      if(!refTimestamps||refTimestamps.length<2)throw new Error(isEs?"No se obtuvieron datos históricos suficientes":"Not enough historical data");
+
+      // Reconstruct portfolio value at each weekly timestamp
       const sortedTxns=[...transactions].sort((a,b)=>new Date(a.date)-new Date(b.date));
-      const timeline=spyD.t.map((ts,i)=>{
+
+      const timeline=refTimestamps.map((ts)=>{
         const date=new Date(ts*1000);
-        // Shares held at this timestamp
         const shares={};const avgCost={};
+
         for(const txn of sortedTxns){
           if(new Date(txn.date)>date)break;
           const tk=txn.ticker;
@@ -3781,13 +3784,16 @@ function PortfolioVsSP500({transactions,prices,lang="es"}){
           if(txn.type==="sell"){
             shares[tk]=Math.max(0,shares[tk]-txn.shares);
           } else {
-            const prev=shares[tk],prevC=avgCost[tk];
-            const newS=prev+(txn.shares);
+            const prev=shares[tk],prevC=avgCost[tk],newS=prev+txn.shares;
             avgCost[tk]=newS>0?(prevC*prev+txn.price*txn.shares)/newS:0;
             shares[tk]=newS;
           }
         }
-        // Portfolio value at this timestamp
+
+        // Total invested at this point
+        const totalInvested=Object.entries(shares).reduce((a,[tk,sh])=>a+sh*(avgCost[tk]||0),0);
+
+        // Portfolio market value at this timestamp
         let portVal=0;
         for(const [tk,sh] of Object.entries(shares)){
           if(sh<=0)continue;
@@ -3799,39 +3805,65 @@ function PortfolioVsSP500({transactions,prices,lang="es"}){
             portVal+=sh*(price||avgCost[tk]||0);
           }
         }
-        // Fallback: use cost basis if no data
-        if(portVal===0){
-          portVal=Object.entries(shares).reduce((a,[tk,sh])=>a+sh*(avgCost[tk]||0),0);
-        }
-        return{ts,date,portVal,spyPrice:spyD.c[i],label:date.toLocaleDateString(isEs?"es-CO":"en-US",{month:"short",year:"2-digit"})};
-      });
+        if(portVal===0)portVal=totalInvested;
 
-      const first=timeline[0];
-      if(!first||!first.portVal||!first.spyPrice)throw new Error("Datos insuficientes para el período seleccionado");
+        return{
+          ts,
+          label:date.toLocaleDateString(isEs?"es-CO":"en-US",{month:"short",year:"2-digit"}),
+          value:Math.round(portVal),
+          invested:Math.round(totalInvested),
+        };
+      }).filter(p=>p.invested>0); // only show from first purchase
 
-      const normalized=timeline.map(p=>({
-        label:p.label,
-        port:parseFloat(((p.portVal/first.portVal-1)*100).toFixed(2)),
-        spy:parseFloat(((p.spyPrice/first.spyPrice-1)*100).toFixed(2)),
-      }));
-      setData(normalized);
+      if(timeline.length<2)throw new Error(isEs?"Período demasiado corto para graficar":"Period too short to chart");
+
+      setData(timeline);
     }catch(e){setErr(isEs?"Error al cargar datos: "+e.message:"Error loading data: "+e.message);}
     setLoading(false);
   };
 
+  const first=data?.[0];
   const last=data?.[data.length-1];
-  const portRet=last?.port??null;
-  const spyRet=last?.spy??null;
-  const alpha=portRet!==null&&spyRet!==null?parseFloat((portRet-spyRet).toFixed(2)):null;
-  const fmt=v=>(v>=0?"+":"")+v.toFixed(1)+"%";
-  const rc=v=>v>=0?T.green:T.red;
+  const totalReturn=first&&last?((last.value-first.invested)/first.invested*100):null;
+  const totalGain=last&&first?last.value-first.invested:null;
+  const isPos=totalReturn!==null&&totalReturn>=0;
+  const lineColor=isPos?T.green:T.red;
 
-  return<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.border}`,padding:0,overflow:"hidden"}}>
+  const CustomTooltip=({active,payload,label})=>{
+    if(!active||!payload?.length)return null;
+    const p=payload[0]?.payload;
+    if(!p)return null;
+    const gain=p.value-p.invested;
+    const pct=p.invested>0?((gain/p.invested)*100):0;
+    return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",minWidth:160}}>
+      <div style={{fontSize:11,color:T.muted,marginBottom:6}}>{label}</div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,marginBottom:3}}>
+        <span style={{color:T.muted}}>{isEs?"Valor":"Value"}</span>
+        <span style={{color:T.gold,fontFamily:"'DM Mono',monospace",fontWeight:700}}>${p.value.toLocaleString("en-US")}</span>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,marginBottom:3}}>
+        <span style={{color:T.muted}}>{isEs?"Invertido":"Invested"}</span>
+        <span style={{color:T.muted,fontFamily:"'DM Mono',monospace"}}>${p.invested.toLocaleString("en-US")}</span>
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:16,fontSize:12,borderTop:`1px solid ${T.border}22`,paddingTop:4,marginTop:4}}>
+        <span style={{color:T.muted}}>P&G</span>
+        <span style={{color:gain>=0?T.green:T.red,fontFamily:"'DM Mono',monospace",fontWeight:700}}>
+          {gain>=0?"+":""}${Math.abs(gain).toLocaleString("en-US")} ({pct>=0?"+":""}{pct.toFixed(1)}%)
+        </span>
+      </div>
+    </div>;
+  };
+
+  return<Card s={{padding:0,overflow:"hidden",border:`1px solid ${T.border}`}}>
     {/* Header */}
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:`1px solid ${T.border}`,flexWrap:"wrap",gap:10}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",borderBottom:`1px solid ${T.border}`,flexWrap:"wrap",gap:10}}>
       <div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>{isEs?"📊 Mi Portafolio vs S&P 500":"📊 My Portfolio vs S&P 500"}</div>
-        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{isEs?"Retorno % normalizado desde inicio del período":"Normalized % return from period start"}</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold}}>
+          {isEs?"📈 Crecimiento del Portafolio":"📈 Portfolio Growth"}
+        </div>
+        <div style={{fontSize:10,color:T.muted,marginTop:2}}>
+          {isEs?"Valor de mercado semana a semana":"Market value week by week"}
+        </div>
       </div>
       <div style={{display:"flex",gap:4}}>
         {["ytd","6m","1y","all"].map(p=>(
@@ -3845,17 +3877,16 @@ function PortfolioVsSP500({transactions,prices,lang="es"}){
     </div>
 
     <div style={{padding:"16px 20px"}}>
-      {/* KPIs */}
+      {/* KPIs when data loaded */}
       {data&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
         {[
-          {l:isEs?"Mi portafolio":"My portfolio",v:portRet,c:rc(portRet),sub:isEs?"retorno del período":"period return"},
-          {l:"S&P 500 (SPY)",v:spyRet,c:rc(spyRet),sub:isEs?"mismo período":"same period"},
-          {l:isEs?"Alpha":"Alpha",v:alpha,c:rc(alpha),sub:alpha>=0?(isEs?"✓ Le ganaste al índice":"✓ Beat the index"):(isEs?"↓ Bajo el índice":"↓ Below index")},
-        ].map(({l,v,c,sub})=>(
+          {l:isEs?"Valor actual":"Current value",  v:`$${(last?.value||0).toLocaleString("en-US")}`,           c:T.gold},
+          {l:isEs?"Total invertido":"Total invested",v:`$${(last?.invested||0).toLocaleString("en-US")}`,       c:T.muted},
+          {l:isEs?"Retorno del período":"Period return",v:`${isPos?"+":""}${(totalReturn||0).toFixed(1)}%`,     c:lineColor},
+        ].map(({l,v,c})=>(
           <div key={l} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 12px"}}>
             <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{l}</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700}}>{fmt(v)}</div>
-            <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
           </div>
         ))}
       </div>}
@@ -3863,57 +3894,54 @@ function PortfolioVsSP500({transactions,prices,lang="es"}){
       {/* Load CTA */}
       {!data&&!loading&&<div style={{textAlign:"center",padding:"24px 0"}}>
         <button className="btn btn-gold" onClick={load} style={{fontSize:13,padding:"11px 28px",borderRadius:10}}>
-          📊 {isEs?"Cargar comparación vs S&P 500":"Load comparison vs S&P 500"}
+          📈 {isEs?"Ver crecimiento del portafolio":"View portfolio growth"}
         </button>
-        <div style={{fontSize:11,color:T.muted,marginTop:8}}>{isEs?"Obtiene datos históricos reales · Finnhub":"Fetches real historical data · Finnhub"}</div>
+        <div style={{fontSize:11,color:T.muted,marginTop:8}}>
+          {isEs?"Datos históricos reales · Finnhub":"Real historical data · Finnhub"}
+        </div>
       </div>}
 
       {loading&&<div style={{textAlign:"center",padding:"24px 0",fontSize:12,color:T.gold}}>
-        <span className="sp">⟳</span> {isEs?" Cargando datos históricos de Finnhub...":" Loading historical data from Finnhub..."}
+        <span className="sp">⟳</span>{isEs?" Cargando datos históricos...":" Loading historical data..."}
       </div>}
 
-      {err&&<div style={{padding:"10px 14px",background:`${T.red}15`,border:`1px solid ${T.red}33`,borderRadius:8,fontSize:12,color:T.red}}>{err}</div>}
+      {err&&<div style={{padding:"10px 14px",background:`${T.red}15`,border:`1px solid ${T.red}33`,borderRadius:8,fontSize:12,color:T.red,lineHeight:1.6}}>{err}</div>}
 
       {/* Chart */}
-      {data&&<>
-        <div style={{display:"flex",gap:16,marginBottom:10}}>
-          {[
-            {color:T.gold,dash:false,label:isEs?"Mi portafolio":"My portfolio"},
-            {color:T.blue,dash:true,label:"S&P 500"},
-          ].map(({color,dash,label})=>(
-            <div key={label} style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:T.muted}}>
-              <div style={{width:12,height:2,background:dash?"transparent":color,borderTop:dash?`2px dashed ${color}`:"none",flexShrink:0,marginTop:dash?1:0}}/>
-              {!dash&&<div style={{width:10,height:3,background:color,borderRadius:1,flexShrink:0}}/>}
-              {label}
-            </div>
-          ))}
+      {data&&<div style={{height:220}}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{top:5,right:5,left:8,bottom:0}}>
+            <defs>
+              <linearGradient id="gGrowth" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={lineColor} stopOpacity={0.2}/>
+                <stop offset="95%" stopColor={lineColor} stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="gInvested" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={T.blue} stopOpacity={0.08}/>
+                <stop offset="95%" stopColor={T.blue} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
+            <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval="preserveStartEnd"/>
+            <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>v>=1000?`$${(v/1000).toFixed(0)}K`:`$${v}`} width={56}/>
+            <Tooltip content={<CustomTooltip/>}/>
+            <Area type="monotone" dataKey="invested" stroke={T.blue} strokeWidth={1} strokeDasharray="4 3" fill="url(#gInvested)" name="invested"/>
+            <Area type="monotone" dataKey="value" stroke={lineColor} strokeWidth={2.5} fill="url(#gGrowth)" name="value"/>
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>}
+
+      {/* Legend */}
+      {data&&<div style={{display:"flex",gap:16,marginTop:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.muted}}>
+          <div style={{width:10,height:3,background:lineColor,borderRadius:1}}/>
+          {isEs?"Valor de mercado":"Market value"}
         </div>
-        <div style={{height:240}}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{top:5,right:5,left:8,bottom:0}}>
-              <defs>
-                <linearGradient id="gPortSP" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={T.gold} stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor={T.gold} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
-              <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval="preserveStartEnd"/>
-              <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>`${v>=0?"+":""}${v}%`} width={52}/>
-              <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}}
-                formatter={(v,n)=>[`${v>=0?"+":""}${v.toFixed(1)}%`,n==="port"?(isEs?"Mi portafolio":"My portfolio"):"S&P 500"]}/>
-              <ReferenceLine y={0} stroke={T.border} strokeDasharray="4 4"/>
-              <Area type="monotone" dataKey="spy" stroke={T.blue} strokeWidth={1.5} strokeDasharray="5 4" fill="transparent" name="spy"/>
-              <Area type="monotone" dataKey="port" stroke={T.gold} strokeWidth={2.5} fill="url(#gPortSP)" name="port"/>
-            </AreaChart>
-          </ResponsiveContainer>
+        <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:T.muted}}>
+          <div style={{width:10,height:0,borderTop:`1.5px dashed ${T.blue}`}}/>
+          {isEs?"Capital invertido":"Invested capital"}
         </div>
-        <div style={{marginTop:12,padding:"10px 14px",background:alpha>=0?`${T.green}10`:`${T.red}10`,border:`1px solid ${alpha>=0?T.green:T.red}33`,borderRadius:10,fontSize:11,color:T.muted,lineHeight:1.6}}>
-          {alpha>=0
-            ?<>{isEs?"✓ Tu portafolio supera al S&P 500 por ":"✓ Your portfolio beats S&P 500 by "}<span style={{color:T.green,fontWeight:600}}>{fmt(alpha)}</span>{isEs?" en este período.":" in this period."}</>
-            :<>{isEs?"↓ Tu portafolio está ":"↓ Your portfolio is "}<span style={{color:T.red,fontWeight:600}}>{Math.abs(alpha).toFixed(1)} pp</span>{isEs?" por debajo del S&P 500 en este período.":" below S&P 500 in this period."}</>}
-        </div>
-      </>}
+      </div>}
     </div>
   </Card>;
 }
@@ -4632,7 +4660,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
     {/* ── PORTFOLIO VS S&P 500 ── */}
     {grouped.length>0&&transactions.length>0&&(
-      <PortfolioVsSP500 transactions={transactions} prices={prices} lang={lang}/>
+      <PortfolioGrowthChart transactions={transactions} lang={lang}/>
     )}
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
