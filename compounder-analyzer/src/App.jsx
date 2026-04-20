@@ -3728,7 +3728,7 @@ function TxnHistory({entries,avgCost,lang="es"}){
 
 
 // ── BROKER IMPORT WIZARD ─────────────────────────────────────────────────────
-const BROKERS = [
+const BROKER_LIST = [
   {id:"trii",  flag:"🇨🇴", name:"Trii",   hasCsv:false},
   {id:"hapi",  flag:"🇲🇽", name:"HAPI",   hasCsv:false},
   {id:"xtb",   flag:"🌎",  name:"XTB",    hasCsv:true},
@@ -3828,7 +3828,7 @@ Return ONLY the JSON array.`}
       {isEs?"¿Desde dónde quieres importar?":"Where do you want to import from?"}
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-      {BROKERS.map(b=>(
+      {BROKER_LIST.map(b=>(
         <button key={b.id} onClick={()=>{setBroker(b.id);setImportMode(b.hasCsv?"csv":"manual");}}
           style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"11px 12px",
             cursor:"pointer",display:"flex",alignItems:"center",gap:8,textAlign:"left"}}>
@@ -3987,7 +3987,7 @@ Return ONLY the JSON array.`}
 
   // ── XTB / IBKR / Other — CSV flow ─────────────────────────────────────
   const steps=broker==="xtb"?XTB_STEPS:broker==="ibkr"?IBKR_STEPS:null;
-  const bLabel=BROKERS.find(b=>b.id===broker);
+  const bLabel=BROKER_LIST.find(b=>b.id===broker);
 
   return<>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
@@ -5033,11 +5033,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
       {/* Add Position Form */}
       <Card s={{}} id="add-position-card">
-        <div style={{f        <BrokerImportWizard lang={lang} importMode={importMode} setImportMode={setImportMode} importErr={importErr} setImportErr={setImportErr} previewData={previewData} setPreviewData={setPreviewData} parseCSV={parseCSV} parsePaste={parsePaste} confirmImport={confirmImport} pasteText={pasteText} setPasteText={setPasteText} transactions={transactions} setTransactions={setTransactions} saveTxns={saveTxns}/>
-        {importErr&&<div style={{padding:"8px 12px",borderRadius:8,fontSize:12,marginBottom:12,
-          background:importErr.startsWith("✅")?`${T.green}15`:`${T.red}15`,
-          color:importErr.startsWith("✅")?T.green:T.red,
-          border:`1px solid ${importErr.startsWith("✅")?T.green:T.red}33`}}>{importErr}</div>}
+        <BrokerImportWizard lang={lang} importMode={importMode} setImportMode={setImportMode} importErr={importErr} setImportErr={setImportErr} previewData={previewData} setPreviewData={setPreviewData} parseCSV={parseCSV} parsePaste={parsePaste} confirmImport={confirmImport} pasteText={pasteText} setPasteText={setPasteText} transactions={transactions} setTransactions={setTransactions} saveTxns={saveTxns}/>
 
         {/* MANUAL */}
         {importMode==="manual"&&<>
