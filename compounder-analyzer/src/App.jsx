@@ -528,6 +528,119 @@ async function callFinnhub(ticker){
 
 
 // ── TICKER RESOLVER ───────────────────────────────────────────────────────────
+
+// ── LATAM MARKETS — Yahoo Finance ticker maps ────────────────────────────────
+// Each exchange uses a suffix that Yahoo Finance recognizes
+const LATAM_MARKETS = {
+  // 🇨🇴 Colombia BVC
+  CL: {
+    suffix:".CL", currency:"COP",
+    tickers:{
+      "ECOPETROL":"ECOPETROL","PFBCOLOM":"PFBCOLOM","TERPEL":"TERPEL",
+      "ISA":"ISA","GRUPOSURA":"GRUPOSURA","NUTRESA":"NUTRESA",
+      "CEMARGOS":"CEMARGOS","CELSIA":"CELSIA","GEB":"GEB",
+      "PROMIGAS":"PROMIGAS","ETB":"ETB","BVC":"BVC",
+      "CORFICOLCF":"CORFICOLCF","MINEROS":"MINEROS","EEB":"EEB",
+      "PFDAVVNDA":"PFDAVVNDA","BOGOTA":"BOGOTA","OCCIDENTE":"OCCIDENTE",
+      "PFAVH":"PFAVH","COLINV":"COLINV","CNEC":"CNEC",
+    }
+  },
+  // 🇧🇷 Brasil BOVESPA
+  SA: {
+    suffix:".SA", currency:"BRL",
+    tickers:{
+      "PETR4":"PETR4","PETR3":"PETR3","VALE3":"VALE3","ITUB4":"ITUB4",
+      "BBDC4":"BBDC4","ABEV3":"ABEV3","B3SA3":"B3SA3","WEGE3":"WEGE3",
+      "RENT3":"RENT3","SUZB3":"SUZB3","BBAS3":"BBAS3","MGLU3":"MGLU3",
+      "LREN3":"LREN3","JBSS3":"JBSS3","RADL3":"RADL3","ELET3":"ELET3",
+      "CSAN3":"CSAN3","EMBR3":"EMBR3","TOTVS3":"TOTVS3","HAPV3":"HAPV3",
+    }
+  },
+  // 🇨🇱 Chile Santiago
+  SN: {
+    suffix:".SN", currency:"CLP",
+    tickers:{
+      "FALABELLA":"FALABELLA","CENCOSUD":"CENCOSUD","COPEC":"COPEC",
+      "SQMB":"SQM-B","CHILE":"CHILE","BCI":"BCI","SECURITY":"SECURITY",
+      "CAP":"CAP","LTM":"LTM","ENELAM":"ENELAM","COLBUN":"COLBUN",
+      "CMPC":"CMPC","IAM":"IAM","PARAUCO":"PARAUCO","SONDA":"SONDA",
+    }
+  },
+  // 🇦🇷 Argentina BYMA
+  BA: {
+    suffix:".BA", currency:"ARS",
+    tickers:{
+      "YPF":"YPF","GGAL":"GGAL","BMA":"BMA","PAMP":"PAMP",
+      "TGSU2":"TGSU2","ALUA":"ALUA","CEPU":"CEPU","TXAR":"TXAR",
+      "VIST":"VIST","CRES":"CRES","METR":"METR","SUPV":"SUPV",
+    }
+  },
+  // 🇲🇽 México BMV
+  MX: {
+    suffix:".MX", currency:"MXN",
+    tickers:{
+      "WALMEX":"WALMEX","FEMSA":"FEMSAUBD","GFNORTE":"GFNORTEO",
+      "AMXL":"AMXL","GMEXICO":"GMEXICOB","CHDRAUI":"CHDRAUI",
+      "ALSEA":"ALSEA","BIMBOA":"BIMBOA","LALAB":"LALAB","TLEVISACPO":"TLEVISACPO",
+    }
+  },
+  // 🇵🇪 Perú BVL
+  LM: {
+    suffix:".LM", currency:"PEN",
+    tickers:{
+      "ALICORC1":"ALICORC1","BACKUSI1":"BACKUSI1","BVN":"BVN",
+      "CPACASC1":"CPACASC1","GRAMONC1":"GRAMONC1","IFIC1":"IFIC1",
+    }
+  },
+};
+
+// Flat reverse map: ticker → {yahoo_symbol, currency, market}
+const LATAM_TICKER_MAP = {};
+for(const [marketCode, market] of Object.entries(LATAM_MARKETS)){
+  for(const [shortTicker, yahooBase] of Object.entries(market.tickers)){
+    LATAM_TICKER_MAP[shortTicker] = {
+      symbol: yahooBase + market.suffix,
+      currency: market.currency,
+      market: marketCode,
+    };
+  }
+}
+
+function getLatamSymbol(ticker){
+  const t = ticker.toUpperCase().replace(/[.](CL|SA|SN|BA|MX|LM)$/i, "");
+  // Direct match in our map
+  if(LATAM_TICKER_MAP[t]) return LATAM_TICKER_MAP[t];
+  // Already has a LATAM suffix
+  const suffixMatch = ticker.toUpperCase().match(/[.](CL|SA|SN|BA|MX|LM)$/i);
+  if(suffixMatch){
+    const market = LATAM_MARKETS[suffixMatch[1].toUpperCase()];
+    if(market) return { symbol: ticker.toUpperCase(), currency: market.currency, market: suffixMatch[1].toUpperCase() };
+  }
+  return null;
+}
+
+// Keep backward compat alias
+function getBVCSymbol(ticker){ const r=getLatamSymbol(ticker); return r&&r.market==="CL"?r.symbol:null; }
+
+async function fetchBVCPrice(ticker){
+  const latam = getLatamSymbol(ticker);
+  if(!latam) return null;
+  try{
+    const url = "https://query1.finance.yahoo.com/v8/finance/chart/" + latam.symbol + "?interval=1d&range=1d";
+    const res = await fetch(url, {headers:{"Accept":"application/json"}});
+    const data = await res.json();
+    const result = data?.chart?.result?.[0];
+    if(!result) return null;
+    const meta = result.meta;
+    const price = meta?.regularMarketPrice || meta?.previousClose;
+    const change = meta?.regularMarketChange || 0;
+    const changePct = meta?.regularMarketChangePercent || 0;
+    const currency = meta?.currency || latam.currency;
+    if(!price) return null;
+    return { price, change, changePct, currency, isBVC: true, market: latam.market };
+  } catch(e){ return null; }
+}
+
 const KNOWN_TICKERS={
   "GOOGLE":"GOOGL","ALPHABET":"GOOGL","GOOGL":"GOOGL",
   "APPLE":"AAPL","MICROSOFT":"MSFT","AMAZON":"AMZN",
@@ -538,6 +651,21 @@ const KNOWN_TICKERS={
   "COSTCO":"COST","WALMART":"WMT","TARGET":"TGT",
   "JOHNSON":"JNJ","PFIZER":"PFE","UNITEDHEALTH":"UNH",
   "ECOPETROL":"EC","BANCOLOMBIA":"CIB","GRUPO AVAL":"AVAL","TECNOGLASS":"TGLS",
+  // 🇨🇴 Colombia BVC
+  "TERPEL":"TERPEL","CELSIA":"CELSIA","ISA":"ISA","GEB":"GEB",
+  "PROMIGAS":"PROMIGAS","CEMARGOS":"CEMARGOS","GRUPOSURA":"GRUPOSURA",
+  "NUTRESA":"NUTRESA","ETB":"ETB","MINEROS":"MINEROS",
+  "PFBCOLOM":"PFBCOLOM","PFDAVVNDA":"PFDAVVNDA","CORFICOLCF":"CORFICOLCF",
+  // 🇧🇷 Brasil BOVESPA
+  "PETROBRAS":"PETR4","ITAU":"ITUB4","VALE":"VALE3","BRADESCO":"BBDC4",
+  "AMBEV":"ABEV3","EMBRAER":"EMBR3","TOTVS":"TOTVS3","WEG":"WEGE3",
+  // 🇨🇱 Chile Santiago
+  "FALABELLA":"FALABELLA","CENCOSUD":"CENCOSUD","COPEC":"COPEC","SQM":"SQMB",
+  "LATAM":"LTM","COLBUN":"COLBUN","CMPC":"CMPC","CAP":"CAP",
+  // 🇦🇷 Argentina BYMA
+  "YPF ARGENTINA":"VIST","GALICIA":"GGAL","PAMPA":"PAMP","ALUAR":"ALUA",
+  // 🇲🇽 México BMV — many already have US tickers (FEMSA, WALMEX)
+  "WALMEX":"WALMEX","BIMBO":"BIMBOA","ALSEA":"ALSEA",
   "CEMEX":"CX","FEMSA":"FMX","PETROBRAS":"PBR","VALE":"VALE","ITAU":"ITUB",
   "MERCADOLIBRE":"MELI","NUBANK":"NU","GLOBANT":"GLOB","DESPEGAR":"DESP",
   "INTEL":"INTC","AMD":"AMD","ARM":"ARM","QUALCOMM":"QCOM","BROADCOM":"AVGO",
@@ -4652,7 +4780,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   const [positions,setPositions]=useState([]); // legacy — kept for CSV/paste compat
   const [transactions,setTransactions]=useState([]);
   const [sellTarget,setSellTarget]=useState(null);
-  const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:""});
+  const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD"});
   const [prices,setPrices]=useState({});
   const [loadingPrices,setLoadingPrices]=useState(false);
   const [aiAnalysis,setAiAnalysis]=useState(null);
@@ -4897,10 +5025,12 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     if(isNew&&activeTickers.size>=FREE_POSITION_LIMIT&&!isAdmin()){
       setShowPortfolioPaywall(true);return;
     }
-    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:parseFloat(form.buyPrice),date:form.date||new Date().toISOString().split("T")[0]};
+    const rawPrice=parseFloat(form.buyPrice);
+    const priceInUSD=form.priceCurrency==="USD"?rawPrice:(rawPrice/(_exRate||1));
+    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:priceInUSD,priceOriginal:rawPrice,priceCurrency:form.priceCurrency||"USD",date:form.date||new Date().toISOString().split("T")[0]};
     const updated=[...transactions,newTxn];
     setTransactions(updated);saveTxns(updated);
-    setForm({ticker:"",shares:"",buyPrice:"",date:""});setErr("");
+    setForm({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD"});setErr("");
   };
 
   const removePosition=(tickerToRemove)=>{
@@ -4923,10 +5053,14 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     const tickers=[...new Set(transactions.map(t=>t.ticker))];
     for(const ticker of tickers){
       try{
-        await new Promise(r=>setTimeout(r,250)); // 250ms between calls
-        const res=await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${key}`);
+        // Try BVC (Colombian stocks) first
+        const bvcResult=await fetchBVCPrice(ticker);
+        if(bvcResult){results[ticker]=bvcResult;continue;}
+        // Fallback: Finnhub for US/international stocks
+        await new Promise(r=>setTimeout(r,250));
+        const res=await fetch("https://finnhub.io/api/v1/quote?symbol="+ticker+"&token="+key);
         const d=await res.json();
-        if(d.c)results[ticker]={price:d.c,change:d.d,changePct:d.dp,high:d.h,low:d.l};
+        if(d.c)results[ticker]={price:d.c,change:d.d,changePct:d.dp,high:d.h,low:d.l,currency:"USD",isBVC:false};
       }catch(e){}
     }
     setPrices(results);setLoadingPrices(false);
@@ -5273,6 +5407,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               const raw=e.target.value.toUpperCase();
               const resolved=KNOWN_TICKERS[raw]||raw;
               setF("ticker",resolved);
+              // Auto-switch currency for LATAM stocks
+              const latamInfo=getLatamSymbol(resolved);
+              if(latamInfo){setF("priceCurrency",latamInfo.currency);}
+              else if(resolved.length>=1){setF("priceCurrency","USD");}
             }}
             placeholder={lang==="es"?"Ej: ADBE, AAPL, MSFT, EC...":"e.g. ADBE, AAPL, MSFT, EC..."}
             onKeyDown={e=>e.key==="Enter"&&addPosition()}
@@ -5286,8 +5424,25 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               <input type="number" value={form.shares} onChange={e=>setF("shares",e.target.value)} placeholder="10" min={0} step={0.001}/>
             </div>
             <div>
-              <Lbl>Buy Price ($)</Lbl>
-              <input type="number" value={form.buyPrice} onChange={e=>setF("buyPrice",e.target.value)} placeholder="150.00" min={0} step={0.01}/>
+              <Lbl>{lang==="es"?"Precio de compra":"Buy Price"} ({form.priceCurrency})</Lbl>
+              <div style={{display:"flex",gap:6}}>
+                <input type="number" value={form.buyPrice} onChange={e=>setF("buyPrice",e.target.value)}
+                  placeholder={form.priceCurrency==="COP"?"18000":"150.00"} min={0}
+                  step={form.priceCurrency==="COP"?10:0.01} style={{flex:1}}/>
+                <select value={form.priceCurrency} onChange={e=>setF("priceCurrency",e.target.value)}
+                  style={{width:70,padding:"6px 4px",fontSize:11,fontWeight:600}}>
+                  <option value="USD">USD 🇺🇸</option>
+                  <option value="COP">COP 🇨🇴</option>
+                  <option value="BRL">BRL 🇧🇷</option>
+                  <option value="CLP">CLP 🇨🇱</option>
+                  <option value="ARS">ARS 🇦🇷</option>
+                  <option value="MXN">MXN 🇲🇽</option>
+                  <option value="PEN">PEN 🇵🇪</option>
+                </select>
+              </div>
+              {form.priceCurrency!=="USD"&&parseFloat(form.buyPrice)>0&&_exRate>1&&<div style={{fontSize:10,color:T.muted,marginTop:3}}>
+                {"≈ $"+(parseFloat(form.buyPrice)/_exRate).toFixed(2)+" USD"}
+              </div>}
             </div>
           </div>
           <Lbl>Date Purchased (optional)</Lbl>
