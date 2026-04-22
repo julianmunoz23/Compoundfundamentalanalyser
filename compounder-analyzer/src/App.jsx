@@ -626,19 +626,21 @@ async function fetchBVCPrice(ticker){
   const latam = getLatamSymbol(ticker);
   if(!latam) return null;
   try{
-    const url = "https://query1.finance.yahoo.com/v8/finance/chart/" + latam.symbol + "?interval=1d&range=1d";
-    const res = await fetch(url, {headers:{"Accept":"application/json"}});
+    // Call our own Vercel serverless proxy — avoids CORS issues with Yahoo Finance
+    const url = "/api/latam-price?symbol=" + encodeURIComponent(latam.symbol);
+    const res = await fetch(url);
+    if(!res.ok) return null;
     const data = await res.json();
-    const result = data?.chart?.result?.[0];
-    if(!result) return null;
-    const meta = result.meta;
-    const price = meta?.regularMarketPrice || meta?.previousClose;
-    const change = meta?.regularMarketChange || 0;
-    const changePct = meta?.regularMarketChangePercent || 0;
-    const currency = meta?.currency || latam.currency;
-    if(!price) return null;
-    return { price, change, changePct, currency, isBVC: true, market: latam.market };
-  } catch(e){ return null; }
+    if(!data.price) return null;
+    return{
+      price: parseFloat(data.price),
+      change: parseFloat(data.change)||0,
+      changePct: parseFloat(data.changePct)||0,
+      currency: data.currency||latam.currency,
+      isBVC: true,
+      market: latam.market,
+    };
+  }catch(e){ return null; }
 }
 
 const KNOWN_TICKERS={
@@ -4972,6 +4974,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     const bName={ibkr:"Interactive Brokers",xtb:"XTB",trii:"Trii",hapi:"HAPI"}[previewData.broker]||"genérico";
     setImportErr(`✅ ${previewData.parsed.length} posiciones importadas${previewData.broker!=="generic"?` desde ${bName}`:""}${previewData.skipped>0?` · ${previewData.skipped} ventas omitidas`:""}.`);
     setPreviewData(null);setImportMode("manual");
+    setTimeout(()=>fetchPrices(),500); // fetch prices for newly imported tickers
   };
 
   // Load saved positions — cloud first, localStorage fallback
@@ -5031,6 +5034,8 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     const updated=[...transactions,newTxn];
     setTransactions(updated);saveTxns(updated);
     setForm({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD"});setErr("");
+    // Fetch price for the new ticker immediately
+    setTimeout(()=>fetchPrices(),300);
   };
 
   const removePosition=(tickerToRemove)=>{
@@ -5072,6 +5077,17 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       fetchPrices();
     }
   },[transactions.length]);
+
+  // Fetch prices for any new tickers not yet in prices state
+  useEffect(()=>{
+    if(!transactions.length)return;
+    const knownTickers=Object.keys(prices);
+    const allTickers=[...new Set(transactions.map(t=>t.ticker))];
+    const missing=allTickers.filter(t=>!knownTickers.includes(t));
+    if(missing.length>0){
+      fetchPrices(); // refresh all to get the new ones
+    }
+  },[transactions]);
 
   useEffect(()=>{
     if(!transactions.length)return;
@@ -5151,11 +5167,16 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
   // ── PIE CHART data ──
   const PIE_COLORS=["#c9a84c","#2ecc71","#4a9eff","#a855f7","#e74c3c","#f39c12","#1abc9c","#e67e22","#3498db","#9b59b6","#e91e63","#00bcd4"];
+  // pieData: use currentValue (live price) if available, fallback to cost basis
+  // isFallback=true means we're using cost data, not live prices
   const pieData=totalValue>0?enriched.map((p,i)=>{
-    const val=p.currentValue||p.totalCostBasis;
+    const hasLivePrice=p.currentValue!=null;
+    const val=hasLivePrice?p.currentValue:p.totalCostBasis;
     const pct=totalValue>0?(val/totalValue*100):0;
-    return{ticker:p.ticker,value:val,pct,color:PIE_COLORS[i%PIE_COLORS.length]};
+    return{ticker:p.ticker,value:val,pct,color:PIE_COLORS[i%PIE_COLORS.length],hasLivePrice};
   }).filter(d=>d.pct>0).sort((a,b)=>b.value-a.value):[];
+  const allPricesLoaded=enriched.length>0&&enriched.every(p=>p.currentValue!=null);
+  const somePricesLoaded=enriched.some(p=>p.currentValue!=null);
 
 
 
@@ -5621,7 +5642,9 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                   <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>{grouped.length} Stock{grouped.length!==1?"s":""} · {transactions.length} Transacci{transactions.length!==1?"ones":"ón"}</div>
                   <div style={{fontSize:10,color:T.muted,marginTop:2}}>{lang==="es"?"Varias compras del mismo activo se agrupan con costo promedio":"Multiple buys of the same stock are grouped with average cost basis"}</div>
                 </div>
-                {grouped.length>0&&!prices[grouped[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>⚡ {lang==="es"?"Actualiza precios para ver datos en vivo":"Click Refresh Prices for live data"}</div>}
+                {grouped.length>0&&!prices[grouped[0]?.ticker]&&<div style={{fontSize:11,color:T.muted}}>
+⚡ {lang==="es"?"Actualizando precios...":"Updating prices..."}
+</div>}
               </div>
               <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
