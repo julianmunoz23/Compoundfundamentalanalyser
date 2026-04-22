@@ -3378,6 +3378,15 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 // ── REBALANCE + DCA COMPONENT ────────────────────────────────────────────────
+// DCA tier logic — position sizing by cash amount
+function getDCATier(cashAmt){
+  if(cashAmt<100)  return{maxPos:1,minPos:40, label:"micro", warn:true,  warnKey:"comisiones se comerían el retorno con más de 1-2 posiciones"};
+  if(cashAmt<300)  return{maxPos:2,minPos:60, label:"small", warn:true,  warnKey:"con este monto, 2 posiciones es lo óptimo"};
+  if(cashAmt<1000) return{maxPos:4,minPos:80, label:"medium",warn:false, warnKey:null};
+  if(cashAmt<3000) return{maxPos:6,minPos:150,label:"large", warn:false, warnKey:null};
+  return              {maxPos:8,minPos:200,label:"xl",    warn:false, warnKey:null};
+}
+
 function RebalanceDCA({positions,totalValue,savedProfile,callAI,lang="en"}){
   const [cash,setCash]=useState("");
   const [loadingReb,setLoadingReb]=useState(false);
@@ -3422,6 +3431,7 @@ Suggest a rebalancing plan. Respond ONLY with valid JSON, no markdown:
     }
     setLoadingDCA(true);setErr("");setDca(null);
     const cashAmt=parseFloat(cash);
+    const tier=getDCATier(cashAmt);
     const dcaSummary=positions.map(p=>{
       const w=totalValue>0?((p.currentValue||p.totalCostBasis)/totalValue*100).toFixed(1):0;
       const pnlStr=p.pnlPct!=null?`P&L: ${p.pnlPct>=0?"+":""}${p.pnlPct.toFixed(1)}%`:"P&L: unknown";
@@ -3438,12 +3448,25 @@ ${dcaSummary}
 Total portfolio value: $${Math.round(totalValue).toLocaleString()}
 Cash to deploy: $${cashAmt.toLocaleString()}
 
+POSITION SIZING RULES FOR THIS CASH AMOUNT ($${cashAmt}):
+- Maximum positions to suggest: ${tier.maxPos} (larger amounts allow more diversification; at this amount, spreading thinner destroys returns via commissions)
+- Minimum per position: $${tier.minPos} (broker commissions in LATAM are ~$2-10/trade; below this minimum the commission cost % is too high)
+- Do NOT suggest more than ${tier.maxPos} positions total, including existing and new
+- ${tier.maxPos<=2?"Focus on the 1-2 highest conviction opportunities only":"Diversify across available positions respecting the minimum per-position amount"}
+
 STRATEGY RULES:
 - Positions DOWN > 10% (negative P&L): Consider averaging down IF the business is fundamentally strong
 - Positions UP > 30%: Add only if still undervalued; otherwise wait for pullback
 - Positions FLAT (-10% to +10%): Good opportunity to add if high conviction
-- May suggest 1 NEW position if portfolio lacks diversification
-- Minimum allocation: $${Math.max(50,Math.round(cashAmt*0.05)).toLocaleString()} per position
+- ${tier.maxPos>=3?"YOU MUST suggest 1-2 NEW positions if the portfolio has fewer than 8 positions OR lacks sector diversification":"Only suggest NEW positions if cash allows — do not force diversification at the expense of position size"}
+
+QUALITY STOCKS UNIVERSE (use these for new position suggestions — pick based on profile & gaps):
+US TECH/GROWTH: NVDA, MSFT, AAPL, GOOGL, META, AMZN, ADBE, CRM, ASML, TSM
+US VALUE/DIVIDEND: BRK.B, JPM, JNJ, PG, KO, V, MA, UNH, HD, MCD
+US SMALL/MID: DECK, CELH, CROX, ONON, ELF, VIST, TRGP
+LATAM: EC (Ecopetrol), PFBCOLOM (Bancolombia pref), ISA, GRUPOSURA, NUTEC, WALMEX, FEMSA
+ETFs: SPY, QQQ, VTI, SCHD, VWO, ILF (Latin America)
+SECTOR GAPS TO FILL: If no healthcare → JNJ or UNH. If no financials → JPM or V. If no energy → EC or XOM. If no consumer → PG or MCD
 
 Respond ONLY with valid JSON, no markdown:
 {"allocations":[{"ticker":"<ticker>","amount":<dollars>,"pct":<% of cash>,"reason":"<specific: mention P&L, avg cost, and DCA rationale>","isNew":<bool>,"action":"<Average Down|Add to Winner|New Position|Maintain Weight>"}],"summary":"<2-3 sentences: overall strategy and key rationale>","topPick":"<ticker + 1 sentence why it is the best DCA opportunity right now>","totalDeployed":<number>}`);
@@ -3517,8 +3540,30 @@ Respond ONLY with valid JSON, no markdown:
             <input type="number" value={cash} onChange={e=>setCash(e.target.value)} placeholder="500" min={0} step={100}
               style={{border:"none",background:"none",color:T.text,fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,outline:"none",width:"100%"}}/>
           </div>
-          <span style={{fontSize:11,color:T.muted,alignSelf:"center",whiteSpace:"nowrap"}}>available</span>
+          <span style={{fontSize:11,color:T.muted,alignSelf:"center",whiteSpace:"nowrap"}}>{lang==="es"?"disponible":"available"}</span>
         </div>
+        {/* Tier indicator — shows dynamically as user types */}
+        {cash&&parseFloat(cash)>0&&(()=>{
+          const t=getDCATier(parseFloat(cash));
+          const isEs=lang==="es";
+          return<div style={{
+            marginBottom:12,padding:"8px 12px",borderRadius:8,fontSize:11,lineHeight:1.6,
+            background:t.warn?`${T.gold}10`:`${T.green}10`,
+            border:`1px solid ${t.warn?T.goldDim+"44":T.green+"33"}`,
+            color:t.warn?T.gold:T.green,
+          }}>
+            <div style={{fontWeight:600,marginBottom:2}}>
+              {t.warn?"⚠️":"✓"} {t.maxPos} {isEs?`posición${t.maxPos>1?"es":""} máx`:`position${t.maxPos>1?"s":""} max`}
+              {" · "}${t.minPos} {isEs?"mín por posición":"min per position"}
+            </div>
+            {t.warn&&<div style={{fontSize:10,color:T.muted,marginTop:2}}>
+              {isEs?t.warnKey:"Commissions would eat into returns with more positions at this amount"}
+            </div>}
+            {!t.warn&&<div style={{fontSize:10,color:T.muted,marginTop:2}}>
+              {isEs?"Monto óptimo para diversificar correctamente":"Good amount for proper diversification"}
+            </div>}
+          </div>;
+        })()}
         <button className="btn btn-gold" onClick={runDCA} disabled={loadingDCA||!cash} style={{width:"100%",padding:"11px 0",fontSize:13,borderRadius:9,background:T.green,color:"#0e0e1a"}}>
           {loadingDCA
             ?<><span className="sp">⟳</span> {lang==="es"?"Planificando...":"Planning..."}</>
@@ -4806,6 +4851,19 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     setPrices(results);setLoadingPrices(false);
   };
 
+  // Auto-refresh prices on mount and every 5 minutes
+  useEffect(()=>{
+    if(transactions.length>0&&Object.keys(prices).length===0){
+      fetchPrices();
+    }
+  },[transactions.length]);
+
+  useEffect(()=>{
+    if(!transactions.length)return;
+    const interval=setInterval(()=>fetchPrices(),5*60*1000);
+    return()=>clearInterval(interval);
+  },[transactions.length]);
+
   // AI portfolio analysis — premium only
   const analyzePortfolio=async()=>{
     if(!grouped.length){setErr("Add at least one position first.");return;}
@@ -4929,10 +4987,18 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         </div>
       </div>}
       <div style={{display:"flex",gap:10}}>
-        <button className="btn" onClick={fetchPrices} disabled={loadingPrices||!transactions.length}
-          style={{background:`${T.blue}18`,border:`1.5px solid ${T.blue}66`,color:T.blue,borderRadius:10,padding:"10px 18px",fontSize:13,fontWeight:600,cursor:"pointer",display:"flex",alignItems:"center",gap:6}} style={{fontSize:12,padding:"8px 16px"}}>
-          {loadingPrices?<><span className="sp">⟳</span> Actualizando...</>:<>{lang==="es"?"🔄 Actualizar Precios":"🔄 Refresh Prices"}</>}
-        </button>
+        {loadingPrices
+          ?<div style={{fontSize:11,color:T.blue,display:"flex",alignItems:"center",gap:5,padding:"0 4px"}}>
+              <span className="sp">⟳</span>{lang==="es"?" Actualizando...":" Updating..."}
+            </div>
+          :<button onClick={fetchPrices} disabled={!transactions.length}
+              style={{background:"none",border:`1px solid ${T.border}`,color:T.muted,fontSize:11,
+                cursor:"pointer",display:"flex",alignItems:"center",gap:4,padding:"6px 10px",
+                borderRadius:8,transition:"all 0.15s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=T.blue;e.currentTarget.style.color=T.blue;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.muted;}}>
+              🔄 {lang==="es"?"Actualizar":"Refresh"}
+            </button>}
         <button className="btn btn-gold" onClick={handleAIAnalysis} disabled={loadingAI||!grouped.length} style={{fontSize:13,padding:"10px 20px",fontWeight:600,borderRadius:10,letterSpacing:"0.02em",background:"linear-gradient(135deg,#7c3aed,#6d28d9)",border:"none",color:"#fff",boxShadow:"0 0 0 0px"}}>
           {loadingAI?<><span className="sp">⟳</span> Analizando...</>:<>{lang==="es"?"🤖 Análisis IA":"🤖 AI Analysis"}</>}
         </button>
