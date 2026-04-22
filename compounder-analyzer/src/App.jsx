@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component{
   render(){
     if(this.state.err)return(
       <div style={{minHeight:"100vh",background:"#0e0e1a",display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
-        <div style={{background:"#141820",border:"1px solid #e74c3c44",borderRadius:16,padding:32,maxWidth:500,textAlign:"center"}}>
+        <div style={{background:T.surface,border:"1px solid #e74c3c44",borderRadius:16,padding:32,maxWidth:500,textAlign:"center"}}>
           <div style={{fontSize:36,marginBottom:12}}>⚠️</div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:"#c9a84c",marginBottom:10}}>Something went wrong</div>
           <div style={{fontSize:13,color:"#6b7694",marginBottom:20,lineHeight:1.7}}>{this.state.err.message}</div>
@@ -59,10 +59,13 @@ class ErrorBoundary extends React.Component{
 
 
 const T = {
-  bg:"#0e0e1a",surface:"#13132a",card:"#15152e",border:"#252548",
+  bg:"#1c1b2e",surface:"#242338",card:"#242338",border:"#35345a",
   gold:"#a78bfa",goldLight:"#c4b5fd",goldDim:"#5b4d8a",
-  green:"#34d399",red:"#f87171",blue:"#60a5fa",purple:"#7c3aed",
-  text:"#f0eeff",muted:"#8888aa",accent:"#1a1535",
+  green:"#4ade80",red:"#f87171",blue:"#60a5fa",purple:"#6d3fdc",
+  text:"#f0eeff",muted:"#8585a8",accent:"#1e1d31",
+  heroCard:"linear-gradient(135deg,#2e1f6b 0%,#1e1545 100%)",
+  heroCardBorder:"#5b3fd455",
+  greenCard:"#0d2a1a",greenCardBorder:"#166534",
 };
 
 const css=`
@@ -5046,31 +5049,74 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     </div>}
 
 
-    {/* KPI Cards */}
-    {grouped.length>0&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-      {[
-        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(totalCost),c:T.blue,icon:"💵",sub:lang==="es"?"posiciones abiertas":"open positions"},
-        {l:lang==="es"?"Valor Actual":"Current Value",v:fmt(totalValue),c:T.gold,icon:"📊",sub:lang==="es"?"precio de mercado":"market price"},
-        {l:lang==="es"?"P&G No Realizado":"Unrealized P&L",v:`${totalUnrealizedPnL>=0?"+":""}${fmt(Math.abs(totalUnrealizedPnL))}`,c:totalUnrealizedPnL>=0?T.green:T.red,icon:"📈",sub:`${totalUnrealizedPnL>=0?"+":""}${totalCost>0?((totalUnrealizedPnL/totalCost)*100).toFixed(2):"0.00"}%`},
-      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
-        <Lbl>{l}</Lbl>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
-        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
-      </Card>)}
-    </div>}
-    {(grouped.length>0||totalRealizedPnL!==0)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
-      {[
-        {l:lang==="es"?"P&G Realizado":"Realized P&L",v:`${totalRealizedPnL>=0?"+":""}${fmt(Math.abs(totalRealizedPnL))}`,c:totalRealizedPnL>0?T.green:totalRealizedPnL<0?T.red:T.muted,icon:"💰",sub:lang==="es"?"de ventas cerradas":"from closed trades"},
-        {l:lang==="es"?"P&G Total":"Total P&L",v:`${totalPnL>=0?"+":""}${fmt(Math.abs(totalPnL))}`,c:totalPnL>=0?T.green:T.red,icon:"🏆",sub:lang==="es"?"realizado + no realizado":"realized + unrealized"},
-        {l:lang==="es"?"Retorno Total":"Total Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct.toFixed(2)}%`,c:totalPnLPct>=0?T.green:T.red,icon:"🎯",sub:lang==="es"?"sobre capital invertido":"on invested capital"},
-      ].map(({l,v,c,icon,sub})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
-        <Lbl>{l}</Lbl>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700,wordBreak:"break-all"}}>{v}</div>
-        <div style={{fontSize:10,color:T.muted,marginTop:3}}>{sub}</div>
-      </Card>)}
-    </div>}
+    {/* KPI Cards — redesigned with visual hierarchy */}
+    {grouped.length>0&&<>
+      {/* Row 1: hero + secondary */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+        {/* HERO — Valor Actual */}
+        <Card s={{background:T.heroCard||"linear-gradient(135deg,#2e1f6b,#1e1545)",border:`1px solid ${T.heroCardBorder||"#5b3fd455"}`,padding:"18px 20px"}}>
+          <div style={{fontSize:10,color:"rgba(167,139,250,0.7)",textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:8}}>
+            {lang==="es"?"Valor actual":"Current value"}
+          </div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.gold,fontWeight:700,letterSpacing:"-0.5px",wordBreak:"break-all"}}>
+            {fmt(totalValue)}
+          </div>
+          <div style={{fontSize:11,color:"rgba(167,139,250,0.6)",marginTop:5}}>{lang==="es"?"precio de mercado":"market price"}</div>
+        </Card>
+        {/* Total Invertido */}
+        <Card s={{padding:"18px 20px"}}>
+          <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:8}}>{lang==="es"?"Total invertido":"Total invested"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:T.text,fontWeight:700,letterSpacing:"-0.5px",wordBreak:"break-all"}}>{fmt(totalCost)}</div>
+          <div style={{fontSize:11,color:T.muted,marginTop:5}}>{lang==="es"?"capital base":"capital base"}</div>
+        </Card>
+        {/* Retorno Total */}
+        <Card s={{background:totalPnLPct>=0?"#0d2a1a":"#2a0d0d",border:`1px solid ${totalPnLPct>=0?"#16653488":"#65161688"}`,padding:"18px 20px"}}>
+          <div style={{fontSize:10,color:totalPnLPct>=0?"rgba(74,222,128,0.7)":"rgba(248,113,113,0.7)",textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:8}}>{lang==="es"?"Retorno total":"Total return"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:24,color:totalPnLPct>=0?T.green:T.red,fontWeight:700,letterSpacing:"-0.5px"}}>
+            {totalPnLPct>=0?"+":""}{totalPnLPct.toFixed(2)}%
+          </div>
+          <div style={{fontSize:11,color:totalPnLPct>=0?"rgba(74,222,128,0.6)":"rgba(248,113,113,0.6)",marginTop:5}}>
+            {totalPnL>=0?"+":""}{fmt(Math.abs(totalPnL))}
+          </div>
+        </Card>
+      </div>
+      {/* Row 2: secondary KPIs */}
+      {(totalValue>0||totalRealizedPnL!==0)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+        <Card s={{padding:"14px 18px"}}>
+          <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:6}}>{lang==="es"?"P&G No Realizado":"Unrealized P&G"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:totalUnrealizedPnL>=0?T.green:T.red,fontWeight:700,wordBreak:"break-all"}}>
+            {totalUnrealizedPnL>=0?"+":""}{fmt(Math.abs(totalUnrealizedPnL))}
+          </div>
+          <div style={{fontSize:11,color:T.muted,marginTop:3}}>{totalCost>0?`${totalUnrealizedPnL>=0?"+":""}${((totalUnrealizedPnL/totalCost)*100).toFixed(2)}%`:""}</div>
+        </Card>
+        <Card s={{padding:"14px 18px"}}>
+          <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:6}}>{lang==="es"?"P&G Realizado":"Realized P&G"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:totalRealizedPnL>0?T.green:totalRealizedPnL<0?T.red:T.muted,fontWeight:700,wordBreak:"break-all"}}>
+            {totalRealizedPnL>=0?"+":""}{fmt(Math.abs(totalRealizedPnL))}
+          </div>
+          <div style={{fontSize:11,color:T.muted,marginTop:3}}>{lang==="es"?"ventas cerradas":"from closed trades"}</div>
+        </Card>
+        {/* Best position */}
+        {(()=>{
+          const best=enriched.filter(p=>p.pnlPct!=null).sort((a,b)=>b.pnlPct-a.pnlPct)[0];
+          const worst=enriched.filter(p=>p.pnlPct!=null).sort((a,b)=>a.pnlPct-b.pnlPct)[0];
+          const show=best&&best.pnlPct>0?best:worst;
+          const isGood=show&&show.pnlPct>=0;
+          return show?<Card s={{background:isGood?"#0d2a1a":"#2a0d0d",border:`1px solid ${isGood?"#16653444":"#65161644"}`,padding:"14px 18px"}}>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:6}}>
+              {isGood?(lang==="es"?"Mejor posición":"Top position"):(lang==="es"?"Mayor pérdida":"Biggest loss")}
+            </div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:isGood?T.green:T.red,fontWeight:700}}>
+              {show.ticker} {show.pnlPct>=0?"+":""}{show.pnlPct.toFixed(1)}%
+            </div>
+            <div style={{fontSize:11,color:T.muted,marginTop:3}}>{fmt(show.currentValue||show.totalCostBasis)}</div>
+          </Card>:<Card s={{padding:"14px 18px"}}>
+            <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.09em",marginBottom:6}}>{lang==="es"?"P&G Total":"Total P&G"}</div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:totalPnL>=0?T.green:T.red,fontWeight:700}}>{totalPnL>=0?"+":""}{fmt(Math.abs(totalPnL),true)}</div>
+          </Card>;
+        })()}
+      </div>}
+    </>}
 
 
 
@@ -5078,6 +5124,37 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {grouped.length>0&&transactions.length>0&&(
       <PortfolioGrowthChart transactions={transactions} prices={prices} lang={lang} fmt={fmt} fmtShort={fmtShort}/>
     )}
+
+    {/* ── AI ANALYSIS BANNER ── */}
+    {grouped.length>0&&!isAdmin()&&<div style={{
+      background:"linear-gradient(135deg,#2a1a5e,#1e1545)",
+      border:"1.5px solid #6d3fdc88",
+      borderRadius:16,
+      padding:"20px 22px",
+      display:"flex",
+      alignItems:"flex-start",
+      gap:16,
+      flexWrap:"wrap",
+    }}>
+      <div style={{width:44,height:44,background:"#6d3fdc22",border:"1px solid #6d3fdc55",borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🤖</div>
+      <div style={{flex:1,minWidth:200}}>
+        <div style={{fontSize:15,fontWeight:600,color:T.text,marginBottom:5}}>
+          {lang==="es"?"¿Tu portafolio está bien armado? La IA lo revisa en 30 segundos.":"Is your portfolio well-built? AI reviews it in 30 seconds."}
+        </div>
+        <div style={{fontSize:12,color:T.muted,lineHeight:1.65,marginBottom:10}}>
+          {lang==="es"?"Detecta concentración de riesgo, te dice qué posiciones cambiar y si el portafolio está alineado con tu perfil.":"Detects risk concentration, tells you what to change and if it matches your profile."}
+        </div>
+        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+          {(lang==="es"?["Score A–F por acción","¿Qué vender hoy?","Alertas de concentración","Match con tu perfil","Plan de rebalanceo"]:["Score A–F per stock","What to sell today","Concentration alerts","Profile match","Rebalance plan"]).map(f=>(
+            <span key={f} style={{fontSize:10,padding:"3px 9px",borderRadius:12,border:"1px solid #6d3fdc55",color:T.gold,background:"#6d3fdc15",fontWeight:500}}>{f}</span>
+          ))}
+        </div>
+      </div>
+      <button onClick={handleAIAnalysis} disabled={loadingAI||!grouped.length}
+        style={{alignSelf:"center",background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",color:"#fff",border:"none",borderRadius:10,padding:"12px 22px",fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+        {loadingAI?<><span className="sp">⟳</span> {lang==="es"?" Analizando...":" Analyzing..."}</>:`${lang==="es"?"Ver análisis completo":"View full analysis"} →`}
+      </button>
+    </div>}
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
     {grouped.length>0&&(
