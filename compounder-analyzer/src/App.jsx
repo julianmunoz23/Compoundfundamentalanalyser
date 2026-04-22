@@ -4846,40 +4846,56 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
           const isXTB = wb.SheetNames.includes("Cash Operations");
 
           if(isXTB){
-            // Parse XTB Cash Operations sheet directly
+            // Parse XTB Cash Operations — calculate NET positions (buys - sells)
             const ws = wb.Sheets["Cash Operations"];
             const rows = window.XLSX.utils.sheet_to_json(ws, {header:1});
-            const parsed=[];
             const today=new Date().toISOString().split("T")[0];
+
+            // Step 1: accumulate buys and sells per ticker
+            const buyMap={};   // ticker → [{shares, price, date}]
+            const sellMap={};  // ticker → total shares sold
 
             for(let i=1;i<rows.length;i++){
               const row=rows[i];
-              const type=(row[0]||"").toString();
-              if(type!=="Stock purchase")continue; // skip sells
-
-              const rawTicker=(row[1]||"").toString().replace(/\.(US|UK|FR|DE|SE|NL|IT|ES|JP|HK|AU|CA)$/i,"");
-              const ticker=KNOWN_TICKERS[rawTicker.toUpperCase()]||rawTicker.toUpperCase();
+              const type=(row[0]||"").toString().trim();
+              const rawTicker=(row[1]||"").toString().replace(/\.(US|UK|FR|DE|SE|NL|IT|ES|JP|HK|AU|CA)$/i,"").toUpperCase();
+              const ticker=KNOWN_TICKERS[rawTicker]||rawTicker;
               const comment=(row[6]||"").toString();
-              // Extract shares and price from comment: "OPEN BUY 0.2549 @ 392.29"
               const m=comment.match(/(\d+\.?\d*)(?:\/[\d.]+)?\s*@\s*([\d.]+)/);
-              if(!m)continue;
+              if(!m||!ticker)continue;
               const shares=parseFloat(m[1]);
               const price=parseFloat(m[2]);
-              // Parse date
+              if(isNaN(shares)||isNaN(price)||shares<=0)continue;
               let date=today;
-              if(row[3]){
-                const d=new Date(row[3]);
-                if(!isNaN(d))date=d.toISOString().split("T")[0];
+              if(row[3]){const d=new Date(row[3]);if(!isNaN(d))date=d.toISOString().split("T")[0];}
+
+              if(type==="Stock purchase"){
+                if(!buyMap[ticker])buyMap[ticker]=[];
+                buyMap[ticker].push({shares,price,date});
+              } else if(type==="Stock sell"){
+                sellMap[ticker]=(sellMap[ticker]||0)+shares;
               }
-              if(!ticker||isNaN(shares)||isNaN(price)||shares<=0||price<=0)continue;
-              parsed.push({id:Date.now()+Math.random(),ticker,shares,price,date});
+            }
+
+            // Step 2: only include tickers with net shares > 0
+            const parsed=[];
+            let skippedClosed=0;
+            for(const [ticker, buys] of Object.entries(buyMap)){
+              const totalBought=buys.reduce((a,b)=>a+b.shares,0);
+              const totalSold=sellMap[ticker]||0;
+              const netShares=parseFloat((totalBought-totalSold).toFixed(6));
+              if(netShares<=0.0001){skippedClosed++;continue;} // fully closed position
+              // Use weighted avg price of remaining shares
+              const avgPrice=buys.reduce((a,b)=>a+b.price*b.shares,0)/totalBought;
+              const lastDate=buys[buys.length-1].date;
+              parsed.push({id:Date.now()+Math.random(),ticker,shares:parseFloat(netShares.toFixed(6)),price:parseFloat(avgPrice.toFixed(4)),date:lastDate});
             }
 
             if(!parsed.length){
-              setImportErr(lang==="es"?"No se encontraron compras en el archivo XTB. Asegúrate de usar el archivo con hoja 'Cash Operations'.":"No purchases found in XTB file.");
+              setImportErr(lang==="es"?"No se encontraron posiciones abiertas en el archivo XTB.":"No open positions found in XTB file.");
               return;
             }
-            setPreviewData({parsed,skipped:0,broker:"xtb"});
+            setPreviewData({parsed,skipped:skippedClosed,broker:"xtb"});
             return;
           }
 
