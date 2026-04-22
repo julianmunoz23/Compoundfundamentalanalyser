@@ -3987,17 +3987,17 @@ Return ONLY the JSON array.`}
 
   // ── XTB/IBKR steps ──────────────────────────────────────────────────────
   const XTB_STEPS = isEs?[
-    "Abre xStation 5 (web o app)",
-    "Clic en \"Historial de la cuenta\" (parte superior)",
-    "Clic en \"Exportar\" → selecciona rango de fechas \"Todo\"",
-    "Tipo: \"Informe completo\" · Formato: Excel o CSV",
-    "Sube el archivo descargado aquí ↓",
+    "Abre xStation 5 → pestaña \"Historial de la cuenta\"",
+    "Clic en \"Exportar\" (arriba a la derecha)",
+    "Selecciona rango: \"Todo\" · Formato: Excel (.xlsx)",
+    "Descarga el archivo y súbelo aquí ↓",
+    "✅ Detectamos automáticamente tus compras — las ventas se ignoran",
   ]:[
-    "Open xStation 5 (web or app)",
-    "Click \"Account history\" (top bar)",
-    "Click \"Export\" → select date range \"All\"",
-    "Type: \"Full report\" · Format: Excel or CSV",
-    "Upload the downloaded file here ↓",
+    "Open xStation 5 → \"Account history\" tab",
+    "Click \"Export\" (top right)",
+    "Range: \"All\" · Format: Excel (.xlsx)",
+    "Download the file and upload it here ↓",
+    "✅ We auto-detect your purchases — sells are ignored",
   ];
   const IBKR_STEPS = isEs?[
     "Entra a Client Portal → Reportes",
@@ -4832,10 +4832,81 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   // Parse CSV file upload
   const parseCSV=(e)=>{
     const file=e.target.files[0];if(!file)return;
+    const isXlsx=file.name.match(/\.xlsx?$/i);
+    setImportErr("");setPreviewData(null);
+
+    // For Excel files — detect XTB format and parse specially
+    if(isXlsx){
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        try{
+          const wb=window.XLSX.read(ev.target.result,{type:"array"});
+
+          // XTB detection: has "Cash Operations" sheet
+          const isXTB = wb.SheetNames.includes("Cash Operations");
+
+          if(isXTB){
+            // Parse XTB Cash Operations sheet directly
+            const ws = wb.Sheets["Cash Operations"];
+            const rows = window.XLSX.utils.sheet_to_json(ws, {header:1});
+            const parsed=[];
+            const today=new Date().toISOString().split("T")[0];
+
+            for(let i=1;i<rows.length;i++){
+              const row=rows[i];
+              const type=(row[0]||"").toString();
+              if(type!=="Stock purchase")continue; // skip sells
+
+              const rawTicker=(row[1]||"").toString().replace(/\.(US|UK|FR|DE|SE|NL|IT|ES|JP|HK|AU|CA)$/i,"");
+              const ticker=KNOWN_TICKERS[rawTicker.toUpperCase()]||rawTicker.toUpperCase();
+              const comment=(row[6]||"").toString();
+              // Extract shares and price from comment: "OPEN BUY 0.2549 @ 392.29"
+              const m=comment.match(/(\d+\.?\d*)(?:\/[\d.]+)?\s*@\s*([\d.]+)/);
+              if(!m)continue;
+              const shares=parseFloat(m[1]);
+              const price=parseFloat(m[2]);
+              // Parse date
+              let date=today;
+              if(row[3]){
+                const d=new Date(row[3]);
+                if(!isNaN(d))date=d.toISOString().split("T")[0];
+              }
+              if(!ticker||isNaN(shares)||isNaN(price)||shares<=0||price<=0)continue;
+              parsed.push({id:Date.now()+Math.random(),ticker,shares,price,date});
+            }
+
+            if(!parsed.length){
+              setImportErr(lang==="es"?"No se encontraron compras en el archivo XTB. Asegúrate de usar el archivo con hoja 'Cash Operations'.":"No purchases found in XTB file.");
+              return;
+            }
+            setPreviewData({parsed,skipped:0,broker:"xtb"});
+            return;
+          }
+
+          // Generic Excel: convert first sheet to CSV
+          const ws=wb.Sheets[wb.SheetNames[0]];
+          const csvRaw=window.XLSX.utils.sheet_to_csv(ws);
+          processCSV(csvRaw);
+        }catch(err){
+          setImportErr(lang==="es"?"Error leyendo el archivo Excel: "+err.message:"Error reading Excel file: "+err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+      return;
+    }
+
     const reader=new FileReader();
     reader.onload=(ev)=>{
-      setImportErr("");setPreviewData(null);
       const raw=ev.target.result.trim();
+      processCSV(raw);
+    };
+    reader.readAsText(file);
+  };
+
+  // Extracted CSV processing logic
+  const processCSV=(rawInput)=>{
+    try{
+      const raw=rawInput.trim();
       const lines=raw.split(/\r?\n/).filter(l=>l.trim());
       if(lines.length<2){setImportErr(lang==="es"?"El archivo está vacío o solo tiene encabezados.":"File is empty or has only headers.");return;}
 
@@ -6565,6 +6636,11 @@ export default function App(){
   });
 
   // ── SUPABASE AUTH LISTENER ──
+    // Load SheetJS for Excel
+  useEffect(()=>{
+    if(!window.XLSX){const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";document.head.appendChild(s);}
+  },[]);
+
   useEffect(()=>{
     if(!supabase)return;
     // Get current session on mount
