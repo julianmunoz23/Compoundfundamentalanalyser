@@ -3481,7 +3481,12 @@ Respond ONLY with valid JSON, no markdown:
   const actionColor=a=>a==="Reduce"||a==="Exit"?T.red:a==="Increase"?T.green:T.gold;
 
   return<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.blue}33`}}>
-    <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.blue,marginBottom:6}}>{lang==="es"?"⚖️ Rebalanceo & Asesor DCA":"⚖️ Rebalance & DCA Advisor"}</div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.blue}}>{lang==="es"?"⚖️ Rebalanceo & Asesor DCA":"⚖️ Rebalance & DCA Advisor"}</div>
+      <span style={{fontSize:10,padding:"3px 9px",borderRadius:12,background:`${T.blue}15`,color:T.blue,border:`1px solid ${T.blue}33`,fontWeight:600}}>
+        {lang==="es"?"INCLUIDO":"INCLUDED"}
+      </span>
+    </div>
     <div style={{fontSize:12,color:T.muted,marginBottom:18,lineHeight:1.7}}>
       {lang==="es"?<>Obtén recomendaciones IA para rebalancear tu portafolio según tu perfil <strong style={{color:savedProfile?.color||T.gold}}>{profileLabel}</strong>, o distribuye efectivo nuevo mediante Dollar Cost Averaging.</>:<>Get AI recommendations to rebalance your portfolio to match your <strong style={{color:savedProfile?.color||T.gold}}>{profileLabel}</strong> profile, or distribute new cash strategically via Dollar Cost Averaging.</>}
     </div>
@@ -4125,6 +4130,79 @@ Return ONLY the JSON array.`}
       </button>
     </>}
   </>;
+}
+
+// ── STICKY AI CTA ────────────────────────────────────────────────────────────
+function StickyAIButton({onAnalyze, loading, hasPositions, lang}){
+  const [visible, setVisible] = useState(false);
+  const isEs = lang==="es";
+
+  useEffect(()=>{
+    const banner = document.getElementById("ai-analysis-section");
+    if(!banner) return;
+    const obs = new IntersectionObserver(
+      ([e]) => setVisible(!e.isIntersecting),
+      {threshold:0}
+    );
+    obs.observe(banner);
+    return () => obs.disconnect();
+  }, []);
+
+  if(!visible||!hasPositions) return null;
+
+  return(
+    <div style={{
+      position:"fixed",
+      bottom:24,
+      right:24,
+      zIndex:500,
+      display:"flex",
+      flexDirection:"column",
+      gap:8,
+      alignItems:"flex-end",
+    }}>
+      <button
+        onClick={()=>{
+          onAnalyze();
+          setTimeout(()=>document.getElementById("ai-analysis-section")?.scrollIntoView({behavior:"smooth"}),200);
+        }}
+        disabled={loading}
+        style={{
+          background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",
+          color:"#fff",
+          border:"none",
+          borderRadius:12,
+          padding:"13px 20px",
+          fontSize:13,
+          fontWeight:600,
+          cursor:"pointer",
+          boxShadow:"0 4px 20px rgba(109,63,220,0.5)",
+          display:"flex",
+          alignItems:"center",
+          gap:8,
+          whiteSpace:"nowrap",
+        }}>
+        {loading
+          ?<><span className="sp">⟳</span> {isEs?" Analizando...":" Analyzing..."}</>
+          :<>🤖 {isEs?"Análisis IA":"AI Analysis"} ↑</>}
+      </button>
+      <button
+        onClick={()=>document.getElementById("rebalance-dca-section")?.scrollIntoView({behavior:"smooth"})}
+        style={{
+          background:"#242338",
+          color:T.gold,
+          border:"1px solid #5b3fd466",
+          borderRadius:10,
+          padding:"9px 16px",
+          fontSize:11,
+          fontWeight:500,
+          cursor:"pointer",
+          whiteSpace:"nowrap",
+        }}>
+        ↓ {isEs?"DCA & Rebalanceo":"DCA & Rebalance"}
+      </button>
+    </div>
+  );
 }
 
 // ── PORTFOLIO GROWTH CHART ───────────────────────────────────────────────────
@@ -4954,6 +5032,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   };
 
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+    <StickyAIButton onAnalyze={handleAIAnalysis} loading={loadingAI} hasPositions={grouped.length>0} lang={lang}/>
     {/* Portfolio paywall modal */}
     {showPortfolioPaywall&&<PaywallModal context="portfolio" onClose={()=>setShowPortfolioPaywall(false)}/>}
     {sellTarget&&<SellModal position={sellTarget} lang={lang} onClose={()=>setSellTarget(null)} onSell={(d)=>{registerSell(sellTarget,d);setSellTarget(null);}}/>}
@@ -5150,13 +5229,21 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           ))}
         </div>
       </div>
-      <button onClick={handleAIAnalysis} disabled={loadingAI||!grouped.length}
-        style={{alignSelf:"center",background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",color:"#fff",border:"none",borderRadius:10,padding:"12px 22px",fontSize:13,fontWeight:600,cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-        {loadingAI?<><span className="sp">⟳</span> {lang==="es"?" Analizando...":" Analyzing..."}</>:`${lang==="es"?"Ver análisis completo":"View full analysis"} →`}
-      </button>
+      <div style={{display:"flex",flexDirection:"column",gap:8,alignSelf:"center",flexShrink:0}}>
+        <button onClick={()=>{handleAIAnalysis();setTimeout(()=>document.getElementById("ai-analysis-section")?.scrollIntoView({behavior:"smooth"}),200);}}
+          disabled={loadingAI||!grouped.length}
+          style={{background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",color:"#fff",border:"none",borderRadius:10,padding:"12px 22px",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>
+          {loadingAI?<><span className="sp">⟳</span> {lang==="es"?" Analizando...":" Analyzing..."}</>:`${lang==="es"?"Ver análisis completo":"View full analysis"} →`}
+        </button>
+        <button onClick={()=>document.getElementById("rebalance-dca-section")?.scrollIntoView({behavior:"smooth"})}
+          style={{background:"none",border:"1px solid #6d3fdc55",color:T.gold,borderRadius:10,padding:"8px 16px",fontSize:11,fontWeight:500,cursor:"pointer",whiteSpace:"nowrap",textAlign:"center"}}>
+          {lang==="es"?"↓ Ver DCA & Rebalanceo":"↓ See DCA & Rebalance"}
+        </button>
+      </div>
     </div>}
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
+    <div id="ai-analysis-section"/>
     {grouped.length>0&&(
       <PortfolioDashboard
         enriched={enriched}
@@ -5521,8 +5608,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           </div>
         </Card>}
 
-        {/* ── REBALANCE + DCA ── */}
-        {aiAnalysis&&<RebalanceDCA positions={enriched} totalValue={totalValue} savedProfile={savedProfile} callAI={callAI} lang={lang}/>}
+        {/* ── REBALANCE + DCA ── always visible ── */}
+        {grouped.length>0&&<div id="rebalance-dca-section"><RebalanceDCA positions={enriched} totalValue={totalValue} savedProfile={savedProfile} callAI={callAI} lang={lang}/></div>}
       </div>
     </div>
 
