@@ -635,11 +635,17 @@ async function fetchBVCPrice(ticker){
     if(!res.ok) return null;
     const data = await res.json();
     if(!data.price) return null;
+    const rawPrice = parseFloat(data.price);
+    const priceCurrency = data.currency||latam.currency;
+    // Convert to USD for internal P&G calculations
+    const currRate = priceCurrency==="USD"?1:(CURRENCIES[priceCurrency]?.rate||1);
+    const priceUSD = priceCurrency==="USD"?rawPrice:(rawPrice/currRate);
     return{
-      price: parseFloat(data.price),
+      price: priceUSD,          // stored in USD for P&G consistency
+      priceLocal: rawPrice,     // original local currency price
       change: parseFloat(data.change)||0,
       changePct: parseFloat(data.changePct)||0,
-      currency: data.currency||latam.currency,
+      currency: priceCurrency,
       isBVC: true,
       market: latam.market,
     };
@@ -5032,8 +5038,11 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       setShowPortfolioPaywall(true);return;
     }
     const rawPrice=parseFloat(form.buyPrice);
-    const priceInUSD=form.priceCurrency==="USD"?rawPrice:(rawPrice/(_exRate||1));
-    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:priceInUSD,priceOriginal:rawPrice,priceCurrency:form.priceCurrency||"USD",date:form.date||new Date().toISOString().split("T")[0]};
+    // Always convert to USD using the currency's own rate (not _exRate which reflects app display currency)
+    const txnCurrency=form.priceCurrency||"USD";
+    const txnRate=txnCurrency==="USD"?1:(CURRENCIES[txnCurrency]?.rate||1);
+    const priceInUSD=txnCurrency==="USD"?rawPrice:(rawPrice/txnRate);
+    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:priceInUSD,priceOriginal:rawPrice,priceCurrency:txnCurrency,date:form.date||new Date().toISOString().split("T")[0]};
     const updated=[...transactions,newTxn];
     setTransactions(updated);saveTxns(updated);
     setForm({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD"});setErr("");
@@ -5464,8 +5473,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                   <option value="PEN">PEN 🇵🇪</option>
                 </select>
               </div>
-              {form.priceCurrency!=="USD"&&parseFloat(form.buyPrice)>0&&_exRate>1&&<div style={{fontSize:10,color:T.muted,marginTop:3}}>
-                {"≈ $"+(parseFloat(form.buyPrice)/_exRate).toFixed(2)+" USD"}
+              {form.priceCurrency!=="USD"&&parseFloat(form.buyPrice)>0&&(CURRENCIES[form.priceCurrency]?.rate||0)>1&&<div style={{fontSize:10,color:T.muted,marginTop:3}}>
+                {"≈ $"+(parseFloat(form.buyPrice)/(CURRENCIES[form.priceCurrency]?.rate||1)).toFixed(2)+" USD"}
               </div>}
             </div>
           </div>
