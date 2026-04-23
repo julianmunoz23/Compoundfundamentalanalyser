@@ -4227,7 +4227,7 @@ Return ONLY the JSON array.`}
       <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <div style={{fontSize:12,color:T.green,fontWeight:600}}>
-            ✓ {previewData.parsed.length} {isEs?"posiciones listas":"positions ready"}
+            ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones abiertas":"open positions"}{previewData.hasSells?` + ${previewData.parsed.length-(previewData.previewRows||previewData.parsed).length} ${isEs?"ventas históricas":"historical sells"}`:""}
           </div>
           <div style={{fontSize:10,color:T.muted,marginTop:2}}>
             {previewData.skipped>0?`${previewData.skipped} ${isEs?"ventas omitidas":"sells skipped"}`:""}
@@ -4247,7 +4247,7 @@ Return ONLY the JSON array.`}
             ))}
           </tr></thead>
           <tbody>
-            {previewData.parsed.slice(0,8).map((p,i)=>(
+            {(previewData.previewRows||previewData.parsed).slice(0,8).map((p,i)=>(
               <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
                 <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
                 <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
@@ -4877,25 +4877,75 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
               }
             }
 
-            // Step 2: only include tickers with net shares > 0
-            const parsed=[];
+            // Step 2: build buy transactions for open positions + sell transactions for all sells
+            const parsed=[];       // buy txns (open positions only)
+            const parsedSells=[];  // sell txns (for P&G realizado)
             let skippedClosed=0;
+
+            // Add all sell transactions
+            for(const [ticker, sellData] of Object.entries(sellMap)){
+              // sellDataEntries — we need per-entry sells, not aggregated
+              // We'll use the sellEntries collected below
+            }
+
+            // Collect individual sell entries
+            const sellEntries=[];
+            for(let i=1;i<rows.length;i++){
+              const row=rows[i];
+              const type=(row[0]||"").toString().trim();
+              if(type!=="Stock sell")continue;
+              const rawTicker=(row[1]||"").toString().replace(/\.(US|UK|FR|DE|SE|NL|IT|ES|JP|HK|AU|CA)$/i,"").toUpperCase();
+              const ticker=KNOWN_TICKERS[rawTicker]||rawTicker;
+              const comment=(row[6]||"").toString();
+              const m=comment.match(/(\d+\.?\d*)(?:\/[\d.]+)?\s*@\s*([\d.]+)/);
+              if(!m||!ticker)continue;
+              const shares=parseFloat(m[1]);
+              const price=parseFloat(m[2]);
+              if(isNaN(shares)||isNaN(price)||shares<=0)continue;
+              let date=today;
+              if(row[3]){const d=new Date(row[3]);if(!isNaN(d))date=d.toISOString().split("T")[0];}
+              sellEntries.push({id:Date.now()+Math.random(),ticker,type:"sell",shares,price,date});
+            }
+
+            // Build open position buy txns
             for(const [ticker, buys] of Object.entries(buyMap)){
               const totalBought=buys.reduce((a,b)=>a+b.shares,0);
               const totalSold=sellMap[ticker]||0;
               const netShares=parseFloat((totalBought-totalSold).toFixed(6));
-              if(netShares<=0.0001){skippedClosed++;continue;} // fully closed position
-              // Use weighted avg price of remaining shares
-              const avgPrice=buys.reduce((a,b)=>a+b.price*b.shares,0)/totalBought;
-              const lastDate=buys[buys.length-1].date;
-              parsed.push({id:Date.now()+Math.random(),ticker,shares:parseFloat(netShares.toFixed(6)),price:parseFloat(avgPrice.toFixed(4)),date:lastDate});
+              if(netShares<=0.0001){skippedClosed++;} // fully closed — sells handle the P&G
+              // Always add individual buy txns (needed for P&G calc with sells)
+              for(const buy of buys){
+                parsed.push({id:Date.now()+Math.random(),ticker,shares:buy.shares,price:buy.price,date:buy.date});
+              }
             }
 
-            if(!parsed.length){
-              setImportErr(lang==="es"?"No se encontraron posiciones abiertas en el archivo XTB.":"No open positions found in XTB file.");
+            // Combine: all buys + all sells
+            const allTxns=[...parsed,...sellEntries].sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+            if(!allTxns.length){
+              setImportErr(lang==="es"?"No se encontraron transacciones en el archivo XTB.":"No transactions found in XTB file.");
               return;
             }
-            setPreviewData({parsed,skipped:skippedClosed,broker:"xtb"});
+
+            // Preview shows only open positions (net>0)
+            const openParsed=[];
+            const netMap={};
+            for(const txn of allTxns){
+              if(!netMap[txn.ticker])netMap[txn.ticker]={shares:0,price:0,date:txn.date};
+              if(txn.type==="sell"){netMap[txn.ticker].shares-=txn.shares;}
+              else{
+                const prev=netMap[txn.ticker];
+                const newShares=prev.shares+txn.shares;
+                prev.price=newShares>0?(prev.price*prev.shares+txn.price*txn.shares)/newShares:txn.price;
+                prev.shares=newShares;
+                prev.date=txn.date;
+              }
+            }
+            for(const [ticker,pos] of Object.entries(netMap)){
+              if(pos.shares>0.0001)openParsed.push({id:Date.now()+Math.random(),ticker,shares:parseFloat(pos.shares.toFixed(6)),price:parseFloat(pos.price.toFixed(4)),date:pos.date});
+            }
+
+            setPreviewData({parsed:allTxns,previewRows:openParsed,skipped:skippedClosed,broker:"xtb",hasSells:sellEntries.length>0});
             return;
           }
 
@@ -5066,7 +5116,16 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
 
   const confirmImport=()=>{
     if(!previewData)return;
-    const newTxns=previewData.parsed.map(p=>({id:p.id,ticker:p.ticker,type:"buy",shares:p.shares,price:p.price,date:p.date}));
+    // For XTB: previewData.parsed already has correct type (buy/sell)
+    // For other brokers: all entries are buys
+    const newTxns=previewData.parsed.map(p=>({
+      id:p.id,
+      ticker:p.ticker,
+      type:p.type||"buy",  // use existing type if present, default to buy
+      shares:p.shares,
+      price:p.price,
+      date:p.date
+    }));
     const updated=[...transactions,...newTxns];
     setTransactions(updated);saveTxns(updated);
     const bName={ibkr:"Interactive Brokers",xtb:"XTB",trii:"Trii",hapi:"HAPI"}[previewData.broker]||"genérico";
