@@ -532,6 +532,17 @@ async function callFinnhub(ticker){
 // ── LATAM MARKETS — Yahoo Finance ticker maps ────────────────────────────────
 // Each exchange uses a suffix that Yahoo Finance recognizes
 const LATAM_MARKETS = {
+  // 🇪🇺 European tickers (XTB strips suffix .FR .DE .UK etc)
+  "MC":"MC.PA",    // LVMH — Euronext Paris
+  "LVMH":"MC.PA",
+  "TTE":"TTE.PA",  // TotalEnergies
+  "AIR":"AIR.PA",  // Airbus
+  "SAF":"SAF.PA",  // Safran
+  "SAN":"SAN.MC",  // Santander
+  "ASML":"ASML",   // ASML (also on Nasdaq)
+  "4BRZ":"4BRZ.DE",// Brasil ETF Xetra
+  "IGLN":"IGLN.L", // Gold ETF London
+  "CJPU":"CJPU.L", // JPMorgan Ultra-Short London
   // 🇨🇴 Colombia BVC
   CL: {
     suffix:".CL", currency:"COP",
