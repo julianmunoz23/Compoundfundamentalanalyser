@@ -4023,14 +4023,18 @@ Return ONLY the JSON array.`};
         if(p.currentValue!=null && p.pnlPct!=null && shares>0){
           const costBasis = p.currentValue / (1 + (p.pnlPct||0)/100);
 
-          // Sanity check: detect "231.0 → 2310" share inflation (AI drops decimal)
-          // If implied current price per share < $2 but > $0.10, likely shares are 10x too many
-          // (applies to certificates like NUCO, BRKBCO that trade between $5-$500)
-          const impliedCurrentPrice = p.currentValue / shares;
-          if(impliedCurrentPrice > 0.10 && impliedCurrentPrice < 2.0 && shares >= 10){
-            const priceIfDiv10 = p.currentValue / (shares / 10);
-            if(priceIfDiv10 > 2.0 && priceIfDiv10 < 5000){
-              shares = shares / 10; // correct the 10x inflation
+          // Sanity check: detect "231.0 → 2310" ONLY for US-certificate tickers
+          // BVC native stocks (GEB, ECOPETROL) legitimately trade at <$2 USD
+          // US certificates (NUCO, BRKBCO, PFECO, NKECO) should trade >$5 USD
+          const US_CERTS=["NUCO","BRKBCO","PFECO","NKECO","AMZECO","MSFTCO","APPLECO","GOOGLCO","TSLAECO","PFAVAL"];
+          const isCert = US_CERTS.includes((p.ticker||"").toUpperCase());
+          if(isCert){
+            const impliedCurrentPrice = p.currentValue / shares;
+            if(impliedCurrentPrice > 0.10 && impliedCurrentPrice < 3.0 && shares >= 10){
+              const priceIfDiv10 = p.currentValue / (shares / 10);
+              if(priceIfDiv10 >= 3.0 && priceIfDiv10 < 5000){
+                shares = shares / 10;
+              }
             }
           }
 
