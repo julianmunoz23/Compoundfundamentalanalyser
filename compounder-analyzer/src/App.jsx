@@ -5001,6 +5001,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   const processCSV=(rawInput)=>{
     try{
       const raw=rawInput.trim();
+      const today=new Date().toISOString().split("T")[0];
       const lines=raw.split(/\r?\n/).filter(l=>l.trim());
       if(lines.length<2){setImportErr(lang==="es"?"El archivo está vacío o solo tiene encabezados.":"File is empty or has only headers.");return;}
 
@@ -5156,7 +5157,6 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       if(dateCol<0)dateCol=3;
 
       const parsed=[];
-      const today=new Date().toISOString().split("T")[0];
       let skipped=0;
 
       for(let i=1;i<lines.length;i++){
