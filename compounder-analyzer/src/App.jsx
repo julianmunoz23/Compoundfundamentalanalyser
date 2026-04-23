@@ -205,6 +205,7 @@ const CURRENCIES={
   CLP:{symbol:"$",  code:"CLP",name:"Peso Chileno",   flag:"🇨🇱",locale:"es-CL",rate:1},
   BRL:{symbol:"R$", code:"BRL",name:"Real Brasileño", flag:"🇧🇷",locale:"pt-BR",rate:1},
   EUR:{symbol:"€",  code:"EUR",name:"Euro",           flag:"🇪🇺",locale:"de-DE",rate:1},
+  GBP:{symbol:"£",  code:"GBP",name:"Libra Esterlina", flag:"🇬🇧",locale:"en-GB",rate:1},
 };
 
 // Global currency state — updated by App
@@ -216,7 +217,7 @@ function setCurrencyGlobal(curr,rate=1){_currency={..._currency,...curr};_exRate
 // Fetch live exchange rates from frankfurter.app (European Central Bank — free, no key)
 async function fetchExchangeRates(){
   try{
-    const res=await fetch("https://api.frankfurter.app/latest?from=USD&to=COP,MXN,ARS,PEN,CLP,BRL,EUR");
+    const res=await fetch("https://api.frankfurter.app/latest?from=USD&to=COP,MXN,ARS,PEN,CLP,BRL,EUR,GBP");
     const data=await res.json();
     if(data?.rates){
       Object.keys(CURRENCIES).forEach(code=>{
@@ -606,6 +607,31 @@ const LATAM_MARKETS = {
       "CPACASC1":"CPACASC1","GRAMONC1":"GRAMONC1","IFIC1":"IFIC1",
     }
   },
+  // 🇫🇷 Francia Euronext París
+  PA: {
+    suffix:".PA", currency:"EUR",
+    tickers:{
+      "MC":"MC","LVMH":"MC","AIR":"AIR","TTE":"TTE","SAF":"SAF",
+      "BNP":"BNP","SAN":"SAN","OR":"OR","KER":"KER","CAP":"CAP",
+      "HO":"HO","SU":"SU","DG":"DG","VIE":"VIE","SGO":"SGO",
+    }
+  },
+  // 🇩🇪 Alemania Xetra
+  DE: {
+    suffix:".DE", currency:"EUR",
+    tickers:{
+      "4BRZ":"4BRZ","SAP":"SAP","SIE":"SIE","ALV":"ALV","BMW":"BMW",
+      "DAI":"DAI","BAYN":"BAYN","DTE":"DTE","DBK":"DBK","ADS":"ADS",
+    }
+  },
+  // 🇬🇧 Reino Unido London
+  L: {
+    suffix:".L", currency:"GBP",
+    tickers:{
+      "IGLN":"IGLN","CJPU":"CJPU","SHEL":"SHEL","AZN":"AZN",
+      "HSBA":"HSBA","BP":"BP","RIO":"RIO","GSK":"GSK","ULVR":"ULVR",
+    }
+  },
 };
 
 // Flat reverse map: ticker → {yahoo_symbol, currency, market}
@@ -624,8 +650,8 @@ function getLatamSymbol(ticker){
   const t = ticker.toUpperCase().replace(/[.](CL|SA|SN|BA|MX|LM)$/i, "");
   // Direct match in our map
   if(LATAM_TICKER_MAP[t]) return LATAM_TICKER_MAP[t];
-  // Already has a LATAM suffix
-  const suffixMatch = ticker.toUpperCase().match(/[.](CL|SA|SN|BA|MX|LM)$/i);
+  // Already has a LATAM or European suffix
+  const suffixMatch = ticker.toUpperCase().match(/[.](CL|SA|SN|BA|MX|LM|PA|DE|L|MC|MI|AS|OL|ST)$/i);
   if(suffixMatch){
     const market = LATAM_MARKETS[suffixMatch[1].toUpperCase()];
     if(market) return { symbol: ticker.toUpperCase(), currency: market.currency, market: suffixMatch[1].toUpperCase() };
@@ -4869,7 +4895,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
             for(let i=1;i<rows.length;i++){
               const row=rows[i];
               const type=(row[0]||"").toString().trim();
-              const rawTicker=(row[1]||"").toString().replace(/\.(US|UK|FR|DE|SE|NL|IT|ES|JP|HK|AU|CA)$/i,"").toUpperCase();
+              const rawTicker=(row[1]||"").toString().replace(/\.(US)$/i,"").toUpperCase(); // only strip .US — keep others for mapping
               const ticker=KNOWN_TICKERS[rawTicker]||rawTicker;
               const comment=(row[6]||"").toString();
               const m=comment.match(/(\d+\.?\d*)(?:\/[\d.]+)?\s*@\s*([\d.]+)/);
