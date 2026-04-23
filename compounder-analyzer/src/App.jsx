@@ -4017,12 +4017,26 @@ Return ONLY the JSON array.`};
       if(!Array.isArray(parsed)||!parsed.length)throw new Error(isEs?"No se detectaron posiciones en la imagen":"No positions detected in image");
       // Calculate avgCost from currentValue + pnlPct (AI returns raw data, we do the math)
       const withCost = parsed.filter(p=>p.ticker&&p.shares>0).map(p=>{
-        let price = p.price; // fallback if AI gave price directly
-        if(p.currentValue!=null && p.pnlPct!=null && p.shares>0){
-          const costBasis = p.currentValue / (1 + p.pnlPct/100);
-          price = costBasis / p.shares; // correct per-share avg cost
+        let shares = p.shares;
+        let price = p.price;
+
+        if(p.currentValue!=null && p.pnlPct!=null && shares>0){
+          const costBasis = p.currentValue / (1 + (p.pnlPct||0)/100);
+
+          // Sanity check: detect "231.0 → 2310" share inflation (AI drops decimal)
+          // If implied current price per share < $2 but > $0.10, likely shares are 10x too many
+          // (applies to certificates like NUCO, BRKBCO that trade between $5-$500)
+          const impliedCurrentPrice = p.currentValue / shares;
+          if(impliedCurrentPrice > 0.10 && impliedCurrentPrice < 2.0 && shares >= 10){
+            const priceIfDiv10 = p.currentValue / (shares / 10);
+            if(priceIfDiv10 > 2.0 && priceIfDiv10 < 5000){
+              shares = shares / 10; // correct the 10x inflation
+            }
+          }
+
+          price = costBasis / shares;
         }
-        return{...p, price:parseFloat(price.toFixed(4)), id:Date.now()+Math.random()};
+        return{...p, shares:parseFloat(shares.toFixed(6)), price:parseFloat(price.toFixed(4)), id:Date.now()+Math.random()};
       }).filter(p=>p.price>0);
       if(!withCost.length)throw new Error(isEs?"No se pudieron extraer posiciones válidas":"Could not extract valid positions");
       setPreviewData({parsed:withCost,skipped:parsed.length-withCost.length,broker});
