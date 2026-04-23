@@ -4156,48 +4156,6 @@ Return ONLY the JSON array.`}
         {(()=>{setImportMode("manual");return null;})()}
       </>}
 
-      {/* Preview table — shared */}
-      {previewData&&<>
-        <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:12,color:T.green,fontWeight:600}}>
-              ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones abiertas":"open positions"}
-            </div>
-            <div style={{fontSize:10,color:T.muted,marginTop:2}}>
-              {isEs?"Revisa y confirma antes de importar":"Review and confirm before importing"}
-            </div>
-          </div>
-          <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>
-            {isEs?"Cambiar":"Change"}
-          </button>
-        </div>
-        <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:12,maxHeight:200,overflowY:"auto"}}>
-          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-            <thead><tr style={{background:T.surface}}>
-              {["Ticker","Acciones","Precio","Fecha"].map(h=>(
-                <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,
-                  textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,
-                  borderBottom:`1px solid ${T.border}`}}>{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {(previewData.previewRows||previewData.parsed).map((p,i)=>(
-                <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
-                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
-                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
-                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${p.price}</td>
-                  <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <button className="btn btn-gold" onClick={confirmImport}
-          style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
-          ✅ {isEs?`Confirmar — ${(previewData.previewRows||previewData.parsed).length} posiciones abiertas`:`Confirm — ${(previewData.previewRows||previewData.parsed).length} open positions`}
-        </button>
-      </>}
-
       {importErr&&<div style={{padding:"8px 12px",borderRadius:8,fontSize:12,marginTop:10,
         background:importErr.startsWith("✅")?`${T.green}15`:`${T.red}15`,
         color:importErr.startsWith("✅")?T.green:T.red,
