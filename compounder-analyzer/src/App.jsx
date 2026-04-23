@@ -3984,7 +3984,7 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
-            {type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI Mexico/Colombia":"broker app"}).
+            {type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI":"broker app"}).
 Return ONLY a valid JSON array, no markdown, no explanation:
 [{"ticker":"AAPL","shares":10.5,"price":150.50,"date":"2024-01-15"},...]
 
@@ -4070,7 +4070,7 @@ Return ONLY the JSON array.`}
 
   // ── Trii / HAPI flow ────────────────────────────────────────────────────
   if(broker==="trii"||broker==="hapi"){
-    const bName=broker==="trii"?"Trii 🇨🇴":"HAPI 🇲🇽";
+    const bName=broker==="trii"?"Trii 🇨🇴":"HAPI 🇨🇴🇲🇽";
     return<>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
         <button onClick={()=>{setBroker(null);setPreviewData(null);setAiErr("");}}
@@ -5030,6 +5030,81 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       let broker="generic";
 
       // Interactive Brokers
+      // ── IBKR native detection: section-based CSV format ──────────────────
+      // IBKR CSV has lines like "Open Positions,Data,Summary,..." or "Trades,Data,Order,..."
+      const isIBKR = raw.includes("Open Positions,Data,Summary") || raw.includes("Trades,Data,Order,Stocks");
+      if(isIBKR){
+        const ibkrLines = raw.split(/
+?
+/);
+        const ibkrTxns = [];
+        let ibkrSkipped = 0;
+
+        // Parse Open Positions for current holdings (most accurate avg cost)
+        const openPos = {}; // ticker → {shares, avgCost}
+        for(const line of ibkrLines){
+          if(!line.includes("Open Positions,Data,Summary,Stocks")) continue;
+          const clean = line.split(";")[0].trim();
+          const parts = clean.split(",");
+          try{
+            const ticker = parts[5]?.trim();
+            const shares = parseFloat(parts[7]);
+            const avgCost = parseFloat(parts[9]);
+            if(ticker && shares > 0 && avgCost > 0){
+              openPos[ticker] = {shares, avgCost};
+            }
+          }catch(e){}
+        }
+
+        // Parse Trades for individual buy/sell history
+        for(const line of ibkrLines){
+          if(!line.includes("Trades,Data,Order,Stocks")) continue;
+          try{
+            // Line format: "Trades,Data,Order,Stocks,USD,SYMBOL,""DATE, TIME"",QTY,PRICE,..."
+            let clean = line.split(";")[0].trim();
+            if(clean.startsWith('"')) clean = clean.slice(1);
+            if(clean.endsWith('"')) clean = clean.slice(0,-1);
+            // Replace ""DATE, TIME"" with just DATE
+            clean = clean.replace(/""\s*(\d{4}-\d{2}-\d{2})[^""]*""/g, "$1");
+            const parts = clean.split(",");
+            const ticker = parts[5]?.trim();
+            const date   = parts[6]?.trim().slice(0,10);
+            const qty    = parseFloat(parts[7]);
+            const price  = Math.abs(parseFloat(parts[8]));
+            if(!ticker || isNaN(qty) || isNaN(price) || price <= 0) continue;
+            const type = qty < 0 ? "sell" : "buy";
+            ibkrTxns.push({id:Date.now()+Math.random(), ticker, type, shares:Math.abs(qty), price, date:date||today});
+          }catch(e){}
+        }
+
+        // If no trade history, fall back to Open Positions snapshot
+        if(!ibkrTxns.length && Object.keys(openPos).length){
+          for(const [ticker, pos] of Object.entries(openPos)){
+            ibkrTxns.push({id:Date.now()+Math.random(), ticker, type:"buy", shares:pos.shares, price:pos.avgCost, date:today});
+          }
+        }
+
+        if(!ibkrTxns.length){
+          setImportErr(lang==="es"?"No se encontraron posiciones en el archivo IBKR.":"No positions found in IBKR file.");
+          return;
+        }
+
+        // Preview: show only open positions
+        const previewRows = Object.entries(openPos).map(([ticker,pos])=>({
+          id:Date.now()+Math.random(), ticker, shares:pos.shares, price:pos.avgCost, date:today
+        }));
+
+        setPreviewData({
+          parsed: ibkrTxns,
+          previewRows: previewRows.length ? previewRows : ibkrTxns.filter(t=>t.type==="buy"),
+          skipped: ibkrSkipped,
+          broker: "ibkr",
+          hasSells: ibkrTxns.some(t=>t.type==="sell")
+        });
+        return;
+      }
+      // ── End IBKR native ────────────────────────────────────────────────────
+
       if(headers.some(h=>h.includes("ibcommission")||h.includes("trademoney")))broker="ibkr";
       else if(headers.some(h=>h.includes("assetcategory")||h.includes("buysell")))broker="ibkr";
       // XTB
@@ -5455,7 +5530,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             {lang==="es"?"¿Tienes acciones en Trii, HAPI o XTB?":"Do you have stocks in Trii, HAPI or XTB?"}
           </div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-            {["🇨🇴 Trii","🇲🇽 HAPI","🌎 XTB","🇺🇸 IBKR"].map(b=>(
+            {["🇨🇴 Trii","🇨🇴🇲🇽 HAPI","🌎 XTB","🇺🇸 IBKR"].map(b=>(
               <span key={b} style={{fontSize:10,padding:"2px 8px",borderRadius:12,background:T.accent,border:`1px solid ${T.border}`,color:T.muted}}>{b}</span>
             ))}
           </div>
@@ -5735,7 +5810,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
                 <div style={{fontSize:12,color:T.green,fontWeight:600}}>
-                  {({ibkr:"Interactive Brokers",xtb:"XTB",trii:"🇨🇴 Trii",hapi:"🇲🇽 HAPI",generic:lang==="es"?"Genérico":"Generic"})[previewData.broker]||previewData.broker} {lang==="es"?"detectado":"detected"}
+                  {({ibkr:"Interactive Brokers",xtb:"XTB",trii:"🇨🇴 Trii",hapi:"🇨🇴🇲🇽 HAPI",generic:lang==="es"?"Genérico":"Generic"})[previewData.broker]||previewData.broker} {lang==="es"?"detectado":"detected"}
                 </div>
                 <div style={{fontSize:10,color:T.muted,marginTop:2}}>
                   {previewData.parsed.length} {lang==="es"?"posiciones listas para importar":"positions ready to import"}{previewData.skipped>0?` · ${previewData.skipped} ${lang==="es"?"ventas omitidas":"sells skipped"}`:""}
