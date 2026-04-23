@@ -5034,9 +5034,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       // IBKR CSV has lines like "Open Positions,Data,Summary,..." or "Trades,Data,Order,..."
       const isIBKR = raw.includes("Open Positions,Data,Summary") || raw.includes("Trades,Data,Order,Stocks");
       if(isIBKR){
-        const ibkrLines = raw.split(/
-?
-/);
+        const ibkrLines = raw.split("\n").map(l=>l.replace(/\r$/,""));
         const ibkrTxns = [];
         let ibkrSkipped = 0;
 
