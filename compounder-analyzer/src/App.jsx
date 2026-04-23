@@ -4193,67 +4193,62 @@ Return ONLY the JSON array.`}
       color:importErr.startsWith("✅")?T.green:T.red,
       border:`1px solid ${importErr.startsWith("✅")?T.green:T.red}33`}}>{importErr}</div>}
 
-    {!previewData?<>
-      <label style={{display:"block",cursor:"pointer"}}>
-        <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"22px 16px",
-          textAlign:"center",background:`${T.gold}05`,marginBottom:8}}>
-          <div style={{fontSize:24,marginBottom:6}}>📂</div>
-          <div style={{fontSize:13,color:T.gold,marginBottom:3}}>
-            {isEs?"Sube tu archivo":"Upload your file"}
-          </div>
-          <div style={{fontSize:10,color:T.muted}}>
-            {broker==="xtb"?"xStation5 → Historial → Exportar (.xlsx / .csv)":
-             broker==="ibkr"?"Client Portal → Flex Query (.csv)":
-             "CSV · TXT · Excel"}
-          </div>
+    <label style={{display:"block",cursor:"pointer"}}>
+      <div style={{border:`2px dashed ${T.goldDim}`,borderRadius:10,padding:"22px 16px",
+        textAlign:"center",background:`${T.gold}05`,marginBottom:8}}>
+        <div style={{fontSize:24,marginBottom:6}}>📂</div>
+        <div style={{fontSize:13,color:T.gold,marginBottom:3}}>
+          {isEs?"Sube tu archivo":"Upload your file"}
         </div>
-        <input type="file" accept=".csv,.txt,.xlsx,.xls" onChange={parseCSV} style={{display:"none"}}/>
-      </label>
-    </>:<>
-      <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{fontSize:10,color:T.muted}}>
+          {broker==="xtb"?"xStation5 → Historial → Exportar (.xlsx / .csv)":
+           broker==="ibkr"?"Client Portal → Activity Statement (.csv)":
+           "CSV · TXT · Excel"}
+        </div>
+      </div>
+      <input type="file" accept=".csv,.txt,.xlsx,.xls" onChange={parseCSV} style={{display:"none"}}/>
+    </label>
+    {previewData&&(broker==="trii"||broker==="hapi")&&<>
+      <div style={{marginBottom:8,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
           <div style={{fontSize:12,color:T.green,fontWeight:600}}>
-            ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones abiertas":"open positions"}{previewData.hasSells?` + ${previewData.parsed.length-(previewData.previewRows||previewData.parsed).length} ${isEs?"ventas históricas":"historical sells"}`:""}
+            ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones detectadas":"positions detected"}
           </div>
-          <div style={{fontSize:10,color:T.muted,marginTop:2}}>
-            {previewData.skipped>0?`${previewData.skipped} ${isEs?"ventas omitidas":"sells skipped"}`:""}
-          </div>
+          <div style={{fontSize:10,color:T.muted,marginTop:2}}>{isEs?"Revisa y confirma":"Review and confirm"}</div>
         </div>
-        <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>
-          {isEs?"Cambiar archivo":"Change file"}
-        </button>
+        <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>{isEs?"Cambiar":"Change"}</button>
       </div>
-      <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:12,maxHeight:200,overflowY:"auto"}}>
+      <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:8,maxHeight:200,overflowY:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
           <thead><tr style={{background:T.surface}}>
             {["Ticker","Acciones","Precio","Fecha"].map(h=>(
-              <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,
-                textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,
-                borderBottom:`1px solid ${T.border}`}}>{h}</th>
+              <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
             ))}
           </tr></thead>
           <tbody>
             {(previewData.previewRows||previewData.parsed).slice(0,8).map((p,i)=>(
               <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
                 <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
-                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
-                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${p.price}</td>
+                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{typeof p.shares==="number"?p.shares.toFixed(4):p.shares}</td>
+                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${typeof p.price==="number"?p.price.toFixed(2):p.price}</td>
                 <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
               </tr>
             ))}
-            {previewData.parsed.length>8&&<tr>
+            {(previewData.previewRows||previewData.parsed).length>8&&<tr>
               <td colSpan={4} style={{padding:"5px 10px",fontSize:10,color:T.muted,textAlign:"center"}}>
-                +{previewData.parsed.length-8} {isEs?"filas más":"more rows"}...
+                +{(previewData.previewRows||previewData.parsed).length-8} {isEs?"más...":"more..."}
               </td>
             </tr>}
           </tbody>
         </table>
       </div>
-      <button className="btn btn-gold" onClick={confirmImport}
-        style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
-        ✅ {isEs?`Confirmar importación — ${previewData.parsed.length} posiciones`:`Confirm import — ${previewData.parsed.length} positions`}
+      <button className="btn btn-gold" onClick={confirmImport} style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
+        ✅ {isEs?`Confirmar — ${(previewData.previewRows||previewData.parsed).length} posiciones`:`Confirm — ${(previewData.previewRows||previewData.parsed).length} positions`}
       </button>
     </>}
+    {previewData&&broker!=="trii"&&broker!=="hapi"&&<div style={{padding:"8px 12px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:8,fontSize:11,color:T.green}}>
+      ✓ {isEs?"Archivo detectado — revisa y confirma abajo ↓":"File detected — review and confirm below ↓"}
+    </div>}
   </>;
 }
 
@@ -5761,8 +5756,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             </label>
           </>}
 
-          {/* ── PREVIEW STEP ── */}
-          {previewData&&<>
+          {/* ── PREVIEW STEP — only for CSV brokers (ibkr, xtb, generic) ── */}
+          {previewData&&previewData.broker!=="trii"&&previewData.broker!=="hapi"&&<>
             <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <div>
                 <div style={{fontSize:12,color:T.green,fontWeight:600}}>
