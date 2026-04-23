@@ -3984,15 +3984,17 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
-            {type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI Mexico":"broker app"}).
-Extract each stock position and return ONLY a valid JSON array, no markdown, no explanation:
-[{"ticker":"AAPL","shares":10,"price":150.50,"date":"2024-01-15"},...]
+            {type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI Mexico/Colombia":"broker app"}).
+Return ONLY a valid JSON array, no markdown, no explanation:
+[{"ticker":"AAPL","shares":10.5,"price":150.50,"date":"2024-01-15"},...]
+
 Rules:
-- ticker: use standard US stock symbol (e.g. AAPL not Apple). For Colombian stocks use their symbol (EC, PFBCOLOM, etc)
-- shares: number of shares/units held
-- price: average cost/purchase price per share in USD (convert if shown in COP using ~4200 COP/USD, in MXN use ~17 MXN/USD)
-- date: purchase date in YYYY-MM-DD, or today if unknown
-- Skip cash, funds, or rows without a clear ticker
+- ticker: exact stock symbol shown (AAPL, TSLA, AMD etc)
+- shares: exact number of shares shown
+- price: average cost per share in USD. If not shown, calculate from currentValue and pnlPct:\n  costBasis = currentValue / (1 + pnlPct/100)\n  price = costBasis / shares\n  Example: AMD $2612.69, 8.60968 shares, +145.67% => costBasis=2612.69/2.4567=1063.49 => price=1063.49/8.60968=123.52
+- If values in MXN divide by 17. If COP divide by 4200.
+- date: today if unknown
+- Skip cash positions
 Return ONLY the JSON array.`}
           ]}]
         })
