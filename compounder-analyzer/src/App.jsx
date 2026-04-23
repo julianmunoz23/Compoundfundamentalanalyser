@@ -2554,9 +2554,34 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const resolvedTicker=await resolveTicker(company);
       if(resolvedTicker!==company.trim().toUpperCase())setCompany(resolvedTicker);
       const tickerToUse=resolvedTicker;
+      // For LATAM/European stocks, fetch live news first to enrich analysis
+      const isLatamStock = getLatamSymbol(tickerToUse) !== null;
+      let stockNewsCtx = "";
+      if(isLatamStock){
+        try{
+          const snRes = await fetch("https://api.anthropic.com/v1/messages",{
+            method:"POST",
+            headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+            body:JSON.stringify({
+              model:"claude-sonnet-4-20250514",
+              max_tokens:1000,
+              tools:[{"type":"web_search_20250305","name":"web_search"}],
+              messages:[{role:"user",content:`Search for recent financial information about the stock "${tickerToUse}". 
+Search query: "${tickerToUse} accion resultados financieros analisis 2025 2026 dividendo"
+Also try: "${tickerToUse} stock fundamentals earnings revenue profit"
+Sources: bloomberglinea.com, valoraanalitik.com, larepublica.co, stockanalysis.com, simplywall.st
+Return key facts: revenue, earnings/EPS, dividend yield, P/E ratio, analyst recommendations, recent news in 3-5 sentences.`}]
+            })
+          });
+          const snData = await snRes.json();
+          const snText = (snData.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+          if(snText.trim()) stockNewsCtx = `\n\nLIVE MARKET DATA & NEWS:\n${snText.slice(0,800)}`;
+        }catch(e){}
+      }
+
       const [fhResult,aiResult]=await Promise.allSettled([
         callFinnhub(tickerToUse),
-        callAI(`You are a value investing analyst using the patient investor method (quality businesses, competitive advantages, long-term compounding). Analyze "${tickerToUse}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
+        callAI(`You are a value investing analyst using the patient investor method (quality businesses, competitive advantages, long-term compounding). Analyze "${tickerToUse}" using real data up to your knowledge cutoff.${stockNewsCtx} FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
       ]);
       let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
       // If Finnhub has no analyst data, use AI to estimate consensus
@@ -5352,6 +5377,41 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const pnl=((current-p.avgCost)/p.avgCost*100).toFixed(1);
       return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%, Realized P&G: $${p.realizedPnL.toFixed(2)}`;
     }).join(" | ");
+
+    // ── Fetch live news for BVC/LATAM/European stocks ─────────────────────────
+    // Identify non-US tickers that need fresh context
+    const latamTickers = enriched
+      .filter(p => getLatamSymbol(p.ticker) !== null || KNOWN_TICKERS[p.ticker]?.includes(".PA") || KNOWN_TICKERS[p.ticker]?.includes(".DE"))
+      .map(p => p.ticker);
+
+    let freshContext = "";
+    if(latamTickers.length > 0){
+      try{
+        // Fetch news for each LATAM/European ticker using Anthropic web_search tool
+        const newsRes = await fetch("https://api.anthropic.com/v1/messages",{
+          method:"POST",
+          headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+          body:JSON.stringify({
+            model:"claude-sonnet-4-20250514",
+            max_tokens:2000,
+            tools:[{"type":"web_search_20250305","name":"web_search"}],
+            messages:[{role:"user",content:`Search for recent financial news and fundamentals for these stocks: ${latamTickers.join(", ")}.
+For each stock search: "[TICKER] accion analisis 2025 OR 2026 resultados financieros dividendo"
+Focus on: recent earnings, dividend announcements, analyst recommendations, key risks.
+Sources to prioritize: bloomberglinea.com, valoraanalitik.com, larepublica.co, investing.com, stockanalysis.com
+Return a brief summary per ticker in 2-3 sentences. Be factual and current.`}]
+          })
+        });
+        const newsData = await newsRes.json();
+        const newsText = (newsData.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("
+");
+        if(newsText.trim()) freshContext = `
+
+RECENT NEWS & FUNDAMENTALS (live data):
+${newsText.slice(0,1500)}`;
+      }catch(e){ /* proceed without news if fetch fails */ }
+    }
+
     try{
       const profileCtx=savedProfile?`Risk Profile: ${typeof savedProfile.label==="object"?savedProfile.label.en:savedProfile.label}. ${typeof savedProfile.desc==="object"?savedProfile.desc.en:savedProfile.desc}`:"No risk profile.";
       // Use higher token limit for large portfolios
@@ -5361,7 +5421,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment). Analyze this investor's portfolio:
 ${summary}
 Total positions: ${grouped.length}
-Investor Risk Profile: ${profileCtx}
+Investor Risk Profile: ${profileCtx}${freshContext}
 ${lang==="es"?"IMPORTANT: Respond ENTIRELY in SPANISH. All text fields (summary, profileMatchReason, suggestions, verdict reasons, overallGrade) must be in Spanish. Keep JSON keys in English.":""}
 Provide a concise but actionable analysis. If a risk profile is available, explicitly state if the portfolio matches it or not, and which positions are misaligned. Respond ONLY with valid JSON, no markdown:
 {
