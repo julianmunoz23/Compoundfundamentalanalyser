@@ -4125,6 +4125,42 @@ Return ONLY the JSON array.`}
         </label>}
       </>}
 
+
+      {/* Preview — shown after screenshot or paste processes */}
+      {previewData&&<>
+        <div style={{marginBottom:8,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:12,color:T.green,fontWeight:600}}>
+              ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones detectadas":"positions detected"}
+            </div>
+            <div style={{fontSize:10,color:T.muted,marginTop:2}}>{isEs?"Revisa y confirma":"Review and confirm"}</div>
+          </div>
+          <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>{isEs?"Cambiar":"Change"}</button>
+        </div>
+        <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:8,maxHeight:220,overflowY:"auto"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+            <thead><tr style={{background:T.surface}}>
+              {["Ticker","Acciones","Precio","Fecha"].map(h=>(
+                <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
+              ))}
+            </tr></thead>
+            <tbody>
+              {(previewData.previewRows||previewData.parsed).slice(0,10).map((p,i)=>(
+                <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
+                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
+                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{typeof p.shares==="number"?p.shares.toFixed(4):p.shares}</td>
+                  <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${typeof p.price==="number"?p.price.toFixed(2):p.price}</td>
+                  <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button className="btn btn-gold" onClick={confirmImport} style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
+          ✅ {isEs?`Confirmar — ${(previewData.previewRows||previewData.parsed).length} posiciones`:`Confirm — ${(previewData.previewRows||previewData.parsed).length} positions`}
+        </button>
+      </>}
+
       {/* Paste mode */}
       {aiMode==="paste"&&!previewData&&<>
         <div style={{padding:"10px 12px",background:`${T.blue}10`,border:`1px solid ${T.blue}22`,borderRadius:8,marginBottom:12,fontSize:11,color:T.muted,lineHeight:1.7}}>
@@ -4208,47 +4244,7 @@ Return ONLY the JSON array.`}
       </div>
       <input type="file" accept=".csv,.txt,.xlsx,.xls" onChange={parseCSV} style={{display:"none"}}/>
     </label>
-    {previewData&&(broker==="trii"||broker==="hapi")&&<>
-      <div style={{marginBottom:8,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <div>
-          <div style={{fontSize:12,color:T.green,fontWeight:600}}>
-            ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones detectadas":"positions detected"}
-          </div>
-          <div style={{fontSize:10,color:T.muted,marginTop:2}}>{isEs?"Revisa y confirma":"Review and confirm"}</div>
-        </div>
-        <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>{isEs?"Cambiar":"Change"}</button>
-      </div>
-      <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:8,maxHeight:200,overflowY:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-          <thead><tr style={{background:T.surface}}>
-            {["Ticker","Acciones","Precio","Fecha"].map(h=>(
-              <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>
-            {(previewData.previewRows||previewData.parsed).slice(0,8).map((p,i)=>(
-              <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
-                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
-                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{typeof p.shares==="number"?p.shares.toFixed(4):p.shares}</td>
-                <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${typeof p.price==="number"?p.price.toFixed(2):p.price}</td>
-                <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
-              </tr>
-            ))}
-            {(previewData.previewRows||previewData.parsed).length>8&&<tr>
-              <td colSpan={4} style={{padding:"5px 10px",fontSize:10,color:T.muted,textAlign:"center"}}>
-                +{(previewData.previewRows||previewData.parsed).length-8} {isEs?"más...":"more..."}
-              </td>
-            </tr>}
-          </tbody>
-        </table>
-      </div>
-      <button className="btn btn-gold" onClick={confirmImport} style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
-        ✅ {isEs?`Confirmar — ${(previewData.previewRows||previewData.parsed).length} posiciones`:`Confirm — ${(previewData.previewRows||previewData.parsed).length} positions`}
-      </button>
-    </>}
-    {previewData&&broker!=="trii"&&broker!=="hapi"&&<div style={{padding:"8px 12px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:8,fontSize:11,color:T.green}}>
-      ✓ {isEs?"Archivo detectado — revisa y confirma abajo ↓":"File detected — review and confirm below ↓"}
-    </div>}
+
   </>;
 }
 
