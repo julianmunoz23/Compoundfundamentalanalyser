@@ -4161,7 +4161,7 @@ Return ONLY the JSON array.`}
         <div style={{marginBottom:12,padding:"10px 14px",background:`${T.green}10`,border:`1px solid ${T.green}33`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div style={{fontSize:12,color:T.green,fontWeight:600}}>
-              ✓ {previewData.parsed.length} {isEs?"posiciones detectadas":"positions detected"}
+              ✓ {(previewData.previewRows||previewData.parsed).length} {isEs?"posiciones abiertas":"open positions"}
             </div>
             <div style={{fontSize:10,color:T.muted,marginTop:2}}>
               {isEs?"Revisa y confirma antes de importar":"Review and confirm before importing"}
@@ -4181,7 +4181,7 @@ Return ONLY the JSON array.`}
               ))}
             </tr></thead>
             <tbody>
-              {previewData.parsed.map((p,i)=>(
+              {(previewData.previewRows||previewData.parsed).map((p,i)=>(
                 <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
                   <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
                   <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
@@ -4194,7 +4194,7 @@ Return ONLY the JSON array.`}
         </div>
         <button className="btn btn-gold" onClick={confirmImport}
           style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
-          ✅ {isEs?`Confirmar — ${previewData.parsed.length} posiciones`:`Confirm — ${previewData.parsed.length} positions`}
+          ✅ {isEs?`Confirmar — ${(previewData.previewRows||previewData.parsed).length} posiciones abiertas`:`Confirm — ${(previewData.previewRows||previewData.parsed).length} open positions`}
         </button>
       </>}
 
@@ -5816,34 +5816,45 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               </div>
               <button className="seg" onClick={()=>setPreviewData(null)} style={{fontSize:10}}>{lang==="es"?"Cambiar archivo":"Change file"}</button>
             </div>
-            {/* Preview table */}
-            <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:12,maxHeight:180,overflowY:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                <thead><tr style={{background:T.surface}}>
-                  {["Ticker","Acciones","Precio","Fecha"].map(h=>(
-                    <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
-                  ))}
-                </tr></thead>
-                <tbody>
-                  {previewData.parsed.slice(0,8).map((p,i)=>(
-                    <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
-                      <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
-                      <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{p.shares}</td>
-                      <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${p.price}</td>
-                      <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
-                    </tr>
-                  ))}
-                  {previewData.parsed.length>8&&<tr>
-                    <td colSpan={4} style={{padding:"5px 10px",fontSize:10,color:T.muted,textAlign:"center"}}>
-                      +{previewData.parsed.length-8} {lang==="es"?"filas más...":"more rows..."}
-                    </td>
-                  </tr>}
-                </tbody>
-              </table>
-            </div>
-            <button className="btn btn-gold" onClick={confirmImport} style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
-              ✅ {lang==="es"?`Confirmar importación — ${previewData.parsed.length} posiciones`:`Confirm import — ${previewData.parsed.length} positions`}
-            </button>
+            {/* Preview table — shows open positions only (previewRows), imports full history */}
+            {(()=>{
+              const displayRows = previewData.previewRows || previewData.parsed;
+              const totalTxns = previewData.parsed.length;
+              const openCount = displayRows.length;
+              const sellCount = previewData.parsed.filter(t=>t.type==="sell").length;
+              return(<>
+                <div style={{background:T.accent,borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`,marginBottom:8,maxHeight:180,overflowY:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                    <thead><tr style={{background:T.surface}}>
+                      {["Ticker","Acciones","Precio Prom.","Fecha"].map(h=>(
+                        <th key={h} style={{padding:"6px 10px",textAlign:"left",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>{h}</th>
+                      ))}
+                    </tr></thead>
+                    <tbody>
+                      {displayRows.slice(0,8).map((p,i)=>(
+                        <tr key={i} style={{borderBottom:`1px solid ${T.border}22`}}>
+                          <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:700}}>{p.ticker}</td>
+                          <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>{typeof p.shares==="number"?p.shares.toFixed(4):p.shares}</td>
+                          <td style={{padding:"5px 10px",fontFamily:"'DM Mono',monospace",color:T.text}}>${typeof p.price==="number"?p.price.toFixed(2):p.price}</td>
+                          <td style={{padding:"5px 10px",color:T.muted,fontSize:10}}>{p.date}</td>
+                        </tr>
+                      ))}
+                      {displayRows.length>8&&<tr>
+                        <td colSpan={4} style={{padding:"5px 10px",fontSize:10,color:T.muted,textAlign:"center"}}>
+                          +{displayRows.length-8} {lang==="es"?"más...":"more..."}
+                        </td>
+                      </tr>}
+                    </tbody>
+                  </table>
+                </div>
+                {sellCount>0&&<div style={{fontSize:10,color:T.blue,padding:"5px 10px",background:`${T.blue}10`,borderRadius:6,marginBottom:8}}>
+                  ℹ️ {lang==="es"?`Incluye ${sellCount} ventas históricas para calcular P&G realizado`:`Includes ${sellCount} historical sells for realized P&G`}
+                </div>}
+                <button className="btn btn-gold" onClick={confirmImport} style={{width:"100%",padding:"11px 0",fontSize:14,borderRadius:10}}>
+                  ✅ {lang==="es"?`Confirmar importación — ${openCount} posiciones abiertas`:`Confirm import — ${openCount} open positions`}
+                </button>
+              </>);
+            })()}
           </>}
         </>}
 
