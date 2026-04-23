@@ -5403,12 +5403,8 @@ Return a brief summary per ticker in 2-3 sentences. Be factual and current.`}]
           })
         });
         const newsData = await newsRes.json();
-        const newsText = (newsData.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("
-");
-        if(newsText.trim()) freshContext = `
-
-RECENT NEWS & FUNDAMENTALS (live data):
-${newsText.slice(0,1500)}`;
+        const newsText = (newsData.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+        if(newsText.trim()) freshContext = "\n\nRECENT NEWS & FUNDAMENTALS (live data):\n" + newsText.slice(0,1500);
       }catch(e){ /* proceed without news if fetch fails */ }
     }
 
