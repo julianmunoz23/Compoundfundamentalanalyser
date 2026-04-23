@@ -689,7 +689,11 @@ const KNOWN_TICKERS={
   "JOHNSON":"JNJ","PFIZER":"PFE","UNITEDHEALTH":"UNH",
   "ECOPETROL":"EC","BANCOLOMBIA":"CIB","GRUPO AVAL":"AVAL","TECNOGLASS":"TGLS",
   // 🇨🇴 Colombia BVC
-  "CIBEST":"CIBEST","GRUPO CIBEST":"CIBEST","TERPEL":"TERPEL","CELSIA":"CELSIA","ISA":"ISA","GEB":"GEB",
+  "CIBEST":"CIBEST","GRUPO CIBEST":"CIBEST","TERPEL":"TERPEL",
+  // Trii Colombia — certificates that track US stocks
+  "BRKBCO":"BRK.B","PFECO":"PFE","NKECO":"NKE","NUCO":"NU",
+  "PFGRUPSURA":"GRUPOSURA","PFAVAL":"AVAL","AMZECO":"AMZN",
+  "MSFTCO":"MSFT","APPLECO":"AAPL","GOOGLCO":"GOOGL","TSLAECO":"TSLA","CELSIA":"CELSIA","ISA":"ISA","GEB":"GEB",
   "PROMIGAS":"PROMIGAS","CEMARGOS":"CEMARGOS","GRUPOSURA":"GRUPOSURA",
   "NUTRESA":"NUTRESA","ETB":"ETB","MINEROS":"MINEROS",
   "PFBCOLOM":"PFBCOLOM","PFDAVVNDA":"PFDAVVNDA","CORFICOLCF":"CORFICOLCF",
@@ -3984,20 +3988,23 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
-            {type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI":"broker app"}).
+(()=>{
+              const copRate=Math.round(CURRENCIES.COP?.rate||3700);
+              const mxnRate=(CURRENCIES.MXN?.rate||17).toFixed(1);
+              return{type:"text",text:`You are extracting a stock portfolio from a broker app screenshot (${broker==="trii"?"Trii Colombia":broker==="hapi"?"HAPI":"broker app"}).
 Return ONLY a valid JSON array, no markdown, no explanation:
 [{"ticker":"AAPL","shares":10.5,"currentValue":1800,"pnlPct":20.5,"date":"2024-01-15"},...]
 
 Rules:
-- ticker: exact stock symbol shown (AAPL, TSLA, AMD etc)
-- shares: exact number of shares (e.g. 0.34668)
-- currentValue: total current value in USD (e.g. 181.25)
-- pnlPct: percentage gain/loss as a number (e.g. 13.28 for +13.28%, -21.11 for -21.11%)
+- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE, NUCO→NU, PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL. Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA.
+- shares: exact number shown (e.g. 515.0)
+- currentValue: the total value shown, converted to USD. For COP values (format like $9.568.700,0): remove dots/commas, divide by ${copRate} (live rate). For MXN divide by ${mxnRate}. For USD keep as-is.
+- pnlPct: percentage gain/loss as number (13.28 for +13.28%, -21.11 for -21.11%). If "No disponible" or missing, use 0.
 - date: today if not shown
-- If values in MXN divide currentValue by 17. If COP divide by 4200.
-- Skip cash positions
-- DO NOT calculate price yourself — just return the raw values shown
-Return ONLY the JSON array.`}
+- Skip cash or bond positions
+- DO NOT calculate price yourself — just return the raw values
+Return ONLY the JSON array.`};
+            })()
           ]}]
         })
       });
