@@ -7112,15 +7112,17 @@ export default function App(){
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Admin
               </div>
-              :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:8}}>
-                  {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
-                </div>
-                <button className="btn btn-gold" onClick={()=>{
-                  if(!user){setAuthMode("signup");setShowAuth(true);}
-                  else{setPaywallContext("stock");setShowPaywall(true);}
-                }} style={{fontSize:12,padding:"8px 16px"}}>
-                  {L.nav_premium}
-                </button></>
+              :(userPlan==="premium"||userPlan==="basic")
+                ?null
+                :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:8}}>
+                    {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
+                  </div>
+                  <button className="btn btn-gold" onClick={()=>{
+                    if(!user){setAuthMode("signup");setShowAuth(true);}
+                    else{setPaywallContext("stock");setShowPaywall(true);}
+                  }} style={{fontSize:12,padding:"8px 16px"}}>
+                    {L.nav_premium}
+                  </button></>
             }
           </div>
         </div>
