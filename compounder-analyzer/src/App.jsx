@@ -4390,7 +4390,7 @@ function SellHistoryTab({transactions, enriched, onEdit, onDelete, lang, fmt}){
                   <td style={{padding:"8px 10px",textAlign:"right",color:"#888",fontSize:10}}>{txn.date}</td>
                   <td style={{padding:"8px 10px",textAlign:"right"}}>
                     {isEdit
-                      ? <div style={{display:"flex",gap:4",justifyContent:"flex-end"}}>
+                      ? <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
                           <button onClick={()=>{onEdit(txn.id,{shares:parseFloat(editShares)||txn.shares,price:parseFloat(editPrice)||txn.price});setEditing(null);}}
                             style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:"#10b981",color:"#fff",border:"none",cursor:"pointer"}}>✓</button>
                           <button onClick={()=>setEditing(null)}
