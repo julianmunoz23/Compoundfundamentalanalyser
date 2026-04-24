@@ -4266,7 +4266,7 @@ Return ONLY the JSON array.`};
       </div>
     </div>
 
-    {steps&&!previewData&&<div style={{marginBottom:14}}>
+    {steps&&!previewData&&broker!=="trii"&&broker!=="hapi"&&<div style={{marginBottom:14}}>
       {steps.map((s,i)=>(
         <div key={i} style={{display:"flex",gap:10,fontSize:11,color:i===steps.length-1?T.gold:T.muted,
           marginBottom:8,padding:"7px 10px",borderRadius:8,
@@ -4300,6 +4300,117 @@ Return ONLY the JSON array.`};
     </label>
 
   </>;
+}
+
+
+// ── SELL HISTORY TAB ─────────────────────────────────────────────────────────
+function SellHistoryTab({transactions, enriched, onEdit, onDelete, lang, fmt}){
+  const isEs = lang==="es";
+  const sells = transactions.filter(t=>t.type==="sell").sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const [editing,setEditing] = useState(null); // txn id being edited
+  const [editShares,setEditShares] = useState("");
+  const [editPrice,setEditPrice] = useState("");
+
+  // Calculate realized P&G per sell
+  const getAvgCost = (ticker) => {
+    const pos = enriched.find(p=>p.ticker===ticker);
+    return pos?.avgCost || 0;
+  };
+
+  const totalRealized = sells.reduce((sum,t)=>{
+    const cost = getAvgCost(t.ticker);
+    return sum + (t.price - cost) * t.shares;
+  },0);
+
+  if(!sells.length) return(
+    <div style={{textAlign:"center",padding:"32px 0",color:"#888"}}>
+      <div style={{fontSize:32,marginBottom:8}}>📭</div>
+      <div style={{fontSize:13}}>{isEs?"No hay ventas registradas":"No sells recorded yet"}</div>
+      <div style={{fontSize:11,marginTop:4,color:"#666"}}>{isEs?"Usa el botón Vender en cada posición":"Use the Sell button on each position"}</div>
+    </div>
+  );
+
+  return(
+    <div>
+      {/* Summary bar */}
+      <div style={{display:"flex",gap:12,marginBottom:14,padding:"10px 14px",borderRadius:10,
+        background:totalRealized>=0?"rgba(16,185,129,0.08)":"rgba(239,68,68,0.08)",
+        border:`1px solid ${totalRealized>=0?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`}}>
+        <div>
+          <div style={{fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:"0.07em"}}>{isEs?"P&G Realizado Total":"Total Realized P&G"}</div>
+          <div style={{fontSize:18,fontWeight:700,color:totalRealized>=0?"#10b981":"#ef4444"}}>
+            {totalRealized>=0?"+":""}{fmt(totalRealized)}
+          </div>
+        </div>
+        <div style={{marginLeft:"auto",textAlign:"right"}}>
+          <div style={{fontSize:10,color:"#888",textTransform:"uppercase",letterSpacing:"0.07em"}}>{isEs?"Operaciones cerradas":"Closed trades"}</div>
+          <div style={{fontSize:18,fontWeight:700,color:"#e8c96d"}}>{sells.length}</div>
+        </div>
+      </div>
+
+      {/* Sells table */}
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+          <thead>
+            <tr style={{borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+              {["Ticker",isEs?"Acciones":"Shares",isEs?"Precio Venta":"Sell Price",isEs?"Costo Prom.":"Avg Cost","P&G","%","Fecha",isEs?"Acción":"Action"].map((h,i)=>(
+                <th key={i} style={{padding:"8px 10px",textAlign:i<2?"left":"right",fontSize:9,color:"#666",letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sells.map(txn=>{
+              const avgCost = getAvgCost(txn.ticker);
+              const pnl = (txn.price - avgCost) * txn.shares;
+              const pct = avgCost>0 ? ((txn.price-avgCost)/avgCost*100) : 0;
+              const isPos = pnl>=0;
+              const isEdit = editing===txn.id;
+              return(
+                <tr key={txn.id} style={{borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                  <td style={{padding:"8px 10px",fontWeight:700,color:"#e8c96d",fontFamily:"'DM Mono',monospace"}}>{txn.ticker}</td>
+                  <td style={{padding:"8px 10px"}}>
+                    {isEdit
+                      ? <input type="number" value={editShares} onChange={e=>setEditShares(e.target.value)}
+                          style={{width:64,padding:"2px 6px",fontSize:11,borderRadius:4,background:"#1e1e2e",border:"1px solid #444",color:"#fff"}}/>
+                      : txn.shares.toFixed(4)}
+                  </td>
+                  <td style={{padding:"8px 10px",textAlign:"right"}}>
+                    {isEdit
+                      ? <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)}
+                          style={{width:72,padding:"2px 6px",fontSize:11,borderRadius:4,background:"#1e1e2e",border:"1px solid #444",color:"#fff",textAlign:"right"}}/>
+                      : `$${txn.price.toFixed(2)}`}
+                  </td>
+                  <td style={{padding:"8px 10px",textAlign:"right",color:"#888"}}>${avgCost.toFixed(2)}</td>
+                  <td style={{padding:"8px 10px",textAlign:"right",color:isPos?"#10b981":"#ef4444",fontWeight:600}}>
+                    {isPos?"+":""}{fmt(pnl)}
+                  </td>
+                  <td style={{padding:"8px 10px",textAlign:"right",color:isPos?"#10b981":"#ef4444"}}>
+                    {isPos?"+":""}{pct.toFixed(1)}%
+                  </td>
+                  <td style={{padding:"8px 10px",textAlign:"right",color:"#888",fontSize:10}}>{txn.date}</td>
+                  <td style={{padding:"8px 10px",textAlign:"right"}}>
+                    {isEdit
+                      ? <div style={{display:"flex",gap:4",justifyContent:"flex-end"}}>
+                          <button onClick={()=>{onEdit(txn.id,{shares:parseFloat(editShares)||txn.shares,price:parseFloat(editPrice)||txn.price});setEditing(null);}}
+                            style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:"#10b981",color:"#fff",border:"none",cursor:"pointer"}}>✓</button>
+                          <button onClick={()=>setEditing(null)}
+                            style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:"#333",color:"#fff",border:"none",cursor:"pointer"}}>✕</button>
+                        </div>
+                      : <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
+                          <button onClick={()=>{setEditing(txn.id);setEditShares(String(txn.shares));setEditPrice(String(txn.price));}}
+                            style={{fontSize:9,padding:"2px 8px",borderRadius:4,background:"rgba(232,201,109,0.15)",color:"#e8c96d",border:"1px solid rgba(232,201,109,0.3)",cursor:"pointer"}}>✏️</button>
+                          <button onClick={()=>{ if(window.confirm(isEs?"¿Eliminar esta venta?":"Delete this sell?")) onDelete(txn.id); }}
+                            style={{fontSize:9,padding:"2px 8px",borderRadius:4,background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>🗑</button>
+                        </div>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 // ── STICKY AI CTA ────────────────────────────────────────────────────────────
@@ -4674,7 +4785,12 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                 {isEs?"Ordenado de mayor a menor ganancia · Click para analizar":"Sorted best to worst · Click to analyze"}
               </div>
             </div>
-            {!isPremium&&<div style={{fontSize:9,color:T.gold,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:6,padding:"3px 8px",cursor:"pointer"}} onClick={onShowPaywall}>🔒 Premium</div>}
+            <button className="seg" onClick={()=>{
+              window._perfMode=window._perfMode==="usd"?"pct":"usd";
+              document.getElementById("perf-mode-btn") && (document.getElementById("perf-mode-btn").textContent=window._perfMode==="usd"?(isEs?"% Rentabilidad":"% Return"):(isEs?"$ Ganancia":"$ P&G"));
+            }} style={{fontSize:10,padding:"4px 10px",borderRadius:6,cursor:"pointer"}}>
+              <span id="perf-mode-btn">{isEs?"$ Ganancia":"$ P&G"}</span>
+            </button>
           </div>
 
           {barData.length===0
@@ -4682,10 +4798,16 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                 {isEs?"Actualiza precios para ver el gráfico":"Refresh prices to see the chart"}
               </div>
             :<div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {barData.map(p=>{
-                const barWidth=Math.abs(p.pnlPct)/maxPnl*100;
-                const isPos=p.pnlPct>=0;
-                const color=isPos?(p.pnlPct>=20?T.green:T.green+"bb"):(p.pnlPct<=-20?T.red:T.red+"bb");
+              {(()=>{
+              const useUSD = typeof window!=="undefined"&&window._perfMode==="usd";
+              const sortedBar = useUSD ? [...barData].sort((a,b)=>b.unrealizedPnL-a.unrealizedPnL) : barData;
+              const maxVal = useUSD ? Math.max(...sortedBar.map(p=>Math.abs(p.unrealizedPnL||0)),1) : maxPnl;
+              return sortedBar.map(p=>{
+                const val = useUSD ? (p.unrealizedPnL||0) : p.pnlPct;
+                const barWidth=Math.abs(val)/maxVal*100;
+                const isPos=val>=0;
+                const color=isPos?(val>=20?T.green:T.green+"bb"):(val<=-20?T.red:T.red+"bb");
+                const label = useUSD ? `${isPos?"+":""}${fmt(val)}` : `${isPos?"+":""}${val.toFixed(1)}%`;
                 return(
                   <div key={p.ticker} style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",alignItems:"center",gap:8}}>
                     <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:700,color:T.text,textAlign:"right"}}>{p.ticker}</span>
@@ -4696,24 +4818,21 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                         width:`${barWidth/2}%`,height:"100%",
                         background:color,borderRadius:isPos?"0 3px 3px 0":"3px 0 0 3px",
                         transition:"width 0.5s ease",
-                        display:"flex",alignItems:"center",justifyContent:isPos?"flex-start":"flex-end",
                       }}/>
-                      {/* Center line */}
                       <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.border}}/>
                     </div>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:11,color,fontWeight:700}}>{isPos?"+":""}{p.pnlPct.toFixed(1)}%</span>
+                      <span style={{fontSize:11,color,fontWeight:700}}>{label}</span>
                     </div>
                   </div>
                 );
-              })}
+              });
+            })()}
               {/* X axis labels */}
               <div style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",gap:8,marginTop:2}}>
                 <span/>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,color:T.muted,padding:"0 0"}}>
-                  <span>-{maxPnl.toFixed(0)}%</span>
-                  <span>0%</span>
-                  <span>+{maxPnl.toFixed(0)}%</span>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,color:T.muted}}>
+                  <span>Menor</span><span>0</span><span>Mayor</span>
                 </div>
                 <span/>
               </div>
@@ -5459,6 +5578,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     analyzePortfolio();
   };
 
+  const [portTab,setPortTab]=useState("positions"); // "positions" | "sells"
+
   return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
     <StickyAIButton onAnalyze={handleAIAnalysis} loading={loadingAI} hasPositions={grouped.length>0} lang={lang}/>
     {/* Portfolio paywall modal */}
@@ -5930,7 +6051,28 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 ⚡ {lang==="es"?"Actualizando precios...":"Updating prices..."}
 </div>}
               </div>
-              <div style={{overflowX:"auto"}}>
+              {/* Tab switcher */}
+              <div style={{display:"flex",gap:4,marginBottom:12}}>
+                {[
+                  {id:"positions",label:lang==="es"?"📊 Posiciones abiertas":"📊 Open Positions"},
+                  {id:"sells",label:lang==="es"?`💰 Ventas (${transactions.filter(t=>t.type==="sell").length})`:`💰 Sells (${transactions.filter(t=>t.type==="sell").length})`},
+                ].map(t=>(
+                  <button key={t.id} onClick={()=>setPortTab(t.id)}
+                    style={{fontSize:11,padding:"5px 14px",borderRadius:8,fontWeight:portTab===t.id?700:400,
+                      background:portTab===t.id?`${T.gold}20`:"transparent",
+                      border:`1px solid ${portTab===t.id?T.goldDim:T.border}`,
+                      color:portTab===t.id?T.gold:T.muted,cursor:"pointer"}}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {portTab==="sells"&&<SellHistoryTab transactions={transactions} enriched={enriched}
+                onEdit={(id,updates)=>{const u=transactions.map(t=>t.id===id?{...t,...updates}:t);setTransactions(u);saveToCloud(user?.id,"transactions",u);}}
+                onDelete={(id)=>{const u=transactions.filter(t=>t.id!==id);setTransactions(u);saveToCloud(user?.id,"transactions",u);}}
+                lang={lang} fmt={fmt}/>}
+
+              {portTab==="positions"&&<div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
                     {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price","P&G No Real.","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
@@ -6067,7 +6209,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                 <span style={{color:T.gold,flexShrink:0}}>{i+1}.</span>{s}
               </div>
             ))}
-          </div>
+          </div>}
         </Card>}
 
         {/* ── REBALANCE + DCA ── always visible ── */}
@@ -6907,7 +7049,7 @@ export default function App(){
             <button onClick={toggleLang} style={{background:`${T.gold}12`,border:`1px solid ${T.gold}30`,borderRadius:8,padding:"5px 11px",cursor:"pointer",display:"flex",alignItems:"center",gap:5,transition:"all 0.2s"}}
               onMouseEnter={e=>{e.currentTarget.style.background=`${T.gold}22`;}}
               onMouseLeave={e=>{e.currentTarget.style.background=`${T.gold}12`;}}>
-              <span style={{fontSize:12}}>{lang==="en"?"🇺🇸":"🇨🇴"}</span>
+              <span style={{fontSize:12}}>{lang==="en"?"🇨🇴":"🇺🇸"}</span>
               <span style={{fontSize:11,color:T.gold,fontWeight:700,letterSpacing:"0.05em"}}>{lang==="en"?"ES":"EN"}</span>
             </button>
             {/* Currency picker */}
