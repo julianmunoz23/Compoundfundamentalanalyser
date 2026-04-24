@@ -1481,7 +1481,57 @@ function Hero({onStart,lang="en"}){
       </div>
     </div>
 
-    <div style={{maxWidth:800,margin:"0 auto",padding:"0 28px 32px"}}><AdBanner size="leaderboard"/></div>
+    {/* ── SEO TEXT — visible para Google, útil para usuarios ── */}
+    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 40px"}}>
+      <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,padding:"28px 32px"}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:16,fontWeight:700}}>
+          {lang==="es"?"La plataforma de inversiones para Colombia y LATAM":"The investment platform for Colombia and LATAM"}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          <div>
+            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
+              {lang==="es"?"📊 Análisis de acciones con IA":"📊 AI-powered stock analysis"}
+            </div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
+              {lang==="es"
+                ?"Analiza acciones de la Bolsa de Valores de Colombia (BVC), NYSE, NASDAQ y mercados de Europa y LATAM. Obtén un score de calidad, análisis del moat del negocio y consenso de analistas de Wall Street en 30 segundos."
+                :"Analyze stocks from the Colombian Stock Exchange (BVC), NYSE, NASDAQ, and markets across Europe and LATAM. Get a quality score, business moat analysis, and Wall Street analyst consensus in 30 seconds."}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
+              {lang==="es"?"📁 Compatible con tus brokers favoritos":"📁 Compatible with your favorite brokers"}
+            </div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
+              {lang==="es"
+                ?"Importa tu portafolio directamente desde Trii, HAPI, XTB e Interactive Brokers (IBKR). Sube una captura de pantalla o archivo CSV y Inversoria detecta tus posiciones automáticamente."
+                :"Import your portfolio directly from Trii, HAPI, XTB, and Interactive Brokers (IBKR). Upload a screenshot or CSV file and Inversoria detects your positions automatically."}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
+              {lang==="es"?"🇨🇴 Acciones colombianas en tiempo real":"🇨🇴 Colombian stocks in real time"}
+            </div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
+              {lang==="es"
+                ?"Precios en vivo de la BVC: Ecopetrol, Bancolombia, Grupo Sura, Terpel, GEB, ISA, Grupo Éxito (CNEC) y más de 30 acciones colombianas. También cobre, petróleo y mercados de México, Brasil, Chile y Argentina."
+                :"Live BVC prices: Ecopetrol, Bancolombia, Grupo Sura, Terpel, GEB, ISA, CNEC, and 30+ Colombian stocks. Also Mexico, Brazil, Chile, and Argentina markets."}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
+              {lang==="es"?"📈 Calculadora de interés compuesto":"📈 Compound interest calculator"}
+            </div>
+            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
+              {lang==="es"
+                ?"Calcula cuándo llegarás a tu meta de riqueza con nuestra calculadora de interés compuesto en pesos colombianos, dólares y cualquier moneda de LATAM. Descubre cuánto ahorrar para llegar a $1.000 millones COP."
+                :"Calculate when you'll reach your wealth goal with our compound interest calculator in Colombian pesos, dollars, and any LATAM currency."}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 32px"}}><AdBanner size="leaderboard"/></div>
   </div>;
 }
 
@@ -5702,6 +5752,9 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             {["🇨🇴 Trii","🇨🇴🇲🇽 HAPI","🌎 XTB","🇺🇸 IBKR"].map(b=>(
               <span key={b} style={{fontSize:10,padding:"2px 8px",borderRadius:12,background:T.accent,border:`1px solid ${T.border}`,color:T.muted}}>{b}</span>
             ))}
+            <span style={{fontSize:10,padding:"2px 8px",borderRadius:12,background:`${T.green}10`,border:`1px solid ${T.green}33`,color:T.green}}>
+              ✓ {lang==="es"?"Compatible con todos tus brokers":"Compatible with all your brokers"}
+            </span>
           </div>
         </div>
       </div>
