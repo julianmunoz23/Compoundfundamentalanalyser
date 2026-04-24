@@ -6208,7 +6208,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                 <span style={{color:T.gold,flexShrink:0}}>{i+1}.</span>{s}
               </div>
             ))}
-          </div>}
+          </div>
         </Card>}
 
         {/* ── REBALANCE + DCA ── always visible ── */}
