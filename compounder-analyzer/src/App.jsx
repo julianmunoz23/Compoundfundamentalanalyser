@@ -1649,7 +1649,7 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
       {/* Charts */}
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>{lang==="es"?"📊 Capital vs. Interés — El Efecto Bola de Nieve":"📊 {lang==="es"?"Capital vs. Interés — El Efecto Bola de Nieve":"Capital vs. Interest — The Snowball Effect"}"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>{lang==="es"?"📊 Capital vs. Interés — El Efecto Bola de Nieve":"📊 Capital vs. Interest — The Snowball Effect"}</div>
           <div style={{fontSize:11,color:T.muted,marginBottom:14}}>{lang==="es"?<>Observa cómo la barra verde (interés) crece hasta <strong style={{color:T.green}}>superar</strong> la azul (capital)</>:<>Watch the green (interest) bar grow until it <strong style={{color:T.green}}>overtakes</strong> the blue (capital)</>}</div>
           <div style={{height:280}}>
             <ResponsiveContainer width="100%" height="100%">
