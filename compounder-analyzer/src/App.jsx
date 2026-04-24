@@ -1525,6 +1525,28 @@ function calcYearsTo1M(startAge,monthly=200,annualRate=10){
 
 function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
   const L2=LANG[lang]||LANG.en;
+  // Local formatter for compound calculator — inputs are in display currency already
+  // so we do NOT multiply by _exRate again; just format with currency symbol and locale
+  const fmtCalc=(n)=>{
+    if(!n&&n!==0)return`${_currency.symbol}0`;
+    const sign=n<0?"-":"";
+    const abs=Math.abs(Math.round(n));
+    if(abs>=1e12)return`${sign}${_currency.symbol}${(Math.abs(n)/1e12).toFixed(2)}T`;
+    if(abs>=1e9)return`${sign}${_currency.symbol}${(Math.abs(n)/1e9).toFixed(2)}B`;
+    if(abs>=1e6)return`${sign}${_currency.symbol}${(Math.abs(n)/1e6).toFixed(2)}M`;
+    if(abs>=1e3)return`${sign}${_currency.symbol}${Math.round(Math.abs(n)).toLocaleString(_currency.locale)}`;
+    return`${sign}${_currency.symbol}${Math.round(Math.abs(n)).toLocaleString(_currency.locale)}`;
+  };
+  const fmtCalcShort=(n)=>{
+    if(!n)return`${_currency.symbol}0`;
+    const abs=Math.abs(n);
+    const sign=n<0?"-":"";
+    if(abs>=1e12)return`${sign}${_currency.symbol}${(Math.abs(n)/1e12).toFixed(1)}T`;
+    if(abs>=1e9)return`${sign}${_currency.symbol}${(Math.abs(n)/1e9).toFixed(1)}B`;
+    if(abs>=1e6)return`${sign}${_currency.symbol}${(Math.abs(n)/1e6).toFixed(0)}M`;
+    if(abs>=1e3)return`${sign}${_currency.symbol}${Math.round(Math.abs(n)/1e3)}K`;
+    return`${sign}${_currency.symbol}${Math.round(Math.abs(n))}`;
+  };
   // Currency-aware slider limits — scale USD maxes by live exchange rate
   const sMaxInitial=5000000;
   const sStepInitial=100;
@@ -1549,11 +1571,11 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
     const int=payload.find(p=>p.dataKey==="interest")?.value||0;
     return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:14,minWidth:230}}>
       <div style={{fontSize:12,color:T.gold,marginBottom:8,fontFamily:"'Playfair Display',serif"}}>{label}</div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}><span style={{color:T.muted}}>💵 {lang==="es"?"Capital Invertido":"Capital Invested"}</span><Mn sz={11} c={T.blue}>{fmt(cap)}</Mn></div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6}}><span style={{color:T.muted}}>✨ {lang==="es"?"Interés Ganado":"Interest Earned"}</span><Mn sz={11} c={T.green}>{fmt(int)}</Mn></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}><span style={{color:T.muted}}>💵 {lang==="es"?"Capital Invertido":"Capital Invested"}</span><Mn sz={11} c={T.blue}>{fmtCalc(cap)}</Mn></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6}}><span style={{color:T.muted}}>✨ {lang==="es"?"Interés Ganado":"Interest Earned"}</span><Mn sz={11} c={T.green}>{fmtCalc(int)}</Mn></div>
       <div style={{borderTop:`1px solid ${T.border}33`,paddingTop:6,display:"flex",justifyContent:"space-between"}}>
         <span style={{fontSize:11,color:T.muted}}>Total Balance</span>
-        <Mn sz={12} c={T.gold} s={{fontWeight:700}}>{fmt(cap+int)}</Mn>
+        <Mn sz={12} c={T.gold} s={{fontWeight:700}}>{fmtCalc(cap+int)}</Mn>
       </div>
       {int>cap&&<div style={{fontSize:10,color:T.green,textAlign:"center",padding:"3px 0",marginTop:6,borderTop:`1px solid ${T.green}22`}}>✨ Interest exceeds capital!</div>}
     </div>;
@@ -1578,9 +1600,9 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
     {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:lang==="es"?"Balance Final":"Final Balance",v:fmt(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
-        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
-        {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmt(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
+        {l:lang==="es"?"Balance Final":"Final Balance",v:fmtCalc(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
+        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmtCalc(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
+        {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmtCalc(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
         {l:lang==="es"?"Multiplicador":"Multiplier",v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
       ].map(({l,v,c,sub,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
@@ -1624,9 +1646,9 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
         <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:12}}>{lang==="es"?"✨ La Magia del Interés Compuesto":"✨ The Magic of Compounding"}</div>
           {[
-            {l:lang==="es"?"Solo Capital (sin interés)":"Capital only (no interest)",v:fmt(last.contributed||0)},
-            {l:lang==="es"?"Con interés compuesto 🏆":"With compound interest 🏆",v:fmt(last.balance||0),hi:true},
-            {l:lang==="es"?"Generado solo por interés":"Generated by interest alone",v:`+${fmt(last.interest||0)}`,pos:true},
+            {l:lang==="es"?"Solo Capital (sin interés)":"Capital only (no interest)",v:fmtCalc(last.contributed||0)},
+            {l:lang==="es"?"Con interés compuesto 🏆":"With compound interest 🏆",v:fmtCalc(last.balance||0),hi:true},
+            {l:lang==="es"?"Generado solo por interés":"Generated by interest alone",v:`+${fmtCalc(last.interest||0)}`,pos:true},
           ].map(({l,v,hi,pos})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${T.border}22`,alignItems:"center"}}>
             <span style={{fontSize:11,color:hi?T.text:T.muted}}>{l}</span>
             <Mn sz={hi?12:11} c={pos?T.green:hi?T.gold:T.muted} s={hi?{fontWeight:700}:{}}>{v}</Mn>
@@ -1647,7 +1669,7 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
               <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}} barCategoryGap="10%">
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtCalcShort(v)} width={82}/>
                 <Tooltip content={<StackedTT/>}/>
                 <Legend formatter={n=>n==="contributed"?(lang==="es"?"Capital Invertido":"Capital Invested"):(lang==="es"?"Interés Ganado":"Interest Earned")} wrapperStyle={{fontSize:11,color:T.muted,paddingTop:8}}/>
                 <Bar dataKey="contributed" stackId="a" fill={T.blue} opacity={0.85} name="contributed"/>
@@ -1663,8 +1685,8 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
               <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
-                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmt(v),"Annual Interest"]}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtCalcShort(v)} width={82}/>
+                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmtCalc(v),"Annual Interest"]}/>
                 <Bar dataKey="interestAnual" fill={T.green} opacity={0.85} radius={[3,3,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
@@ -1681,7 +1703,7 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
         const intAhead=row.interest>row.contributed;
         return<Card key={y} s={{padding:14,textAlign:"center",background:`${T.gold}06`,border:`1px solid ${T.goldDim}33`}}>
           <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>Year {y}</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:4,wordBreak:"break-all"}}>{fmt(row.balance)}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:4,wordBreak:"break-all"}}>{fmtCalc(row.balance)}</div>
           <div style={{fontSize:10,color:T.green,marginBottom:3}}>×{row.mult} initial</div>
           {intAhead?<div style={{fontSize:10,color:T.green,padding:"2px 6px",background:`${T.green}15`,borderRadius:10}}>Interest &gt; Capital ✨</div>
             :<div style={{fontSize:10,color:T.muted}}>{row.balance>0?((row.interest/row.balance)*100).toFixed(0):0}% from interest</div>}
@@ -1727,22 +1749,22 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
                   {intAhead&&r.year===data.findIndex(d=>d.interest>d.contributed)+1&&<div style={{fontSize:8,color:T.green,marginTop:2,whiteSpace:"nowrap"}}>↑ crossover</div>}
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right"}}>
-                  <Mn sz={12} c={T.blue}>{fmt(annualContrib)}</Mn>
+                  <Mn sz={12} c={T.blue}>{fmtCalc(annualContrib)}</Mn>
                 </td>
                 {/* HIGHLIGHTED INTEREST COLUMN */}
                 <td style={{padding:"10px 16px",textAlign:"right",background:`${T.green}08`,borderLeft:`1px solid ${T.green}22`,borderRight:`1px solid ${T.green}22`}}>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-                    <Mn sz={13} c={T.green} s={{fontWeight:600}}>{fmt(r.interestAnual)}</Mn>
+                    <Mn sz={13} c={T.green} s={{fontWeight:600}}>{fmtCalc(r.interestAnual)}</Mn>
                     <div style={{fontSize:9,color:T.green,opacity:0.7}}>{intPct}% of balance/yr</div>
                     <div style={{width:Math.min((r.interestAnual/(data[data.length-1]?.interestAnual||1))*60,60),height:2,background:T.green,borderRadius:2,opacity:0.5}}/>
                   </div>
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right",background:`${T.green}04`}}>
-                  <Mn sz={12} c={intAhead?T.green:`${T.green}99`}>{fmt(r.interest)}</Mn>
+                  <Mn sz={12} c={intAhead?T.green:`${T.green}99`}>{fmtCalc(r.interest)}</Mn>
                   <div style={{fontSize:9,color:T.muted,marginTop:2}}>{r.balance>0?((r.interest/r.balance)*100).toFixed(0):0}% of balance</div>
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right"}}>
-                  <Mn sz={hi?14:12} c={hi?T.gold:T.text} s={hi?{fontWeight:700}:{}}>{fmt(r.balance)}</Mn>
+                  <Mn sz={hi?14:12} c={hi?T.gold:T.text} s={hi?{fontWeight:700}:{}}>{fmtCalc(r.balance)}</Mn>
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right"}}>
                   <span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:r.mult>=10?`${T.gold}22`:r.mult>=5?`${T.gold}15`:r.mult>=2?`${T.green}15`:`${T.blue}15`,color:r.mult>=10?T.gold:r.mult>=5?T.gold:r.mult>=2?T.green:T.blue,fontWeight:r.mult>=5?700:400}}>×{r.mult}</span>
@@ -1753,10 +1775,10 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
           <tfoot>
             <tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
               <td style={{padding:"12px 16px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
-              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmt(annualContrib*cfg.years)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmtCalc(annualContrib*cfg.years)}</Mn></td>
               <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}10`}}><Mn sz={12} c={T.muted}>—</Mn></td>
-              <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}06`}}><Mn sz={14} c={T.green} s={{fontWeight:700}}>{fmt(last.interest||0)}</Mn></td>
-              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmt(last.balance||0)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}06`}}><Mn sz={14} c={T.green} s={{fontWeight:700}}>{fmtCalc(last.interest||0)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmtCalc(last.balance||0)}</Mn></td>
               <td style={{padding:"12px 16px",textAlign:"right"}}><span style={{fontSize:12,padding:"3px 10px",borderRadius:20,background:`${T.gold}22`,color:T.gold,border:`1px solid ${T.goldDim}`,fontWeight:700}}>×{last.mult}</span></td>
             </tr>
           </tfoot>
