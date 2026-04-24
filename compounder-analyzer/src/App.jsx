@@ -1587,7 +1587,7 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
     {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:lang==="es"?"Balance Final":lang==="es"?"Balance Final":"Final Balance",v:fmtCalc(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:{lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`},icon:"🏆"},
+        {l:lang==="es"?"Balance Final":"Final Balance",v:fmtCalc(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
         {l:lang==="es"?"Total Invertido":"Total Invested",v:fmtCalc(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
         {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmtCalc(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
         {l:lang==="es"?"Multiplicador":"Multiplier",v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
