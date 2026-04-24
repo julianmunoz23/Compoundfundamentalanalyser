@@ -1527,26 +1527,13 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
   const L2=LANG[lang]||LANG.en;
   // Local formatter for compound calculator — inputs are in display currency already
   // so we do NOT multiply by _exRate again; just format with currency symbol and locale
+  // Full number formatter — no abbreviations, always shows complete number
   const fmtCalc=(n)=>{
     if(!n&&n!==0)return`${_currency.symbol}0`;
     const sign=n<0?"-":"";
-    const abs=Math.abs(Math.round(n));
-    if(abs>=1e12)return`${sign}${_currency.symbol}${(Math.abs(n)/1e12).toFixed(2)}T`;
-    if(abs>=1e9)return`${sign}${_currency.symbol}${(Math.abs(n)/1e9).toFixed(2)}B`;
-    if(abs>=1e6)return`${sign}${_currency.symbol}${(Math.abs(n)/1e6).toFixed(2)}M`;
-    if(abs>=1e3)return`${sign}${_currency.symbol}${Math.round(Math.abs(n)).toLocaleString(_currency.locale)}`;
     return`${sign}${_currency.symbol}${Math.round(Math.abs(n)).toLocaleString(_currency.locale)}`;
   };
-  const fmtCalcShort=(n)=>{
-    if(!n)return`${_currency.symbol}0`;
-    const abs=Math.abs(n);
-    const sign=n<0?"-":"";
-    if(abs>=1e12)return`${sign}${_currency.symbol}${(Math.abs(n)/1e12).toFixed(1)}T`;
-    if(abs>=1e9)return`${sign}${_currency.symbol}${(Math.abs(n)/1e9).toFixed(1)}B`;
-    if(abs>=1e6)return`${sign}${_currency.symbol}${(Math.abs(n)/1e6).toFixed(0)}M`;
-    if(abs>=1e3)return`${sign}${_currency.symbol}${Math.round(Math.abs(n)/1e3)}K`;
-    return`${sign}${_currency.symbol}${Math.round(Math.abs(n))}`;
-  };
+  const fmtCalcShort=fmtCalc; // same — no abbreviations in calculator
   // Currency-aware slider limits — scale USD maxes by live exchange rate
   const sMaxInitial=5000000;
   const sStepInitial=100;
