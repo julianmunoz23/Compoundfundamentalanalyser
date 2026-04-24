@@ -6141,7 +6141,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                   </tr></tfoot>
                 </table>
               </div>}
-            </Card>}
+            </Card>
 
         {/* AI Analysis result */}
         {aiAnalysis&&<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
