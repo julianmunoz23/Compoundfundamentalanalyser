@@ -1113,13 +1113,25 @@ function DonutChartFS() {
 
 function PhoneFrame({children}){
   return(
-    <div style={{width:"100%",maxWidth:224,background:T.surface,borderRadius:34,
-      border:`1.5px solid rgba(167,139,250,0.16)`,
-      boxShadow:`0 28px 56px rgba(0,0,0,0.55),0 0 0 1px rgba(255,255,255,0.04) inset`,
-      overflow:"hidden",position:"relative"}}>
-      <div style={{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",
-        width:66,height:20,background:"#000",borderRadius:"0 0 12px 12px",zIndex:10}}/>
-      <div style={{padding:"26px 11px 14px"}}>{children}</div>
+    <div style={{width:"100%",maxWidth:220,background:T.surface,borderRadius:36,
+      border:`2px solid rgba(167,139,250,0.18)`,
+      boxShadow:`0 32px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.04) inset`,
+      overflow:"hidden",position:"relative",
+      height:460,  /* fixed height — same for all 3 */
+      display:"flex",flexDirection:"column",
+    }}>
+      {/* Status bar */}
+      <div style={{background:"#0a0918",padding:"10px 16px 4px",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+        <span style={{fontSize:9,color:"rgba(240,238,255,0.6)",fontFamily:"'DM Mono',monospace"}}>9:41</span>
+        <div style={{width:48,height:14,background:"#0a0918",borderRadius:"0 0 10px 10px",border:"1px solid rgba(167,139,250,0.15)",position:"absolute",left:"50%",transform:"translateX(-50%)",top:0}}/>
+        <span style={{fontSize:8,color:"rgba(240,238,255,0.4)"}}>▊▊▊</span>
+      </div>
+      {/* Scrollable content */}
+      <div style={{padding:"8px 11px 14px",flex:1,overflowY:"hidden"}}>{children}</div>
+      {/* Home indicator */}
+      <div style={{padding:"6px 0 8px",display:"flex",justifyContent:"center",flexShrink:0}}>
+        <div style={{width:40,height:3,background:"rgba(167,139,250,0.25)",borderRadius:3}}/>
+      </div>
     </div>
   );
 }
@@ -1299,9 +1311,9 @@ function FeaturesShowcase({onStart,lang="es"}){
         {isEs?"Portafolio multi-broker, análisis de acciones con IA y tu perfil de riesgo personalizado. En español, para Colombia y LATAM.":"Multi-broker portfolio, AI stock analysis and your personalized risk profile. In Spanish, for LATAM."}
       </p>
       {/* Phones grid */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:880,margin:"0 auto",alignItems:"start"}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,maxWidth:860,margin:"0 auto",alignItems:"start"}}>
         {features.map(({num,title,desc,pill,tab,screen},i)=>(
-          <div key={num} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:20,marginTop:i===1?-22:0}}>
+          <div key={num} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:20}}>
             <PhoneFrame>{screen}</PhoneFrame>
             <div style={{textAlign:"center"}}>
               <div style={{fontSize:9,fontWeight:600,letterSpacing:"0.14em",color:T.goldDim,textTransform:"uppercase",marginBottom:5}}>{num}</div>
