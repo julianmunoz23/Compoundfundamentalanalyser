@@ -1352,14 +1352,14 @@ function Hero({onStart,lang="en"}){
       {/* Headline */}
       <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(34,5,50),color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
         {isEs
-          ?<>¿En qué<br/><span style={{color:T.gold}}>debería invertir?</span></>
-          :<>Is this stock<br/><span style={{color:T.gold}}>worth buying?</span></>}
+          ?<>Sigue tu dinero.<br/><span style={{color:T.gold}}>Invierte con inteligencia.</span></>
+          :<>Track your money.<br/><span style={{color:T.gold}}>Invest with intelligence.</span></>}
       </h1>
 
       <p style={{fontSize:19,color:T.muted,maxWidth:560,margin:"0 auto 10px",lineHeight:1.75,fontWeight:400}}>
         {isEs
-          ?"Dile a la IA el nombre de cualquier acción y en 30 segundos sabrás si vale la pena comprarla — sin tecnicismos, sin experiencia previa."
-          :"Tell the AI any stock name and in 30 seconds you'll know if it's worth buying — no finance degree, no experience needed."}
+          ?"Importa tu portafolio de Trii, HAPI, XTB o IBKR en segundos. Ve tu P&G en tiempo real, analiza cada acción con IA y toma mejores decisiones — en español, para Colombia y LATAM."
+          :"Import your portfolio from Trii, HAPI, XTB or IBKR in seconds. See your P&L in real time, analyze each stock with AI, and make smarter decisions — in Spanish, for LATAM."}
       </p>
       {/* ── POWER TAGLINE ── */}
       {isEs
@@ -1376,13 +1376,13 @@ function Hero({onStart,lang="en"}){
 
       {/* CTA buttons */}
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
-        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("score")}
+        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("portfolio")}
           style={{fontSize:16,padding:"15px 36px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
-          {isEs?"🎯 Analiza tu primera acción — gratis":"🎯 Analyze a stock — free"}
+          {isEs?"📁 Importa tu portafolio — gratis":"📁 Import your portfolio — free"}
         </button>
-        <button className="btn btn-outline" onClick={()=>onStart("profile")}
+        <button className="btn btn-outline" onClick={()=>onStart("score")}
           style={{fontSize:14,padding:"15px 26px",borderRadius:12}}>
-          {isEs?"🧬 ¿Cómo debería invertir yo?":"🧬 What type of investor am I?"}
+          {isEs?"🎯 Analizar una acción":"🎯 Analyze a stock"}
         </button>
       </div>
 
@@ -7224,9 +7224,9 @@ export default function App(){
             </svg>
           </div>
           {[
+            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
             {id:"score",l:L.tab_score,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
             {id:"profile",l:L.tab_profile,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
-            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
             {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
             {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
             {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
