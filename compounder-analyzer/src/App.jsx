@@ -1481,6 +1481,51 @@ function Hero({onStart,lang="en"}){
       </div>
     </div>
 
+    {/* ── MULTI-BROKER VALUE PROP ── */}
+    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 40px"}}>
+      <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}55`,borderRadius:16,padding:"24px 28px",textAlign:"center"}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:isEs?20:18,color:T.gold,marginBottom:10,fontWeight:700}}>
+          {isEs
+            ?"🇨🇴 En Colombia usas varios brokers — Inversoria los une todos"
+            :"🇨🇴 In Colombia you use multiple brokers — Inversoria unifies them all"}
+        </div>
+        <div style={{fontSize:13,color:T.muted,lineHeight:1.8,maxWidth:680,margin:"0 auto 20px"}}>
+          {isEs
+            ?<>Trii solo tiene algunas acciones colombianas. Para invertir en <strong style={{color:T.text}}>NYSE, NASDAQ o Europa</strong> usas HAPI, XTB o IBKR. El resultado: tu dinero disperso en 3 o 4 apps distintas, sin una vista clara de cómo vas realmente.</>
+            :<>Trii only has some Colombian stocks. For <strong style={{color:T.text}}>NYSE, NASDAQ or Europe</strong> you use HAPI, XTB or IBKR. The result: your money scattered across 3-4 different apps, with no clear view of how you're really doing.</>}
+        </div>
+        <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",flexWrap:"wrap",marginBottom:20}}>
+          {[
+            {flag:"🇨🇴",name:"Trii",desc:isEs?"Acciones BVC":"BVC stocks"},
+            {flag:"🇲🇽",name:"HAPI",desc:isEs?"NYSE · NASDAQ":"NYSE · NASDAQ"},
+            {flag:"🌎",name:"XTB",desc:isEs?"Europa · USA":"Europe · USA"},
+            {flag:"🇺🇸",name:"IBKR",desc:isEs?"Mercados globales":"Global markets"},
+          ].map(({flag,name,desc},i)=><React.Fragment key={name}>
+            <div style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+              <div style={{fontSize:16,marginBottom:2}}>{flag}</div>
+              <div style={{fontSize:12,color:T.text,fontWeight:600}}>{name}</div>
+              <div style={{fontSize:10,color:T.muted}}>{desc}</div>
+            </div>
+            {i<3&&<div style={{fontSize:16,color:T.muted}}>+</div>}
+          </React.Fragment>)}
+          <div style={{fontSize:20,color:T.muted,fontWeight:300}}>→</div>
+          <div style={{background:`linear-gradient(135deg,#6d3fdc,#4f2db0)`,border:`1px solid ${T.purple}`,borderRadius:10,padding:"8px 18px",textAlign:"center",minWidth:100}}>
+            <div style={{fontSize:14,marginBottom:2}}>📊</div>
+            <div style={{fontSize:12,color:"#fff",fontWeight:600}}>Inversoria</div>
+            <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Todo junto</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:16,justifyContent:"center",flexWrap:"wrap"}}>
+          {[
+            isEs?"✓ Todas tus acciones en un solo lugar":"✓ All your stocks in one place",
+            isEs?"✓ P&G total en tiempo real":"✓ Total P&L in real time",
+            isEs?"✓ Rentabilidad de todas tus operaciones":"✓ Returns across all your trades",
+            isEs?"✓ Análisis IA de cada posición":"✓ AI analysis of each position",
+          ].map(f=><span key={f} style={{fontSize:11,color:T.green}}>{"✓"} {f.replace("✓ ","")}</span>)}
+        </div>
+      </div>
+    </div>
+
     {/* ── SEO TEXT — visible para Google, útil para usuarios ── */}
     <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 40px"}}>
       <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,padding:"28px 32px"}}>
