@@ -549,7 +549,7 @@ const LATAM_MARKETS = {
       "INVERARGOS":"INVERARGOS","PFDGRUPOARG":"PFDGRUPOARG",
       "NUCO":"NUCO","BRKBCO":"BRKBCO","PFECO":"PFECO","NKECO":"NKECO",
       "PFGRUPSURA":"PFGRUPSURA","COLINV":"COLINV",
-      "PEI":"PEI","EXITO":"CNEC","CNEC":"CNEC","BOGOTA":"BOGOTA",
+      "PEI":"PEI","EXITO":"CNEC","CNEC":"CNEC",
     }
   },
   // 🇧🇷 Brasil BOVESPA
@@ -693,7 +693,6 @@ const KNOWN_TICKERS={
   "ECOPETROL":"EC","BANCOLOMBIA":"CIB","GRUPO AVAL":"AVAL","TECNOGLASS":"TGLS",
   // 🇨🇴 Colombia BVC
   "CIBEST":"CIBEST","GRUPO CIBEST":"CIBEST","TERPEL":"TERPEL",
-  "PEI":"PEI","EXITO":"CNEC","GRUPO EXITO":"CNEC","ÉXITO":"CNEC",
   // Trii Colombia — certificates that track US stocks
   "BRKBCO":"BRK.B","PFECO":"PFE","NKECO":"NKE","NUCO":"NUCO",
   "PFGRUPSURA":"GRUPOSURA","PFAVAL":"AVAL","AMZECO":"AMZN",
@@ -1126,99 +1125,50 @@ function PhoneFrame({children}){
 }
 
 function FSScreen1(){
-  // Portafolio multi-broker con gráfica de crecimiento
   return<>
-    <div style={{fontSize:8,letterSpacing:"0.11em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mi Portafolio</div>
-    <div style={{fontFamily:"'DM Mono',monospace",fontSize:19,color:T.text,fontWeight:500,lineHeight:1}}>$47.320.000</div>
-    <div style={{fontSize:8.5,color:T.green,fontWeight:500,marginTop:2,marginBottom:6}}>+$5.840.000 · +14.1% total</div>
-    <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
-      <span style={{fontSize:7,background:"rgba(74,222,128,0.12)",color:T.green,border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"1px 5px"}}>4 brokers</span>
-      {["Trii","HAPI","XTB","IBKR"].map(b=><span key={b} style={{fontSize:7,background:T.accent,color:T.muted,borderRadius:8,padding:"1px 5px"}}>{b}</span>)}
-    </div>
-    {/* Growth chart */}
-    <div style={{background:T.accent,borderRadius:8,padding:"7px 7px 4px",marginBottom:8}}>
-      <div style={{fontSize:7,color:T.muted,marginBottom:3}}>Crecimiento · COP</div>
-      <svg width="100%" height="44" viewBox="0 0 150 44" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="pg1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3"/>
-            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0"/>
-          </linearGradient>
-        </defs>
-        <path d="M0 38 C15 36,25 32,40 28 S55 26,70 20 S90 24,105 14 S125 6,140 4 S147 3,150 2" stroke="#a78bfa" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
-        <path d="M0 38 C15 36,25 32,40 28 S55 26,70 20 S90 24,105 14 S125 6,140 4 S147 3,150 2 L150 44 L0 44Z" fill="url(#pg1)"/>
-        <circle cx="150" cy="2" r="3" fill="#a78bfa"/>
-        <line x1="0" y1="38" x2="150" y2="38" stroke={T.border} strokeWidth="0.5" strokeDasharray="3,2"/>
-      </svg>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:6.5,color:T.muted,marginTop:2}}>
-        <span>Ene</span><span>Mar</span><span>Jun</span><span>Hoy</span>
-      </div>
-    </div>
-    {/* Holdings */}
-    <div style={{display:"flex",flexDirection:"column",gap:5}}>
-      {[
-        {t:"TERPEL",broker:"Trii",moneda:"9.568.700 COP",val:"$2.584",chg:"+67.3%"},
-        {t:"NVDA",  broker:"IBKR",moneda:"4.377 USD",    val:"$4.377",chg:"+82.4%"},
-        {t:"ASML",  broker:"XTB", moneda:"1.490 EUR",    val:"$1.620",chg:"+75.7%"},
-        {t:"SPOT",  broker:"HAPI",moneda:"0.34 acc",     val:"$181",  chg:"+13.3%"},
-      ].map(({t,broker,moneda,val,chg})=>(
-        <React.Fragment key={t}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:T.text,fontWeight:500}}>{t} <span style={{fontSize:7,color:T.muted}}>· {broker}</span></div>
-              <div style={{fontSize:7,color:T.muted}}>{moneda}</div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:9,color:T.text}}>{val}</div>
-              <div style={{fontSize:7.5,color:T.green}}>{chg}</div>
-            </div>
-          </div>
-          <div style={{height:"0.5px",background:T.border}}/>
-        </React.Fragment>
-      ))}
-    </div>
-  </>;
-}
-
-function FSScreen2(){
-  // Análisis de acción con score, barras y Wall Street
-  return<>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:9}}>
       <div>
-        <div style={{fontSize:8,letterSpacing:"0.11em",textTransform:"uppercase",color:T.muted,marginBottom:2}}>Análisis · NYSE</div>
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:17,color:T.text,fontWeight:500}}>NVDA</div>
+        <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Análisis de Valor</div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,color:T.text,fontWeight:700}}>NVDA</div>
       </div>
-      <span style={{fontSize:8,padding:"2px 6px",borderRadius:6,background:"rgba(167,139,250,0.12)",color:T.gold,border:"1px solid rgba(167,139,250,0.22)"}}>NASDAQ</span>
+      <span style={{fontSize:8,fontWeight:600,padding:"2px 7px",borderRadius:6,background:"rgba(167,139,250,0.12)",
+        color:T.gold,border:"1px solid rgba(167,139,250,0.22)",marginTop:2,display:"inline-block"}}>NASDAQ</span>
     </div>
-    <div style={{fontFamily:"'DM Mono',monospace",fontSize:17,color:T.gold}}>$875.40</div>
-    <div style={{fontSize:8.5,color:T.green,marginBottom:7}}>▲ +3.21% hoy</div>
+    <div style={{fontFamily:"'DM Mono',monospace",fontSize:21,color:T.text,fontWeight:500,lineHeight:1}}>$875.40</div>
+    <div style={{fontSize:9.5,color:T.green,fontWeight:500,marginTop:2}}>▲ +3.21% hoy</div>
     <MiniChartFS/>
-    <div style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:9,padding:"8px 9px",marginBottom:7}}>
-      <div style={{fontSize:7,letterSpacing:"0.1em",textTransform:"uppercase",color:T.gold,marginBottom:4}}>Score · 8 filtros</div>
-      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.green,fontWeight:700,lineHeight:1}}>A+</div>
-        <div><div style={{fontSize:8.5,color:T.green}}>Negocio Excepcional</div><div style={{fontSize:7.5,color:T.muted}}>87/100</div></div>
+    <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.13),rgba(167,139,250,0.06))",
+      border:"1px solid rgba(167,139,250,0.2)",borderRadius:10,padding:"9px 10px",marginBottom:8}}>
+      <div style={{fontSize:7.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.gold,fontWeight:600,marginBottom:5}}>
+        ✦ Score de Calidad — Los 8 Filtros
       </div>
-      {[{l:"Crecimiento",p:92,c:T.gold},{l:"Rentabilidad",p:88,c:T.blue},{l:"Flujo Caja",p:84,c:T.green},{l:"La Fosa",p:90,c:"#f59e0b"}].map(({l,p,c})=>(
-        <div key={l} style={{display:"grid",gridTemplateColumns:"48px 1fr 20px",alignItems:"center",gap:3,marginBottom:3}}>
-          <span style={{fontSize:7,color:T.muted}}>{l}</span>
-          <div style={{height:2.5,background:T.border,borderRadius:2,overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:7,marginBottom:5}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.green,fontWeight:700,lineHeight:1}}>A+</div>
+        <div style={{fontSize:9,color:T.green,fontWeight:500}}>Negocio Excepcional</div>
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:T.muted,marginLeft:"auto"}}>87/100</div>
+      </div>
+      {[{l:"📈 Crecimiento",p:92,c:T.gold},{l:"💎 Rentabilidad",p:88,c:T.blue},{l:"💵 Flujo Caja",p:84,c:T.green},{l:"🏰 La Fosa",p:90,c:"#f59e0b"}].map(({l,p,c})=>(
+        <div key={l} style={{display:"grid",gridTemplateColumns:"52px 1fr 22px",alignItems:"center",gap:4,marginBottom:4}}>
+          <span style={{fontSize:7.5,color:T.muted}}>{l}</span>
+          <div style={{height:3,background:T.border,borderRadius:2,overflow:"hidden"}}>
             <div style={{height:"100%",width:`${p}%`,background:c,borderRadius:2}}/>
           </div>
-          <span style={{fontSize:7,color:T.text,textAlign:"right"}}>{p}%</span>
+          <span style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,color:T.text,textAlign:"right"}}>{p}%</span>
         </div>
       ))}
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:7}}>
-      {[{t:"✓ ROIC 28%",c:T.green},{t:"✓ FCF 22%",c:T.green},{t:"✓ Ingresos +56%",c:T.green},{t:"⚠ Deuda 2.1x",c:"#f59e0b"}].map(({t,c})=>
-        <div key={t} style={{fontSize:7.5,color:c}}>{t}</div>)}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:8}}>
+      {[{t:"✓ ROIC 28% ≥ 20%",c:T.green},{t:"✓ FCF Margen 22%",c:T.green},{t:"✓ Ingresos +56%",c:T.green},{t:"⚠ Deuda 2.1x",c:"#f59e0b"}]
+        .map(({t,c})=><div key={t} style={{fontSize:7.5,color:c}}>{t}</div>)}
     </div>
     <div style={{background:"rgba(52,211,153,0.07)",border:"1px solid rgba(52,211,153,0.18)",borderRadius:8,padding:"7px 9px"}}>
-      <div style={{fontSize:7,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3}}>42 analistas Wall Street</div>
+      <div style={{fontSize:7,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3,fontWeight:600}}>
+        Consenso Wall Street · 42 analistas
+      </div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:12,color:T.green,fontWeight:700}}>Compra Fuerte</div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.gold}}>Obj. $940</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.gold,fontWeight:500}}>Obj. $940</div>
           <div style={{fontSize:8,color:T.green}}>+7.4% upside</div>
         </div>
       </div>
@@ -1226,64 +1176,103 @@ function FSScreen2(){
   </>;
 }
 
-function FSScreen3(){
-  // Perfil de riesgo — 3 opciones arriba + 3 preguntas
+function FSScreen2(){
+  const holdings=[
+    {ticker:"NVDA",alloc:37,val:"$4,617",chg:"+12.4%",up:true,color:T.gold},
+    {ticker:"AAPL",alloc:25,val:"$3,120",chg:"+4.1%",up:true,color:T.blue},
+    {ticker:"MELI",alloc:16,val:"$1,997",chg:"-2.3%",up:false,color:T.green},
+    {ticker:"Otros",alloc:22,val:"$2,746",chg:"+1.8%",up:true,color:"rgba(255,255,255,0.15)"},
+  ];
   return<>
-    <div style={{fontSize:8,letterSpacing:"0.11em",textTransform:"uppercase",color:T.muted,marginBottom:7}}>¿Qué tipo de inversor eres?</div>
-    {/* 3 profile options */}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:10}}>
-      {[
-        {icon:"🛡️",label:"Conservador",color:T.blue,active:false},
-        {icon:"⚖️",label:"Moderado",   color:T.gold,active:true},
-        {icon:"🚀",label:"Agresivo",   color:T.green,active:false},
-      ].map(({icon,label,color,active})=>(
-        <div key={label} style={{background:active?"rgba(167,139,250,0.12)":T.accent,
-          border:`${active?"1.5":"1"}px solid ${active?color:T.border}`,
-          borderRadius:8,padding:"6px 3px",textAlign:"center"}}>
-          <div style={{fontSize:13,marginBottom:2}}>{icon}</div>
-          <div style={{fontSize:7.5,color,fontWeight:active?600:400}}>{label}</div>
-          <div style={{fontSize:6.5,color:T.muted,marginTop:1}}>{label==="Conservador"?"Bajo riesgo":label==="Moderado"?"Equilibrado":"Alto riesgo"}</div>
-        </div>
-      ))}
-    </div>
-    {/* 3 questions */}
-    <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:9}}>
-      {[
-        {q:"1 · ¿Cuánto tiempo puedes invertir?",opts:["-2 años","2–5 años","+10 años"],sel:1},
-        {q:"2 · Si cae 30%, ¿qué haces?",opts:["Vendo todo","Espero","Compro más"],sel:2},
-        {q:"3 · ¿Tu objetivo principal?",opts:["Seguridad","Equilibrio","Máx. crecimiento"],sel:1},
-      ].map(({q,opts,sel})=>(
-        <div key={q} style={{background:T.accent,borderRadius:7,padding:"7px 8px"}}>
-          <div style={{fontSize:7.5,color:T.muted,marginBottom:4}}>{q}</div>
-          <div style={{display:"flex",gap:3}}>
-            {opts.map((o,i)=>(
-              <div key={o} style={{flex:1,background:i===sel?"rgba(167,139,250,0.12)":T.surface,
-                border:`1px solid ${i===sel?T.gold:T.border}`,
-                borderRadius:5,padding:"3px 2px",textAlign:"center",fontSize:6.5,
-                color:i===sel?T.gold:T.muted}}>{o}</div>
-            ))}
+    <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mi Portafolio</div>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:23,color:T.text,fontWeight:700,lineHeight:1}}>$12,480</div>
+    <div style={{fontSize:9.5,color:T.green,fontWeight:500,marginTop:3,marginBottom:11}}>▲ +$840 · +7.2% este mes</div>
+    <DonutChartFS/>
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      {holdings.map(({ticker,alloc,val,chg,up,color})=>(
+        <div key={ticker}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <div style={{width:7,height:7,borderRadius:2,background:color,flexShrink:0}}/>
+              <div>
+                <div style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,fontWeight:500,color:T.text}}>{ticker}</div>
+                <div style={{fontSize:8,color:T.muted}}>{alloc}%</div>
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9.5,color:T.text}}>{val}</div>
+              <div style={{fontSize:8.5,fontWeight:500,color:up?T.green:T.red}}>{chg}</div>
+            </div>
+          </div>
+          <div style={{height:2.5,background:T.border,borderRadius:2,marginTop:2,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${alloc}%`,background:color,borderRadius:2}}/>
           </div>
         </div>
       ))}
     </div>
-    {/* CTA */}
-    <div style={{background:"#6d3fdc",borderRadius:8,padding:"7px",textAlign:"center",fontSize:8.5,color:"#fff",fontWeight:500}}>
-      Ver mi portafolio personalizado →
+    <div style={{marginTop:9,padding:"7px 9px",background:"rgba(167,139,250,0.08)",
+      border:"1px solid rgba(167,139,250,0.18)",borderRadius:8,
+      display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+      <div>
+        <div style={{fontSize:7.5,color:T.muted}}>🤖 Diagnóstico IA</div>
+        <div style={{fontSize:8,color:T.muted,marginTop:1}}>Concentración alta en tech</div>
+      </div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,fontWeight:700}}>B+</div>
+    </div>
+  </>;
+}
+
+function FSScreen3(){
+  const news=[
+    {src:"Reuters · 2h",type:"pos",badge:"POSITIVO",body:"Fed mantiene tasas; mercados reaccionan con alza en tech.",tags:"$SPY · $QQQ · $NVDA"},
+    {src:"Bloomberg · 4h",type:"neg",badge:"NEGATIVO",body:"MercadoLibre reporta caída en márgenes en Brasil.",tags:"$MELI · $B3SA3"},
+    {src:"El Economista · 6h",type:"neu",badge:"NEUTRO",body:"Banxico revisa proyecciones de crecimiento para 2025.",tags:"$BMXN · $EWW"},
+  ];
+  const borderColor={pos:T.green,neg:T.red,neu:T.border};
+  const badgeBg={pos:"rgba(52,211,153,0.14)",neg:"rgba(248,113,113,0.14)",neu:"rgba(255,255,255,0.06)"};
+  const badgeColor={pos:T.green,neg:T.red,neu:T.muted};
+  return<>
+    <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mercado hoy</div>
+    <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.text,fontWeight:700,marginBottom:10}}>Noticias & Sentimiento</div>
+    <div style={{display:"flex",height:5,borderRadius:3,overflow:"hidden",gap:2,marginBottom:5}}>
+      <div style={{flex:5.8,background:"linear-gradient(90deg,#34d399,#22c87a)",borderRadius:"3px 0 0 3px"}}/>
+      <div style={{flex:2.4,background:"rgba(255,255,255,0.09)"}}/>
+      <div style={{flex:1.8,background:"linear-gradient(90deg,#f87171,#ef5050)",borderRadius:"0 3px 3px 0"}}/>
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",fontSize:7.5,marginBottom:10}}>
+      <span style={{color:T.green,fontWeight:600}}>58% Positivo</span>
+      <span style={{color:T.muted}}>24% Neutro</span>
+      <span style={{color:T.red,fontWeight:600}}>18% Neg.</span>
+    </div>
+    {news.map(({src,type,badge,body,tags})=>(
+      <div key={src} style={{background:T.accent,borderRadius:8,padding:"8px 9px",marginBottom:6,borderLeft:`2px solid ${borderColor[type]}`}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+          <span style={{fontSize:7.5,color:T.muted}}>{src}</span>
+          <span style={{fontSize:7,padding:"1.5px 5px",borderRadius:4,fontWeight:600,background:badgeBg[type],color:badgeColor[type]}}>{badge}</span>
+        </div>
+        <div style={{fontSize:9,color:T.text,lineHeight:1.45}}>{body}</div>
+        <div style={{fontSize:7.5,color:T.blue,marginTop:2,fontWeight:500}}>{tags}</div>
+      </div>
+    ))}
+    <div style={{marginTop:8,padding:"7px 9px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:7}}>
+      <div style={{fontSize:7,color:T.gold,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3}}>✦ Resumen del inversor paciente</div>
+      <div style={{fontSize:8.5,color:T.muted,lineHeight:1.5}}>Tech lidera el rebote. Cautela en LATAM por datos macro de Brasil y México.</div>
     </div>
   </>;
 }
 
 function FeaturesShowcase({onStart,lang="es"}){
+  const isEs=lang==="es";
   const features=[
-    {num:"01 — Mi Portafolio",title:isEs?"Todas tus acciones, un solo lugar":"All your stocks, one place",
-     desc:isEs?"Trii, HAPI, XTB e IBKR unidos. Tu P&G total en tiempo real con tu moneda local.":"Trii, HAPI, XTB and IBKR unified. Your total P&L in real time in your local currency.",
-     pill:isEs?"📁 Hasta 5 acciones gratis":"📁 Free up to 5 stocks",tab:"portfolio",screen:<FSScreen1/>},
-    {num:"02 — Analizar Acción",title:isEs?"¿Vale la pena comprarla?":"Is it worth buying?",
-     desc:isEs?"Score de calidad, análisis del negocio y consenso de Wall Street en 30 segundos.":"Quality score, business analysis and Wall Street consensus in 30 seconds.",
-     pill:isEs?"🎯 3 análisis gratis · Sin cuenta":"🎯 3 free analyses · No account",tab:"score",screen:<FSScreen2/>},
-    {num:"03 — Perfil de Riesgo",title:isEs?"Tu portafolio IA personalizado":"Your personalized AI portfolio",
-     desc:isEs?"8 preguntas y la IA construye un portafolio con acciones y precios de entrada para tu perfil.":"8 questions and AI builds a portfolio with stocks and entry prices for your profile.",
-     pill:isEs?"🧬 Siempre gratis":"🧬 Always free",tab:"profile",screen:<FSScreen3/>},
+    {num:"01 — Análisis de Valor",title:"Los 8 Filtros del Inversor Paciente",
+     desc:"Score de Calidad con ROIC, FCF, La Fosa del Negocio y consenso de Wall Street en tiempo real.",
+     pill:"🎯 3 análisis gratis · Sin cuenta",tab:"score",screen:<FSScreen1/>},
+    {num:"02 — Mi Portafolio",title:"P&G en Tiempo Real",
+     desc:"Tus posiciones con precios en vivo. La IA evalúa si tu portafolio coincide con tu perfil.",
+     pill:"📁 Hasta 5 acciones gratis",tab:"portfolio",screen:<FSScreen2/>},
+    {num:"03 — Noticias",title:"El Mercado Filtrado para Ti",
+     desc:"La IA clasifica cada noticia por sentimiento y genera el resumen que el inversor paciente necesita leer.",
+     pill:"📰 Actualización diaria",tab:"score",screen:<FSScreen3/>},
   ];
   const bottomTags=[
     {text:"✓ 3 análisis gratis · Sin tarjeta",bg:"rgba(52,211,153,0.08)",border:"rgba(52,211,153,0.2)",color:T.green},
@@ -1300,11 +1289,16 @@ function FeaturesShowcase({onStart,lang="es"}){
       </p>
       <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,40px)",fontWeight:700,color:T.text,
         textAlign:"center",lineHeight:1.15,margin:"0 auto 6px",maxWidth:600}}>
-        {isEs?"Todo en un solo lugar — ":"Everything in one place — "}
-        <span style={{color:T.gold}}>{isEs?"sigue tu dinero":"track your money"}</span>
+        Todo lo que necesitas para{" "}
+        <span style={{color:T.gold}}>invertir con inteligencia</span>
       </h2>
-      <p style={{textAlign:"center",fontSize:13,color:T.muted,maxWidth:500,margin:"0 auto 48px",lineHeight:1.65}}>
-        {isEs?"Portafolio multi-broker, análisis de acciones con IA y tu perfil de riesgo personalizado. En español, para Colombia y LATAM.":"Multi-broker portfolio, AI stock analysis and your personalized risk profile. In Spanish, for LATAM."}
+      <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(13px,2vw,18px)",fontWeight:700,
+        color:T.muted,textAlign:"center",lineHeight:1.3,margin:"0 auto 14px",maxWidth:580}}>
+        ¿Es este negocio lo suficientemente{" "}
+        <span style={{color:T.goldDim}}>bueno para tu dinero?</span>
+      </p>
+      <p style={{textAlign:"center",fontSize:13,color:T.muted,maxWidth:460,margin:"0 auto 48px",lineHeight:1.65}}>
+        Los mejores inversores no buscan acciones baratas. Buscan negocios extraordinarios. Inversoria aplica los 8 filtros del inversor paciente a cualquier acción — en 30 segundos.
       </p>
       {/* Phones grid */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:880,margin:"0 auto",alignItems:"start"}}>
@@ -1358,14 +1352,14 @@ function Hero({onStart,lang="en"}){
       {/* Headline */}
       <h1 className="hero-h1" style={{fontFamily:"'Playfair Display',serif",fontSize:clamp(34,5,50),color:T.text,lineHeight:1.15,marginBottom:16,fontWeight:700}}>
         {isEs
-          ?<>Sigue tu dinero.<br/><span style={{color:T.gold}}>Invierte con inteligencia.</span></>
-          :<>Track your money.<br/><span style={{color:T.gold}}>Invest with intelligence.</span></>}
+          ?<>¿En qué<br/><span style={{color:T.gold}}>debería invertir?</span></>
+          :<>Is this stock<br/><span style={{color:T.gold}}>worth buying?</span></>}
       </h1>
 
       <p style={{fontSize:19,color:T.muted,maxWidth:560,margin:"0 auto 10px",lineHeight:1.75,fontWeight:400}}>
         {isEs
-          ?"Importa tu portafolio de Trii, HAPI, XTB o IBKR en segundos. Ve tu P&G en tiempo real, analiza cada acción con IA y toma mejores decisiones — en español, para Colombia y LATAM."
-          :"Import your portfolio from Trii, HAPI, XTB or IBKR in seconds. See your P&L in real time, analyze each stock with AI, and make smarter decisions — in Spanish, for LATAM."}
+          ?"Dile a la IA el nombre de cualquier acción y en 30 segundos sabrás si vale la pena comprarla — sin tecnicismos, sin experiencia previa."
+          :"Tell the AI any stock name and in 30 seconds you'll know if it's worth buying — no finance degree, no experience needed."}
       </p>
       {/* ── POWER TAGLINE ── */}
       {isEs
@@ -1382,13 +1376,13 @@ function Hero({onStart,lang="en"}){
 
       {/* CTA buttons */}
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
-        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("portfolio")}
+        <button className="btn btn-gold btn-mobile-full" onClick={()=>onStart("score")}
           style={{fontSize:16,padding:"15px 36px",borderRadius:12,boxShadow:`0 4px 24px ${T.gold}33`}}>
-          {isEs?"📁 Importa tu portafolio — gratis":"📁 Import your portfolio — free"}
+          {isEs?"🎯 Analiza tu primera acción — gratis":"🎯 Analyze a stock — free"}
         </button>
-        <button className="btn btn-outline" onClick={()=>onStart("score")}
+        <button className="btn btn-outline" onClick={()=>onStart("profile")}
           style={{fontSize:14,padding:"15px 26px",borderRadius:12}}>
-          {isEs?"🎯 Analizar una acción":"🎯 Analyze a stock"}
+          {isEs?"🧬 ¿Cómo debería invertir yo?":"🧬 What type of investor am I?"}
         </button>
       </div>
 
@@ -1408,31 +1402,31 @@ function Hero({onStart,lang="en"}){
       <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:"100%"}}>
         {[
           {
-            step:isEs?"Paso 1 — Siempre gratis":"Step 1 — Always free",
+            step:isEs?"Paso 1 — Gratis":"Step 1 — Free",
+            color:T.gold,
+            icon:"🎯",
+            title:isEs?"¿Vale la pena esta acción?":"Is this stock worth it?",
+            desc:isEs?"Escribe el nombre o ticker de cualquier acción. En 30 segundos recibes un score de calidad y una recomendación clara — comprar, esperar o evitar.":"Type any stock name or ticker. In 30 seconds you get a quality score and a clear recommendation — buy, wait, or avoid.",
+            tab:"score",
+            cta:isEs?"Analizar ahora →":"Analyze now →",
+          },
+          {
+            step:isEs?"Paso 2 — Gratis":"Step 2 — Free",
             color:T.blue,
             icon:"🧬",
             title:isEs?"¿Qué tipo de inversor eres?":"What type of investor are you?",
-            desc:isEs?"8 preguntas rápidas. La IA descubre si eres Conservador, Moderado o Agresivo — y construye un portafolio personalizado con acciones que se adaptan a ti.":"8 quick questions. AI finds out if you're Conservative, Moderate or Aggressive — and builds a personalized portfolio of stocks that fit you.",
+            desc:isEs?"8 preguntas rápidas. La IA descubre tu perfil de riesgo y te dice exactamente qué tipo de acciones se adaptan a ti.":"8 quick questions. AI discovers your risk profile and tells you exactly what type of stocks suit you.",
             tab:"profile",
-            cta:isEs?"Descubrir mi perfil →":"Find my profile →",
+            cta:isEs?"Hacer el test →":"Take the test →",
           },
           {
-            step:isEs?"Paso 2 — 3 análisis gratis":"Step 2 — 3 free analyses",
-            color:T.gold,
-            icon:"🎯",
-            title:isEs?"Analiza cualquier acción con IA":"Analyze any stock with AI",
-            desc:isEs?"Escribe NVDA, Ecopetrol, Apple o cualquier empresa. En 30 segundos sabes si vale la pena comprarla — score de calidad, análisis del negocio y consenso de Wall Street.":"Type NVDA, Ecopetrol, Apple or any company. In 30 seconds you know if it's worth buying — quality score, business analysis and Wall Street consensus.",
-            tab:"score",
-            cta:isEs?"Analizar una acción →":"Analyze a stock →",
-          },
-          {
-            step:isEs?"Paso 3 — Gratis hasta 5 acciones":"Step 3 — Free up to 5 stocks",
+            step:isEs?"Paso 3 — Gratis hasta 5":"Step 3 — Free up to 5",
             color:T.green,
             icon:"📁",
             title:isEs?"Sigue tu dinero en tiempo real":"Track your money in real time",
-            desc:isEs?"¿Ya tienes acciones en Trii, HAPI o IBKR? Importa tu portafolio en segundos y ve tu P&G al instante. La IA analiza todo y te dice cómo mejorar.":"Already have stocks in Trii, HAPI or IBKR? Import your portfolio in seconds and see your P&L instantly. AI analyzes everything and tells you how to improve.",
+            desc:isEs?"Agrega tus acciones y ve cuánto ganaste o perdiste hoy. La IA analiza tu portafolio completo y te dice cómo mejorarlo.":"Add your stocks and see how much you gained or lost today. AI analyzes your full portfolio and tells you how to improve it.",
             tab:"portfolio",
-            cta:isEs?"Importar mi portafolio →":"Import my portfolio →",
+            cta:isEs?"Armar portafolio →":"Build portfolio →",
           },
         ].map(({step,color,icon,title,desc,tab,cta})=>(
           <div key={tab} onClick={()=>onStart(tab)}
@@ -1487,102 +1481,7 @@ function Hero({onStart,lang="en"}){
       </div>
     </div>
 
-    {/* ── MULTI-BROKER VALUE PROP ── */}
-    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 40px"}}>
-      <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}55`,borderRadius:16,padding:"24px 28px",textAlign:"center"}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:isEs?20:18,color:T.gold,marginBottom:10,fontWeight:700}}>
-          {isEs
-            ?"🇨🇴 En Colombia usas varios brokers — Inversoria los une todos"
-            :"🇨🇴 In Colombia you use multiple brokers — Inversoria unifies them all"}
-        </div>
-        <div style={{fontSize:13,color:T.muted,lineHeight:1.8,maxWidth:680,margin:"0 auto 20px"}}>
-          {isEs
-            ?<>Trii solo tiene algunas acciones colombianas. Para invertir en <strong style={{color:T.text}}>NYSE, NASDAQ o Europa</strong> usas HAPI, XTB o IBKR. El resultado: tu dinero disperso en 3 o 4 apps distintas, sin una vista clara de cómo vas realmente.</>
-            :<>Trii only has some Colombian stocks. For <strong style={{color:T.text}}>NYSE, NASDAQ or Europe</strong> you use HAPI, XTB or IBKR. The result: your money scattered across 3-4 different apps, with no clear view of how you're really doing.</>}
-        </div>
-        <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",flexWrap:"wrap",marginBottom:20}}>
-          {[
-            {flag:"🇨🇴",name:"Trii",desc:isEs?"Acciones BVC":"BVC stocks"},
-            {flag:"🇲🇽",name:"HAPI",desc:isEs?"NYSE · NASDAQ":"NYSE · NASDAQ"},
-            {flag:"🌎",name:"XTB",desc:isEs?"Europa · USA":"Europe · USA"},
-            {flag:"🇺🇸",name:"IBKR",desc:isEs?"Mercados globales":"Global markets"},
-          ].map(({flag,name,desc},i)=><React.Fragment key={name}>
-            <div style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
-              <div style={{fontSize:16,marginBottom:2}}>{flag}</div>
-              <div style={{fontSize:12,color:T.text,fontWeight:600}}>{name}</div>
-              <div style={{fontSize:10,color:T.muted}}>{desc}</div>
-            </div>
-            {i<3&&<div style={{fontSize:16,color:T.muted}}>+</div>}
-          </React.Fragment>)}
-          <div style={{fontSize:20,color:T.muted,fontWeight:300}}>→</div>
-          <div style={{background:`linear-gradient(135deg,#6d3fdc,#4f2db0)`,border:`1px solid ${T.purple}`,borderRadius:10,padding:"8px 18px",textAlign:"center",minWidth:100}}>
-            <div style={{fontSize:14,marginBottom:2}}>📊</div>
-            <div style={{fontSize:12,color:"#fff",fontWeight:600}}>Inversoria</div>
-            <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Todo junto</div>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:16,justifyContent:"center",flexWrap:"wrap"}}>
-          {[
-            isEs?"✓ Todas tus acciones en un solo lugar":"✓ All your stocks in one place",
-            isEs?"✓ P&G total en tiempo real":"✓ Total P&L in real time",
-            isEs?"✓ Rentabilidad de todas tus operaciones":"✓ Returns across all your trades",
-            isEs?"✓ Análisis IA de cada posición":"✓ AI analysis of each position",
-          ].map(f=><span key={f} style={{fontSize:11,color:T.green}}>{"✓"} {f.replace("✓ ","")}</span>)}
-        </div>
-      </div>
-    </div>
-
-    {/* ── SEO TEXT — visible para Google, útil para usuarios ── */}
-    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 40px"}}>
-      <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:16,padding:"28px 32px"}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:T.gold,marginBottom:16,fontWeight:700}}>
-          {lang==="es"?"La plataforma de inversiones para Colombia y LATAM":"The investment platform for Colombia and LATAM"}
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-          <div>
-            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
-              {lang==="es"?"📊 Análisis de acciones con IA":"📊 AI-powered stock analysis"}
-            </div>
-            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
-              {lang==="es"
-                ?"Analiza acciones de la Bolsa de Valores de Colombia (BVC), NYSE, NASDAQ y mercados de Europa y LATAM. Obtén un score de calidad, análisis del moat del negocio y consenso de analistas de Wall Street en 30 segundos."
-                :"Analyze stocks from the Colombian Stock Exchange (BVC), NYSE, NASDAQ, and markets across Europe and LATAM. Get a quality score, business moat analysis, and Wall Street analyst consensus in 30 seconds."}
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
-              {lang==="es"?"📁 Compatible con tus brokers favoritos":"📁 Compatible with your favorite brokers"}
-            </div>
-            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
-              {lang==="es"
-                ?"Importa tu portafolio directamente desde Trii, HAPI, XTB e Interactive Brokers (IBKR). Sube una captura de pantalla o archivo CSV y Inversoria detecta tus posiciones automáticamente."
-                :"Import your portfolio directly from Trii, HAPI, XTB, and Interactive Brokers (IBKR). Upload a screenshot or CSV file and Inversoria detects your positions automatically."}
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
-              {lang==="es"?"🇨🇴 Acciones colombianas en tiempo real":"🇨🇴 Colombian stocks in real time"}
-            </div>
-            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
-              {lang==="es"
-                ?"Precios en vivo de la BVC: Ecopetrol, Bancolombia, Grupo Sura, Terpel, GEB, ISA, Grupo Éxito (CNEC) y más de 30 acciones colombianas. También cobre, petróleo y mercados de México, Brasil, Chile y Argentina."
-                :"Live BVC prices: Ecopetrol, Bancolombia, Grupo Sura, Terpel, GEB, ISA, CNEC, and 30+ Colombian stocks. Also Mexico, Brazil, Chile, and Argentina markets."}
-            </div>
-          </div>
-          <div>
-            <div style={{fontSize:13,color:T.text,fontWeight:600,marginBottom:6}}>
-              {lang==="es"?"📈 Calculadora de interés compuesto":"📈 Compound interest calculator"}
-            </div>
-            <div style={{fontSize:12,color:T.muted,lineHeight:1.8}}>
-              {lang==="es"
-                ?"Calcula cuándo llegarás a tu meta de riqueza con nuestra calculadora de interés compuesto en pesos colombianos, dólares y cualquier moneda de LATAM. Descubre cuánto ahorrar para llegar a $1.000 millones COP."
-                :"Calculate when you'll reach your wealth goal with our compound interest calculator in Colombian pesos, dollars, and any LATAM currency."}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 32px"}}><AdBanner size="leaderboard"/></div>
+    <div style={{maxWidth:800,margin:"0 auto",padding:"0 28px 32px"}}><AdBanner size="leaderboard"/></div>
   </div>;
 }
 
@@ -1626,15 +1525,6 @@ function calcYearsTo1M(startAge,monthly=200,annualRate=10){
 
 function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
   const L2=LANG[lang]||LANG.en;
-  // Local formatter for compound calculator — inputs are in display currency already
-  // so we do NOT multiply by _exRate again; just format with currency symbol and locale
-  // Full number formatter — no abbreviations, always shows complete number
-  const fmtCalc=(n)=>{
-    if(!n&&n!==0)return`${_currency.symbol}0`;
-    const sign=n<0?"-":"";
-    return`${sign}${_currency.symbol}${Math.round(Math.abs(n)).toLocaleString(_currency.locale)}`;
-  };
-  const fmtCalcShort=fmtCalc; // same — no abbreviations in calculator
   // Currency-aware slider limits — scale USD maxes by live exchange rate
   const sMaxInitial=5000000;
   const sStepInitial=100;
@@ -1659,11 +1549,11 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
     const int=payload.find(p=>p.dataKey==="interest")?.value||0;
     return<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,padding:14,minWidth:230}}>
       <div style={{fontSize:12,color:T.gold,marginBottom:8,fontFamily:"'Playfair Display',serif"}}>{label}</div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}><span style={{color:T.muted}}>💵 {lang==="es"?"Capital Invertido":"Capital Invested"}</span><Mn sz={11} c={T.blue}>{fmtCalc(cap)}</Mn></div>
-      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6}}><span style={{color:T.muted}}>✨ {lang==="es"?"Interés Ganado":"Interest Earned"}</span><Mn sz={11} c={T.green}>{fmtCalc(int)}</Mn></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:4}}><span style={{color:T.muted}}>💵 {lang==="es"?"Capital Invertido":"Capital Invested"}</span><Mn sz={11} c={T.blue}>{fmt(cap)}</Mn></div>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:6}}><span style={{color:T.muted}}>✨ {lang==="es"?"Interés Ganado":"Interest Earned"}</span><Mn sz={11} c={T.green}>{fmt(int)}</Mn></div>
       <div style={{borderTop:`1px solid ${T.border}33`,paddingTop:6,display:"flex",justifyContent:"space-between"}}>
         <span style={{fontSize:11,color:T.muted}}>Total Balance</span>
-        <Mn sz={12} c={T.gold} s={{fontWeight:700}}>{fmtCalc(cap+int)}</Mn>
+        <Mn sz={12} c={T.gold} s={{fontWeight:700}}>{fmt(cap+int)}</Mn>
       </div>
       {int>cap&&<div style={{fontSize:10,color:T.green,textAlign:"center",padding:"3px 0",marginTop:6,borderTop:`1px solid ${T.green}22`}}>✨ Interest exceeds capital!</div>}
     </div>;
@@ -1688,9 +1578,9 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
     {/* KPI cards */}
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14}}>
       {[
-        {l:lang==="es"?"Balance Final":"Final Balance",v:fmtCalc(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
-        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmtCalc(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
-        {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmtCalc(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
+        {l:lang==="es"?"Balance Final":"Final Balance",v:fmt(last.balance||0),c:T.gold,sub:lang==="es"?`en ${cfg.years} años`:`in ${cfg.years} years`,icon:"🏆"},
+        {l:lang==="es"?"Total Invertido":"Total Invested",v:fmt(last.contributed||0),c:T.blue,sub:lang==="es"?"tu dinero":"your money",icon:"💵"},
+        {l:lang==="es"?"Interés Ganado":"Interest Earned",v:fmt(last.interest||0),c:T.green,sub:`${last.balance?((last.interest/last.balance)*100).toFixed(0):0}% of total`,icon:"✨"},
         {l:lang==="es"?"Multiplicador":"Multiplier",v:`${last.mult||1}x`,c:T.purple,sub:`Doubles every ${doubleYears} yrs`,icon:"🚀"},
       ].map(({l,v,c,sub,icon})=><Card key={l} s={{padding:16,position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",top:10,right:14,fontSize:22,opacity:0.12}}>{icon}</div>
@@ -1734,9 +1624,9 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
         <Card s={{background:`${T.gold}07`,border:`1px solid ${T.goldDim}44`}}>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:12}}>{lang==="es"?"✨ La Magia del Interés Compuesto":"✨ The Magic of Compounding"}</div>
           {[
-            {l:lang==="es"?"Solo Capital (sin interés)":"Capital only (no interest)",v:fmtCalc(last.contributed||0)},
-            {l:lang==="es"?"Con interés compuesto 🏆":"With compound interest 🏆",v:fmtCalc(last.balance||0),hi:true},
-            {l:lang==="es"?"Generado solo por interés":"Generated by interest alone",v:`+${fmtCalc(last.interest||0)}`,pos:true},
+            {l:lang==="es"?"Solo Capital (sin interés)":"Capital only (no interest)",v:fmt(last.contributed||0)},
+            {l:lang==="es"?"Con interés compuesto 🏆":"With compound interest 🏆",v:fmt(last.balance||0),hi:true},
+            {l:lang==="es"?"Generado solo por interés":"Generated by interest alone",v:`+${fmt(last.interest||0)}`,pos:true},
           ].map(({l,v,hi,pos})=><div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${T.border}22`,alignItems:"center"}}>
             <span style={{fontSize:11,color:hi?T.text:T.muted}}>{l}</span>
             <Mn sz={hi?12:11} c={pos?T.green:hi?T.gold:T.muted} s={hi?{fontWeight:700}:{}}>{v}</Mn>
@@ -1751,13 +1641,13 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         <Card>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:3}}>{lang==="es"?"📊 Capital vs. Interés — El Efecto Bola de Nieve":"📊 Capital vs. Interest — The Snowball Effect"}</div>
-          <div style={{fontSize:11,color:T.muted,marginBottom:14}}>{lang==="es"?<>Observa cómo la barra verde (interés) crece hasta <strong style={{color:T.green}}>superar</strong> la azul (capital)</>:<>Watch the green (interest) bar grow until it <strong style={{color:T.green}}>overtakes</strong> the blue (capital)</>}</div>
+          <div style={{fontSize:11,color:T.muted,marginBottom:14}}>Watch the green (interest) bar grow until it <strong style={{color:T.green}}>overtakes</strong> the blue (capital)</div>
           <div style={{height:280}}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}} barCategoryGap="10%">
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtCalcShort(v)} width={82}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
                 <Tooltip content={<StackedTT/>}/>
                 <Legend formatter={n=>n==="contributed"?(lang==="es"?"Capital Invertido":"Capital Invested"):(lang==="es"?"Interés Ganado":"Interest Earned")} wrapperStyle={{fontSize:11,color:T.muted,paddingTop:8}}/>
                 <Bar dataKey="contributed" stackId="a" fill={T.blue} opacity={0.85} name="contributed"/>
@@ -1773,8 +1663,8 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
               <BarChart data={data} margin={{top:5,right:5,left:10,bottom:0}}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false}/>
                 <XAxis dataKey="label" tick={{fill:T.muted,fontSize:9}} interval={Math.max(0,Math.floor(cfg.years/8)-1)}/>
-                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtCalcShort(v)} width={82}/>
-                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmtCalc(v),"Annual Interest"]}/>
+                <YAxis tick={{fill:T.muted,fontSize:9}} tickFormatter={v=>fmtShort(v)} width={82}/>
+                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:8}} formatter={v=>[fmt(v),"Annual Interest"]}/>
                 <Bar dataKey="interestAnual" fill={T.green} opacity={0.85} radius={[3,3,0,0]}/>
               </BarChart>
             </ResponsiveContainer>
@@ -1791,7 +1681,7 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
         const intAhead=row.interest>row.contributed;
         return<Card key={y} s={{padding:14,textAlign:"center",background:`${T.gold}06`,border:`1px solid ${T.goldDim}33`}}>
           <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:6}}>Year {y}</div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:4,wordBreak:"break-all"}}>{fmtCalc(row.balance)}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:T.gold,marginBottom:4,wordBreak:"break-all"}}>{fmt(row.balance)}</div>
           <div style={{fontSize:10,color:T.green,marginBottom:3}}>×{row.mult} initial</div>
           {intAhead?<div style={{fontSize:10,color:T.green,padding:"2px 6px",background:`${T.green}15`,borderRadius:10}}>Interest &gt; Capital ✨</div>
             :<div style={{fontSize:10,color:T.muted}}>{row.balance>0?((row.interest/row.balance)*100).toFixed(0):0}% from interest</div>}
@@ -1805,10 +1695,10 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
         <div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold}}>📋 Year-by-Year Breakdown</div>
           <div style={{fontSize:11,color:T.muted,marginTop:3}}>
-            {lang==="es"?<><span style={{color:T.green,fontWeight:600}}>Columna verde = interés generado</span> — esto es lo que financia tu estilo de vida</>:<><span style={{color:T.green,fontWeight:600}}>Green column = interest generated</span> — this is what pays for your lifestyle</>}
+            <span style={{color:T.green,fontWeight:600}}>Green column = interest generated</span> — this is what pays for your lifestyle
           </div>
         </div>
-        <button className="seg" onClick={()=>setShowTable(v=>!v)}>{lang==="es"?(showTable?"Ocultar tabla":"Ver tabla"):(showTable?"Hide Table":"Show Table")}</button>
+        <button className="seg" onClick={()=>setShowTable(v=>!v)}>{showTable?"Hide Table":"Show Table"}</button>
       </div>
       {showTable&&<div style={{overflowX:"auto"}}>
         <table style={{width:"100%",borderCollapse:"collapse",minWidth:800}}>
@@ -1816,7 +1706,7 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
             <tr style={{background:T.accent}}>
               <th style={{padding:"12px 16px",textAlign:"center",fontSize:10,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>Year</th>
               <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.blue,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>Annual Contribution</th>
-              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.green,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,background:`${T.green}12`,borderBottom:`2px solid ${T.green}44`}}>{lang==="es"?"✨ Interés Este Año":"✨ Interest This Year"}</th>
+              <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.green,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,background:`${T.green}12`,borderBottom:`2px solid ${T.green}44`}}>✨ Interest This Year</th>
               <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.green,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,background:`${T.green}08`,borderBottom:`2px solid ${T.green}33`}}>Cumulative Interest</th>
               <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.gold,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>Final Balance</th>
               <th style={{padding:"12px 16px",textAlign:"right",fontSize:10,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,borderBottom:`1px solid ${T.border}`}}>×Initial</th>
@@ -1837,22 +1727,22 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
                   {intAhead&&r.year===data.findIndex(d=>d.interest>d.contributed)+1&&<div style={{fontSize:8,color:T.green,marginTop:2,whiteSpace:"nowrap"}}>↑ crossover</div>}
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right"}}>
-                  <Mn sz={12} c={T.blue}>{fmtCalc(annualContrib)}</Mn>
+                  <Mn sz={12} c={T.blue}>{fmt(annualContrib)}</Mn>
                 </td>
                 {/* HIGHLIGHTED INTEREST COLUMN */}
                 <td style={{padding:"10px 16px",textAlign:"right",background:`${T.green}08`,borderLeft:`1px solid ${T.green}22`,borderRight:`1px solid ${T.green}22`}}>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
-                    <Mn sz={13} c={T.green} s={{fontWeight:600}}>{fmtCalc(r.interestAnual)}</Mn>
+                    <Mn sz={13} c={T.green} s={{fontWeight:600}}>{fmt(r.interestAnual)}</Mn>
                     <div style={{fontSize:9,color:T.green,opacity:0.7}}>{intPct}% of balance/yr</div>
                     <div style={{width:Math.min((r.interestAnual/(data[data.length-1]?.interestAnual||1))*60,60),height:2,background:T.green,borderRadius:2,opacity:0.5}}/>
                   </div>
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right",background:`${T.green}04`}}>
-                  <Mn sz={12} c={intAhead?T.green:`${T.green}99`}>{fmtCalc(r.interest)}</Mn>
+                  <Mn sz={12} c={intAhead?T.green:`${T.green}99`}>{fmt(r.interest)}</Mn>
                   <div style={{fontSize:9,color:T.muted,marginTop:2}}>{r.balance>0?((r.interest/r.balance)*100).toFixed(0):0}% of balance</div>
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right"}}>
-                  <Mn sz={hi?14:12} c={hi?T.gold:T.text} s={hi?{fontWeight:700}:{}}>{fmtCalc(r.balance)}</Mn>
+                  <Mn sz={hi?14:12} c={hi?T.gold:T.text} s={hi?{fontWeight:700}:{}}>{fmt(r.balance)}</Mn>
                 </td>
                 <td style={{padding:"10px 16px",textAlign:"right"}}>
                   <span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:r.mult>=10?`${T.gold}22`:r.mult>=5?`${T.gold}15`:r.mult>=2?`${T.green}15`:`${T.blue}15`,color:r.mult>=10?T.gold:r.mult>=5?T.gold:r.mult>=2?T.green:T.blue,fontWeight:r.mult>=5?700:400}}>×{r.mult}</span>
@@ -1863,10 +1753,10 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
           <tfoot>
             <tr style={{borderTop:`2px solid ${T.border}`,background:T.accent}}>
               <td style={{padding:"12px 16px",textAlign:"center"}}><Mn sz={11} c={T.gold}>TOTAL</Mn></td>
-              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmtCalc(annualContrib*cfg.years)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.blue}>{fmt(annualContrib*cfg.years)}</Mn></td>
               <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}10`}}><Mn sz={12} c={T.muted}>—</Mn></td>
-              <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}06`}}><Mn sz={14} c={T.green} s={{fontWeight:700}}>{fmtCalc(last.interest||0)}</Mn></td>
-              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmtCalc(last.balance||0)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right",background:`${T.green}06`}}><Mn sz={14} c={T.green} s={{fontWeight:700}}>{fmt(last.interest||0)}</Mn></td>
+              <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={14} c={T.gold} s={{fontWeight:700}}>{fmt(last.balance||0)}</Mn></td>
               <td style={{padding:"12px 16px",textAlign:"right"}}><span style={{fontSize:12,padding:"3px 10px",borderRadius:20,background:`${T.gold}22`,color:T.gold,border:`1px solid ${T.goldDim}`,fontWeight:700}}>×{last.mult}</span></td>
             </tr>
           </tfoot>
@@ -1888,9 +1778,9 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:860,margin:"0 auto"}}>
         {[
-          {icon:"🧬",title:lang==="es"?"Descubre tu ADN Inversor":"Discover Your Investor DNA",desc:lang==="es"?"8 preguntas rápidas. La IA descubre tu perfil y te construye un portafolio personalizado.":"Take our 8-question quiz and get a Conservative, Moderate, or Aggressive profile with a personalized AI portfolio.",cta:lang==="es"?"Tomar el Quiz →":"Take the Quiz →",tab:"profile",color:T.purple},
-          {icon:"🎯",title:lang==="es"?"Analizar una Acción":"Analyze a Specific Stock",desc:lang==="es"?"Escribe cualquier ticker y obtén un score de calidad, análisis del moat y consenso de Wall Street.":"Enter any ticker and get a quality score, moat analysis, and Wall Street consensus.",cta:lang==="es"?"Analizar →":"Analyze →",tab:"score",color:T.gold},
-          {icon:"📁",title:lang==="es"?"Revisar Mi Portafolio":"Audit Your Portfolio",desc:lang==="es"?"¿Ya tienes acciones? Sube tus posiciones y la IA te dice qué mantener, comprar más o vender.":"Already invested? Upload your positions and our AI will tell you what to hold, buy more, or sell.",cta:lang==="es"?"Analizar →":"Analyze →",tab:"portfolio",color:T.green},
+          {icon:"🧬",title:"Discover Your Investor DNA",desc:"Take our 8-question quiz and get a Conservative, Moderate, or Aggressive profile with a personalized AI portfolio.",cta:lang==="es"?"Tomar el Quiz →":"Take the Quiz →",tab:"profile",color:T.purple},
+          {icon:"🎯",title:"Analyze a Specific Stock",desc:"Enter any ticker — NVDA, AAPL, COST — and get a quality score, moat analysis (La Fosa del Negocio), and Wall Street consensus.",cta:"Analyze a Stock →",tab:"score",color:T.gold},
+          {icon:"📁",title:"Audit Your Portfolio",desc:"Already invested? Upload your positions and our AI will tell you what to hold, buy more, or sell — with live prices.",cta:"Analyze Portfolio →",tab:"portfolio",color:T.green},
         ].map(({icon,title,desc,cta,tab,color})=>(
           <div key={tab} onClick={()=>onGoToTab(tab)}
             style={{cursor:"pointer",background:T.card,border:`1px solid ${color}33`,borderRadius:14,padding:22,textAlign:"left",transition:"all 0.2s",position:"relative",overflow:"hidden"}}
@@ -1908,7 +1798,6 @@ function CompoundTab({onGoToTab,lang="en",portfolioBalance=0}){
 }
 
 function MillionGoalSection({lang="en"}){
-  const isEs=lang==="es";
   const RATE=10;
   const [age,setAge]=useState(30);
   const [goal,setGoal]=useState(1000000);
@@ -1916,58 +1805,36 @@ function MillionGoalSection({lang="en"}){
 
   const r=(RATE/100)/12;
 
+  // At current monthly savings, what age do you hit the goal?
   const monthsToGoal=monthly>0?Math.log(1+goal*r/monthly)/Math.log(1+r):Infinity;
   const reachAge=isFinite(monthsToGoal)?Math.round(age+monthsToGoal/12):null;
   const yearsToGoal=isFinite(monthsToGoal)?Math.round(monthsToGoal/12):null;
+
+  // How much/month needed to hit goal by 65?
   const yearsLeft=65-age;
   const n=yearsLeft*12;
   const neededMonthly=n>0?Math.round(goal*r/(Math.pow(1+r,n)-1)):Infinity;
   const neededDaily=Math.ceil(neededMonthly/30);
+
+  // What if you wait 5 or 10 years?
   const neededAt5=((65-(age+5))*12)>0?Math.round(goal*r/(Math.pow(1+r,(65-(age+5))*12)-1)):Infinity;
   const neededAt10=((65-(age+10))*12)>0?Math.round(goal*r/(Math.pow(1+r,(65-(age+10))*12)-1)):Infinity;
 
   const canReach=reachAge&&reachAge<=85;
+  const goalFmt=n=>"$"+Math.round(n).toLocaleString("en-US");
   const resultColor=canReach&&reachAge<=65?T.green:canReach?T.gold:T.red;
-
-  // Currency-aware formatter — no exchange rate multiplication (inputs are in display currency)
-  const gFmt=n=>{
-    if(!n&&n!==0)return`${_currency.symbol}0`;
-    const sign=n<0?"-":"";
-    return`${sign}${_currency.symbol}${Math.round(Math.abs(n)).toLocaleString(_currency.locale)}`;
-  };
-  const dailyFmt=n=>`${_currency.symbol}${Math.ceil(Math.abs(n))}`;
-
-  // Slider ranges adapt to currency (COP needs much larger values)
-  const isCOP=_currency.code==="COP";
-  const goalMin=isCOP?100_000_000:100_000;
-  const goalMax=isCOP?5_000_000_000:5_000_000;
-  const goalStep=isCOP?50_000_000:50_000;
-  const goalDefault=isCOP?4_000_000_000:1_000_000;
-  const monthlyMin=isCOP?200_000:50;
-  const monthlyMax=isCOP?20_000_000:5_000;
-  const monthlyStep=isCOP?100_000:50;
-  const monthlyDefault=isCOP?1_200_000:300;
-
-  // Slider labels
-  const goalLabel1=isCOP?"$100M":"$100K";
-  const goalLabel2=isCOP?"$1,000M":"$1M";
-  const goalLabel3=isCOP?"$5,000M":"$5M";
-  const moLabel1=isCOP?"$200K":isEs?"$50":"$50";
-  const moLabel2=isCOP?"$2M":isEs?"$500":"$500";
-  const moLabel3=isCOP?"$20M":isEs?"$5,000":"$5,000";
 
   return<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`,padding:0,overflow:"hidden"}}>
     {/* Header */}
     <div style={{textAlign:"center",padding:"28px 24px 20px",borderBottom:`1px solid ${T.border}33`}}>
       <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.gold}15`,border:`1px solid ${T.goldDim}`,borderRadius:20,padding:"5px 14px",marginBottom:14}}>
-        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>{isEs?"🎯 Tu Plan Personal de Riqueza":"🎯 Your Personal Wealth Plan"}</span>
+        <span style={{fontSize:11,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase"}}>{lang==="es"?"🎯 Tu Plan Personal de Riqueza":"🎯 Your Personal Wealth Plan"}</span>
       </div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.text,marginBottom:8,fontWeight:700}}>
-        {isEs?"¿Cuándo alcanzarás ":"When will "}<span style={{color:T.gold}}>{isEs?"tu":"you"}</span>{isEs?" meta?":" reach your goal?"}
+        {lang==="es"?"¿Cuándo alcanzarás ":"When will "}<span style={{color:T.gold}}>{lang==="es"?"tu":"you"}</span>{lang==="es"?" meta?":" reach your goal?"}
       </div>
       <div style={{fontSize:13,color:T.muted,lineHeight:1.7}}>
-        {isEs?<>Al <strong style={{color:T.green}}>{RATE}% anual</strong> (promedio histórico S&P 500), con capitalización mensual.</>
-              :<>At <strong style={{color:T.green}}>{RATE}% annual</strong> (S&P 500 historical average), compounded monthly.</>}
+        At <strong style={{color:T.green}}>{RATE}% annual</strong> (S&P 500 historical average), compounded monthly.
       </div>
     </div>
 
@@ -1975,8 +1842,8 @@ function MillionGoalSection({lang="en"}){
     <div className="kpi-3" style={{padding:"24px",display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,borderBottom:`1px solid ${T.border}33`,background:`${T.accent}66`}}>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,color:T.muted}}>{isEs?"🎂 Tu edad actual":"🎂 Your current age"}</span>
-          <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{age} {isEs?"años":"years old"}</Mn>
+          <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"🎂 Tu edad actual":"🎂 Your current age"}</span>
+          <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{age} years old</Mn>
         </div>
         <input type="range" min={18} max={60} step={1} value={age} onChange={e=>setAge(parseInt(e.target.value))}/>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
@@ -1985,22 +1852,22 @@ function MillionGoalSection({lang="en"}){
       </div>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,color:T.muted}}>{isEs?"🎯 Tu meta de riqueza":"🎯 Your wealth goal"}</span>
-          <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{gFmt(goal)}</Mn>
+          <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"🎯 Tu meta de riqueza":"🎯 Your wealth goal"}</span>
+          <Mn sz={14} c={T.gold} s={{fontWeight:700}}>{goalFmt(goal)}</Mn>
         </div>
-        <input type="range" min={goalMin} max={goalMax} step={goalStep} value={Math.min(goal,goalMax)} onChange={e=>setGoal(parseInt(e.target.value))}/>
+        <input type="range" min={100000} max={5000000} step={50000} value={goal} onChange={e=>setGoal(parseInt(e.target.value))}/>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
-          <span>{goalLabel1}</span><span>{goalLabel2}</span><span>{goalLabel3}</span>
+          <span>$100K</span><span>$1M</span><span>$5M</span>
         </div>
       </div>
       <div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-          <span style={{fontSize:12,color:T.muted}}>{isEs?"💵 Ahorro mensual":"💵 Monthly savings"}</span>
-          <Mn sz={14} c={T.green} s={{fontWeight:700}}>{gFmt(monthly)}/{isEs?"mes":"mo"} · ~{dailyFmt(monthly/30)}/{isEs?"día":"day"}</Mn>
+          <span style={{fontSize:12,color:T.muted}}>{lang==="es"?"💵 Ahorro mensual":"💵 Monthly savings"}</span>
+          <Mn sz={14} c={T.green} s={{fontWeight:700}}>{goalFmt(monthly)}/mo · ~${Math.ceil(monthly/30)}/day</Mn>
         </div>
-        <input type="range" min={monthlyMin} max={monthlyMax} step={monthlyStep} value={Math.min(monthly,monthlyMax)} onChange={e=>setMonthly(parseInt(e.target.value))}/>
+        <input type="range" min={50} max={5000} step={50} value={monthly} onChange={e=>setMonthly(parseInt(e.target.value))}/>
         <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:T.muted,marginTop:4}}>
-          <span>{moLabel1}</span><span>{moLabel2}</span><span>{moLabel3}</span>
+          <span>$50</span><span>$500</span><span>$5,000</span>
         </div>
       </div>
     </div>
@@ -2008,64 +1875,60 @@ function MillionGoalSection({lang="en"}){
     {/* Main result */}
     <div style={{padding:"28px 24px"}}>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
-        {/* Result A */}
+        {/* Result A: when do you reach goal */}
         <div style={{background:canReach?`${resultColor}10`:`${T.red}08`,border:`2px solid ${resultColor}44`,borderRadius:16,padding:"22px 24px",textAlign:"center"}}>
           <div style={{fontSize:11,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>
-            {isEs?`Ahorrando ${gFmt(monthly)}/mes, llegas a ${gFmt(goal)} a los`:`Saving ${gFmt(monthly)}/mo, you reach ${gFmt(goal)} at`}
+            Saving {goalFmt(monthly)}/mo, you reach {goalFmt(goal)} at
           </div>
           {canReach
             ?<>
               <div style={{fontFamily:"'Playfair Display',serif",fontSize:52,color:resultColor,fontWeight:700,lineHeight:1}}>
                 {reachAge}
               </div>
-              <div style={{fontSize:14,color:T.muted,marginTop:6}}>
-                {isEs?`años · en `:"years old · in "}<span style={{color:resultColor,fontWeight:600}}>{yearsToGoal} {isEs?"años":"years"}</span>
-              </div>
-              {reachAge<=65&&<div style={{marginTop:10,fontSize:11,color:T.green,padding:"4px 12px",background:`${T.green}15`,borderRadius:20,display:"inline-block"}}>✓ {isEs?"Antes de la edad de jubilación":"Before retirement age"}</div>}
-              {reachAge>65&&<div style={{marginTop:10,fontSize:11,color:T.gold,padding:"4px 12px",background:`${T.gold}15`,borderRadius:20,display:"inline-block"}}>⚡ {isEs?"Aumenta el ahorro para lograrlo antes":"Increase savings to reach it sooner"}</div>}
+              <div style={{fontSize:14,color:T.muted,marginTop:6}}>years old · in <span style={{color:resultColor,fontWeight:600}}>{yearsToGoal} years</span></div>
+              {reachAge<=65&&<div style={{marginTop:10,fontSize:11,color:T.green,padding:"4px 12px",background:`${T.green}15`,borderRadius:20,display:"inline-block"}}>✓ Before retirement age</div>}
+              {reachAge>65&&<div style={{marginTop:10,fontSize:11,color:T.gold,padding:"4px 12px",background:`${T.gold}15`,borderRadius:20,display:"inline-block"}}>⚡ Increase savings to reach it sooner</div>}
             </>
             :<>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.red,fontWeight:700,marginBottom:6}}>{isEs?"No alcanzable":"Not reachable"}</div>
-              <div style={{fontSize:12,color:T.muted}}>{isEs?"Con este ahorro — aumenta el monto mensual":"at this savings rate — increase your monthly amount"}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.red,fontWeight:700,marginBottom:6}}>Not reachable</div>
+              <div style={{fontSize:12,color:T.muted}}>at this savings rate — increase your monthly amount</div>
             </>}
         </div>
 
-        {/* Result B */}
+        {/* Result B: how much needed by 65 */}
         <div style={{background:`${T.gold}08`,border:`1px solid ${T.goldDim}44`,borderRadius:16,padding:"22px 24px",textAlign:"center"}}>
           <div style={{fontSize:11,color:T.muted,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>
-            {isEs?`Para llegar a ${gFmt(goal)} a los 65, ahorra`:`To reach ${gFmt(goal)} by age 65, save`}
+            To reach {goalFmt(goal)} by age 65, save
           </div>
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:52,color:T.gold,fontWeight:700,lineHeight:1}}>
-            {isFinite(neededMonthly)?gFmt(neededMonthly):"—"}
+            {isFinite(neededMonthly)?goalFmt(neededMonthly):"—"}
           </div>
-          <div style={{fontSize:14,color:T.muted,marginTop:6}}>{isEs?"por mes":"per month"} · ~{dailyFmt(neededDaily)}/{isEs?"día":"day"}</div>
+          <div style={{fontSize:14,color:T.muted,marginTop:6}}>per month · ~${neededDaily}/day</div>
           <div style={{marginTop:10,fontSize:11,color:T.muted}}>
-            {yearsLeft} {isEs?"años de inversión restantes":"years of investing remaining"}
+            {yearsLeft} years of investing remaining
           </div>
-          {monthly>=neededMonthly&&<div style={{marginTop:8,fontSize:11,color:T.green,padding:"4px 12px",background:`${T.green}15`,borderRadius:20,display:"inline-block"}}>✓ {isEs?"¡Ya vas por buen camino!":"You're already on track!"}</div>}
+          {monthly>=neededMonthly&&<div style={{marginTop:8,fontSize:11,color:T.green,padding:"4px 12px",background:`${T.green}15`,borderRadius:20,display:"inline-block"}}>✓ You're already on track!</div>}
         </div>
       </div>
 
       {/* Cost of waiting */}
       {isFinite(neededAt5)&&isFinite(neededAt10)&&<div style={{background:T.accent,borderRadius:12,padding:"16px 20px",border:`1px solid ${T.border}`}}>
-        <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:12}}>⏰ {isEs?"El costo de esperar":"The cost of waiting"}</div>
+        <div style={{fontSize:11,color:T.gold,fontWeight:600,marginBottom:12}}>⏰ The cost of waiting</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,textAlign:"center"}}>
           {[
-            {l:isEs?`Empezando hoy (${age} años)`:`Starting now (age ${age})`,v:neededMonthly,c:T.green,highlight:true},
-            {l:isEs?`Espero 5 años (${age+5} años)`:`Wait 5 years (age ${age+5})`,v:neededAt5,c:T.gold,highlight:false},
-            {l:isEs?`Espero 10 años (${age+10} años)`:`Wait 10 years (age ${age+10})`,v:neededAt10,c:T.red,highlight:false},
+            {l:`Starting now (age ${age})`,v:neededMonthly,c:T.green,highlight:true},
+            {l:`Wait 5 years (age ${age+5})`,v:neededAt5,c:T.gold,highlight:false},
+            {l:`Wait 10 years (age ${age+10})`,v:neededAt10,c:T.red,highlight:false},
           ].map(({l,v,c,highlight})=>(
             <div key={l} style={{padding:"10px 12px",background:highlight?`${T.green}10`:T.card,borderRadius:10,border:`1px solid ${c}22`}}>
               <div style={{fontSize:10,color:T.muted,marginBottom:6,lineHeight:1.4}}>{l}</div>
-              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700}}>{gFmt(v)}/{isEs?"mes":"mo"}</div>
-              {!highlight&&<div style={{fontSize:10,color:c,marginTop:3}}>+{gFmt(v-neededMonthly)}/{isEs?"mes más":"mo more"}</div>}
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:c,fontWeight:700}}>{goalFmt(v)}/mo</div>
+              {!highlight&&<div style={{fontSize:10,color:c,marginTop:3}}>+{goalFmt(v-neededMonthly)}/mo more</div>}
             </div>
           ))}
         </div>
         <div style={{marginTop:12,fontSize:11,color:T.muted,textAlign:"center",lineHeight:1.7}}>
-          {isEs
-            ?<>Cada año que esperas, necesitas <span style={{color:T.red,fontWeight:600}}>más dinero por mes</span> para llegar a la misma meta. Empieza hoy con <span style={{color:T.green,fontWeight:600}}>{gFmt(neededMonthly)}/mes</span> — eso son ~{dailyFmt(neededDaily)}/día.</>
-            :<>Every year you wait, you need <span style={{color:T.red,fontWeight:600}}>more money per month</span> to reach the same goal. Start today with <span style={{color:T.green,fontWeight:600}}>{gFmt(neededMonthly)}/month</span> — that's ~{dailyFmt(neededDaily)}/day.</>}
+          Every year you wait, you need <span style={{color:T.red,fontWeight:600}}>more money per month</span> to reach the same goal. Start today with <span style={{color:T.green,fontWeight:600}}>{goalFmt(neededMonthly)}/month</span> — that's <span style={{color:T.gold}}>~${neededDaily}/day</span>.
         </div>
       </div>}
     </div>
@@ -4154,7 +4017,7 @@ Return ONLY a valid JSON array, no markdown, no explanation:
 [{"ticker":"AAPL","shares":10.5,"currentValue":1800,"pnlPct":20.5,"date":"2024-01-15"},...]
 
 Rules:
-- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE, NUCO→NUCO (keep as BVC), PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL, EXITO→CNEC (Grupo Éxito changed ticker to CNEC). Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA, PEI, CNEC, ISA.
+- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE, NUCO→NUCO (keep as BVC), PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL. Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA.
 - shares: exact number of shares. IMPORTANT: "231.0 Acciones" means 231 shares (not 2310). "515.0 Acciones" means 515 shares. Remove the ".0" decimal suffix.
 - currentValue: the total value shown, converted to USD. For COP values (format like $9.568.700,0): remove dots/commas, divide by ${copRate} (live rate). For MXN divide by ${mxnRate}. For USD keep as-is.
 - pnlPct: percentage gain/loss as number (13.28 for +13.28%, -21.11 for -21.11%). If "No disponible" or missing, use 0.
@@ -4439,117 +4302,6 @@ Return ONLY the JSON array.`};
     </label>
 
   </>;
-}
-
-
-// ── SELL HISTORY TAB ─────────────────────────────────────────────────────────
-function SellHistoryTab({transactions, enriched, onEdit, onDelete, lang, fmt}){
-  const isEs = lang==="es";
-  const sells = transactions.filter(t=>t.type==="sell").sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const [editing,setEditing] = useState(null);
-  const [editShares,setEditShares] = useState("");
-  const [editPrice,setEditPrice] = useState("");
-
-  const getAvgCost = (ticker) => {
-    const pos = enriched.find(p=>p.ticker===ticker);
-    return pos?.avgCost || 0;
-  };
-
-  const totalRealized = sells.reduce((sum,t)=>{
-    const cost = getAvgCost(t.ticker);
-    return sum + (t.price - cost) * t.shares;
-  },0);
-
-  if(!sells.length) return(
-    <div style={{textAlign:"center",padding:"32px 0",color:T.muted}}>
-      <div style={{fontSize:32,marginBottom:8}}>📭</div>
-      <div style={{fontSize:13}}>{isEs?"No hay ventas registradas":"No sells recorded yet"}</div>
-      <div style={{fontSize:11,marginTop:4,color:T.muted}}>{isEs?"Usa el botón Vender en cada posición":"Use the Sell button on each position"}</div>
-    </div>
-  );
-
-  return(
-    <div style={{padding:"14px 18px"}}>
-      {/* Summary bar */}
-      <div style={{display:"flex",gap:12,marginBottom:14,padding:"10px 14px",borderRadius:10,
-        background:totalRealized>=0?`${T.green}08`:`${T.red}08`,
-        border:`1px solid ${totalRealized>=0?T.green:T.red}33`}}>
-        <div>
-          <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em"}}>{isEs?"P&G Realizado Total":"Total Realized P&G"}</div>
-          <div style={{fontSize:18,fontWeight:700,color:totalRealized>=0?T.green:T.red,fontFamily:"'Playfair Display',serif"}}>
-            {totalRealized>=0?"+":""}{fmt(Math.abs(totalRealized))}
-          </div>
-        </div>
-        <div style={{marginLeft:"auto",textAlign:"right"}}>
-          <div style={{fontSize:10,color:T.muted,textTransform:"uppercase",letterSpacing:"0.07em"}}>{isEs?"Operaciones cerradas":"Closed trades"}</div>
-          <div style={{fontSize:18,fontWeight:700,color:T.gold,fontFamily:"'Playfair Display',serif"}}>{sells.length}</div>
-        </div>
-      </div>
-      {/* Sells table */}
-      <div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:600}}>
-          <thead>
-            <tr style={{borderBottom:`1px solid ${T.border}`}}>
-              {["Ticker",isEs?"Acciones":"Shares",isEs?"Precio Venta":"Sell Price",isEs?"Costo Prom.":"Avg Cost","P&G","%","Fecha",isEs?"Acción":"Action"].map((h,i)=>(
-                <th key={i} style={{padding:"8px 10px",textAlign:i<2?"left":"right",fontSize:9,color:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sells.map(txn=>{
-              const avgCost = getAvgCost(txn.ticker);
-              const pnl = (txn.price - avgCost) * txn.shares;
-              const pct = avgCost>0 ? ((txn.price-avgCost)/avgCost*100) : 0;
-              const isPos = pnl>=0;
-              const isEdit = editing===txn.id;
-              return(
-                <tr key={txn.id} style={{borderBottom:`1px solid ${T.border}22`}}
-                  onMouseEnter={e=>e.currentTarget.style.background=T.accent}
-                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                  <td style={{padding:"8px 10px",fontWeight:700,color:T.gold,fontFamily:"'DM Mono',monospace"}}>{txn.ticker}</td>
-                  <td style={{padding:"8px 10px"}}>
-                    {isEdit
-                      ? <input type="number" value={editShares} onChange={e=>setEditShares(e.target.value)}
-                          style={{width:64,padding:"2px 6px",fontSize:11,borderRadius:4,background:T.accent,border:`1px solid ${T.border}`,color:T.text}}/>
-                      : txn.shares.toFixed(4)}
-                  </td>
-                  <td style={{padding:"8px 10px",textAlign:"right"}}>
-                    {isEdit
-                      ? <input type="number" value={editPrice} onChange={e=>setEditPrice(e.target.value)}
-                          style={{width:72,padding:"2px 6px",fontSize:11,borderRadius:4,background:T.accent,border:`1px solid ${T.border}`,color:T.text,textAlign:"right"}}/>
-                      : `$${txn.price.toFixed(2)}`}
-                  </td>
-                  <td style={{padding:"8px 10px",textAlign:"right",color:T.muted}}>${avgCost.toFixed(2)}</td>
-                  <td style={{padding:"8px 10px",textAlign:"right",color:isPos?T.green:T.red,fontWeight:600}}>
-                    {isPos?"+":""}{fmt(Math.abs(pnl))}
-                  </td>
-                  <td style={{padding:"8px 10px",textAlign:"right",color:isPos?T.green:T.red}}>
-                    {isPos?"+":""}{pct.toFixed(1)}%
-                  </td>
-                  <td style={{padding:"8px 10px",textAlign:"right",color:T.muted,fontSize:10}}>{txn.date}</td>
-                  <td style={{padding:"8px 10px",textAlign:"right"}}>
-                    {isEdit
-                      ? <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
-                          <button onClick={()=>{onEdit(txn.id,{shares:parseFloat(editShares)||txn.shares,price:parseFloat(editPrice)||txn.price});setEditing(null);}}
-                            style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:T.green,color:"#fff",border:"none",cursor:"pointer"}}>✓</button>
-                          <button onClick={()=>setEditing(null)}
-                            style={{fontSize:10,padding:"2px 8px",borderRadius:4,background:T.border,color:T.text,border:"none",cursor:"pointer"}}>✕</button>
-                        </div>
-                      : <div style={{display:"flex",gap:4,justifyContent:"flex-end"}}>
-                          <button onClick={()=>{setEditing(txn.id);setEditShares(String(txn.shares));setEditPrice(String(txn.price));}}
-                            style={{fontSize:9,padding:"2px 8px",borderRadius:4,background:`${T.gold}15`,color:T.gold,border:`1px solid ${T.goldDim}33`,cursor:"pointer"}}>✏️</button>
-                          <button onClick={()=>{ if(window.confirm(isEs?"¿Eliminar esta venta?":"Delete this sell?")) onDelete(txn.id); }}
-                            style={{fontSize:9,padding:"2px 8px",borderRadius:4,background:`${T.red}15`,color:T.red,border:`1px solid ${T.red}33`,cursor:"pointer"}}>🗑</button>
-                        </div>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
 }
 
 // ── STICKY AI CTA ────────────────────────────────────────────────────────────
@@ -4924,13 +4676,7 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                 {isEs?"Ordenado de mayor a menor ganancia · Click para analizar":"Sorted best to worst · Click to analyze"}
               </div>
             </div>
-            <button className="seg" onClick={()=>{
-              window._perfMode=window._perfMode==="usd"?"pct":"usd";
-              const btn=document.getElementById("perf-mode-btn");
-              if(btn)btn.textContent=window._perfMode==="usd"?(isEs?"% Rend.":"% Return"):(isEs?"$ Ganancia":"$ P&G");
-            }} style={{fontSize:10,padding:"4px 10px",borderRadius:6,cursor:"pointer"}}>
-              <span id="perf-mode-btn">{isEs?"$ Ganancia":"$ P&G"}</span>
-            </button>
+            {/* Chart is free */}
           </div>
 
           {barData.length===0
@@ -4938,41 +4684,38 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                 {isEs?"Actualiza precios para ver el gráfico":"Refresh prices to see the chart"}
               </div>
             :<div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {(()=>{
-                const useUSD = typeof window!=="undefined" && window._perfMode==="usd";
-                const displayData = useUSD ? [...barData].sort((a,b)=>(b.unrealizedPnL||0)-(a.unrealizedPnL||0)) : barData;
-                const maxVal = useUSD ? Math.max(...displayData.map(p=>Math.abs(p.unrealizedPnL||0)),1) : maxPnl;
-                return displayData.map(p=>{
-                  const val = useUSD ? (p.unrealizedPnL||0) : p.pnlPct;
-                  const barWidth = Math.abs(val)/maxVal*100;
-                  const isPos = val>=0;
-                  const color = isPos?(Math.abs(val)>=20?T.green:T.green+"bb"):(Math.abs(val)>=20?T.red:T.red+"bb");
-                  const label = useUSD ? `${isPos?"+":""}$${Math.abs(val).toLocaleString("en-US",{maximumFractionDigits:0})}` : `${isPos?"+":""}${val.toFixed(1)}%`;
-                  return(
-                    <div key={p.ticker} style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",alignItems:"center",gap:8}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:700,color:T.text,textAlign:"right"}}>{p.ticker}</span>
-                      <div style={{position:"relative",height:22,background:T.accent,borderRadius:4,overflow:"hidden"}}>
-                        <div style={{
-                          position:"absolute",
-                          left:isPos?"50%":"auto",right:isPos?"auto":"50%",
-                          width:`${barWidth/2}%`,height:"100%",
-                          background:color,borderRadius:isPos?"0 3px 3px 0":"3px 0 0 3px",
-                          transition:"width 0.5s ease",
-                        }}/>
-                        <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.border}}/>
-                      </div>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                        <span style={{fontSize:11,color,fontWeight:700}}>{label}</span>
-                      </div>
+              {barData.map(p=>{
+                const barWidth=Math.abs(p.pnlPct)/maxPnl*100;
+                const isPos=p.pnlPct>=0;
+                const color=isPos?(p.pnlPct>=20?T.green:T.green+"bb"):(p.pnlPct<=-20?T.red:T.red+"bb");
+                return(
+                  <div key={p.ticker} style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",alignItems:"center",gap:8}}>
+                    <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:700,color:T.text,textAlign:"right"}}>{p.ticker}</span>
+                    <div style={{position:"relative",height:22,background:T.accent,borderRadius:4,overflow:"hidden"}}>
+                      <div style={{
+                        position:"absolute",
+                        left:isPos?"50%":"auto",right:isPos?"auto":"50%",
+                        width:`${barWidth/2}%`,height:"100%",
+                        background:color,borderRadius:isPos?"0 3px 3px 0":"3px 0 0 3px",
+                        transition:"width 0.5s ease",
+                        display:"flex",alignItems:"center",justifyContent:isPos?"flex-start":"flex-end",
+                      }}/>
+                      {/* Center line */}
+                      <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.border}}/>
                     </div>
-                  );
-                });
-              })()}
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,color,fontWeight:700}}>{isPos?"+":""}{p.pnlPct.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                );
+              })}
               {/* X axis labels */}
               <div style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",gap:8,marginTop:2}}>
                 <span/>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,color:T.muted}}>
-                  <span>Menor</span><span>0</span><span>Mayor</span>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,color:T.muted,padding:"0 0"}}>
+                  <span>-{maxPnl.toFixed(0)}%</span>
+                  <span>0%</span>
+                  <span>+{maxPnl.toFixed(0)}%</span>
                 </div>
                 <span/>
               </div>
@@ -5076,7 +4819,6 @@ function PieChart({data,stockCount,size=220}){
 
 function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null}){
   const [paywallCtx,setPaywallCtx]=useState(null);
-  const [portTab,setPortTab]=useState("positions"); // "positions" | "sells"
   // Read risk profile if user came from Risk Profile tab
   const savedProfile=(()=>{try{const p=localStorage.getItem("inversoria_risk_profile");return p?JSON.parse(p):null;}catch{return null;}})();
   const [positions,setPositions]=useState([]); // legacy — kept for CSV/paste compat
@@ -5803,9 +5545,6 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             {["🇨🇴 Trii","🇨🇴🇲🇽 HAPI","🌎 XTB","🇺🇸 IBKR"].map(b=>(
               <span key={b} style={{fontSize:10,padding:"2px 8px",borderRadius:12,background:T.accent,border:`1px solid ${T.border}`,color:T.muted}}>{b}</span>
             ))}
-            <span style={{fontSize:10,padding:"2px 8px",borderRadius:12,background:`${T.green}10`,border:`1px solid ${T.green}33`,color:T.green}}>
-              ✓ {lang==="es"?"Compatible con todos tus brokers":"Compatible with all your brokers"}
-            </span>
           </div>
         </div>
       </div>
@@ -6039,9 +5778,11 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         {/* CSV UPLOAD — Guided broker import */}
         {importMode==="csv"&&<>
           {!previewData&&<>
-            {/* Broker cards — only show steps for CSV brokers */}
+            {/* Broker cards */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
               {[
+                {id:"trii",flag:"🇨🇴",name:"Trii",steps:lang==="es"?["Abre Trii → Portafolio","Toca cada acción y anota: ticker, cantidad y precio promedio","Crea un CSV con esas columnas y súbelo aquí"]:["Open Trii → Portfolio","Tap each stock, note: ticker, shares, avg cost","Create a CSV with those columns and upload here"]},
+                {id:"hapi",flag:"🇲🇽",name:"HAPI",steps:lang==="es"?["Abre HAPI → Mi portafolio","Exporta tu historial o anota emisora, unidades, precio promedio","Sube el archivo CSV aquí"]:["Open HAPI → My portfolio","Export history or note: ticker, units, avg price","Upload the CSV file here"]},
                 {id:"xtb",flag:"🌎",name:"XTB",steps:lang==="es"?["Plataforma XTB → Historia de trading","Exporta como CSV (icono de descarga)","Sube el archivo directamente — lo detectamos automáticamente"]:["XTB Platform → Trading History","Export as CSV (download icon)","Upload directly — we auto-detect the format"]},
                 {id:"ibkr",flag:"🇺🇸",name:"IBKR",steps:lang==="es"?["Client Portal → Reportes → Flex Query","Exporta Activity Statement en CSV","Sube el archivo aquí"]:["Client Portal → Reports → Flex Query","Export Activity Statement as CSV","Upload the file here"]},
               ].map(({id,flag,name,steps})=>(
@@ -6191,26 +5932,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 ⚡ {lang==="es"?"Actualizando precios...":"Updating prices..."}
 </div>}
               </div>
-              {/* Tabs: Posiciones | Ventas */}
-              <div style={{display:"flex",gap:4,padding:"10px 14px",borderBottom:`1px solid ${T.border}`}}>
-                {[
-                  {id:"positions",label:lang==="es"?"📊 Posiciones abiertas":"📊 Open Positions"},
-                  {id:"sells",label:lang==="es"?`💰 Ventas (${transactions.filter(t=>t.type==="sell").length})`:`💰 Sells (${transactions.filter(t=>t.type==="sell").length})`},
-                ].map(t=>(
-                  <button key={t.id} onClick={()=>setPortTab(t.id)}
-                    style={{fontSize:11,padding:"5px 14px",borderRadius:8,cursor:"pointer",fontWeight:portTab===t.id?700:400,
-                      background:portTab===t.id?`${T.gold}20`:"transparent",
-                      border:`1px solid ${portTab===t.id?T.goldDim:T.border}`,
-                      color:portTab===t.id?T.gold:T.muted}}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              {portTab==="sells"&&<SellHistoryTab transactions={transactions} enriched={enriched}
-                onEdit={(id,updates)=>{const u=transactions.map(t=>t.id===id?{...t,...updates}:t);setTransactions(u);saveTxns(u);}}
-                onDelete={(id)=>{const u=transactions.filter(t=>t.id!==id);setTransactions(u);saveTxns(u);}}
-                lang={lang} fmt={fmt}/>}
-              {portTab==="positions"&&<div style={{overflowX:"auto"}}>
+              <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
                     {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price","P&G No Real.","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
@@ -6278,7 +6000,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                     </td>
                   </tr></tfoot>
                 </table>
-              </div>}
+              </div>
             </Card>
           </>}
 
@@ -7252,7 +6974,7 @@ export default function App(){
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 Admin
               </div>
-              :(userPlan==="premium"||userPlan==="basic")
+                :(userPlan==="premium"||userPlan==="basic")
                 ?null
                 :<><div style={{fontSize:11,color:T.muted,padding:"4px 10px",border:`1px solid ${T.border}`,borderRadius:8}}>
                     {L.nav_free(Math.max(0,FREE_LIMIT-getCount()))}
@@ -7275,9 +6997,9 @@ export default function App(){
             </svg>
           </div>
           {[
-            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
             {id:"score",l:L.tab_score,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
             {id:"profile",l:L.tab_profile,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>},
+            {id:"portfolio",l:L.tab_portfolio,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>},
             {id:"strategy",l:L.tab_strategy,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>},
             {id:"compound",l:L.tab_compound,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/></svg>},
             {id:"whatif",l:L.tab_whatif,icon:<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
