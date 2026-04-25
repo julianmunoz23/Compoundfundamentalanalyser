@@ -4096,7 +4096,7 @@ Return ONLY a valid JSON array, no markdown, no explanation:
 [{"ticker":"AAPL","shares":10.5,"currentValue":1800,"pnlPct":20.5,"date":"2024-01-15"},...]
 
 Rules:
-- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE, NUCO→NUCO (keep as BVC), PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL. Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA.
+- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE (Nike, always include even if logo looks like checkmark), NUCO→NUCO (keep as BVC stock), PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL, EXITO→CNEC. Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA, PEI, CNEC.
 - shares: exact number of shares. IMPORTANT: "231.0 Acciones" means 231 shares (not 2310). "515.0 Acciones" means 515 shares. Remove the ".0" decimal suffix.
 - currentValue: the total value shown, converted to USD. For COP values (format like $9.568.700,0): remove dots/commas, divide by ${copRate} (live rate). For MXN divide by ${mxnRate}. For USD keep as-is.
 - pnlPct: percentage gain/loss as number (13.28 for +13.28%, -21.11 for -21.11%). If "No disponible" or missing, use 0.
