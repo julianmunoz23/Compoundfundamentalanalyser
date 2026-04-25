@@ -967,9 +967,39 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setSuccess(isEs
-          ? "✅ ¡Cuenta creada! Revisa tu email para confirmar."
-          : "✅ Account created! Check your email to confirm.");
-        if (data.user) onAuth(data.user);
+          ? "✅ ¡Cuenta creada! Tienes 30 días Premium gratis. Revisa tu email."
+          : "✅ Account created! You have 30 days of free Premium. Check your email.");
+        // Send welcome email via Resend
+        if (data.user) {
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {"Content-Type":"application/json","Authorization":`Bearer ${import.meta.env.VITE_RESEND_KEY||""}`},
+              body: JSON.stringify({
+                from: "Inversoria <onboarding@resend.dev>",
+                to: [email],
+                subject: isEs ? "🎁 Bienvenido a Inversoria — 30 días Premium gratis" : "🎁 Welcome to Inversoria — 30 free Premium days",
+                html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1c1b2e;color:#f0eeff;padding:32px;border-radius:12px">
+                  <div style="font-size:28px;margin-bottom:8px">📈 Inversoria</div>
+                  <h1 style="color:#a78bfa;font-size:22px;margin-bottom:16px">${isEs?"¡Bienvenido! Tienes 30 días Premium gratis 🎁":"Welcome! You have 30 free Premium days 🎁"}</h1>
+                  <p style="color:#8585a8;line-height:1.7;margin-bottom:20px">${isEs?"Tu cuenta está activa con acceso Premium completo durante 30 días — sin tarjeta, sin compromisos.":"Your account is active with full Premium access for 30 days — no credit card, no commitment."}</p>
+                  <div style="background:#242338;border-radius:8px;padding:16px;margin-bottom:20px">
+                    <p style="color:#4ade80;font-weight:600;margin-bottom:8px">${isEs?"✓ Lo que tienes desbloqueado:":"✓ What you have unlocked:"}</p>
+                    <ul style="color:#8585a8;line-height:2;padding-left:20px">
+                      <li>${isEs?"Análisis IA ilimitados (NVDA, Ecopetrol, cualquier acción)":"Unlimited AI analyses (NVDA, Ecopetrol, any stock)"}</li>
+                      <li>${isEs?"Portafolio ilimitado con precios en vivo":"Unlimited portfolio with live prices"}</li>
+                      <li>${isEs?"Perfil de riesgo + portafolio IA personalizado":"Risk profile + personalized AI portfolio"}</li>
+                      <li>${isEs?"Calculadora de interés compuesto avanzada":"Advanced compound interest calculator"}</li>
+                    </ul>
+                  </div>
+                  <a href="https://www.inversoria.lat" style="display:inline-block;background:#6d3fdc;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">${isEs?"→ Ir a Inversoria":"→ Go to Inversoria"}</a>
+                  <p style="color:#4a4870;font-size:11px;margin-top:24px">${isEs?"Inversoria · inversoria.lat · hola@inversoria.lat":"Inversoria · inversoria.lat · hola@inversoria.lat"}</p>
+                </div>`
+              })
+            });
+          } catch(emailErr) { console.warn("Welcome email failed:", emailErr); }
+          onAuth(data.user);
+        }
       } else if (mode === "login") {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -1355,7 +1385,7 @@ function Hero({onStart,lang="en"}){
       {/* Badge social proof */}
       <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:T.green,fontWeight:500}}>
-          ★ {isEs?"✦ Más de 500 inversores en LATAM ya toman mejores decisiones":"✦ 500+ LATAM investors already making smarter decisions"}
+          🎁 {isEs?"30 días Premium GRATIS al registrarte — sin tarjeta":"30 days FREE Premium when you sign up — no credit card"}
         </span>
       </div>
 
@@ -6804,6 +6834,17 @@ const TABS=[
 ];
 const FREE_LIMIT=3;
 
+// ── TRIAL SYSTEM — 30 days premium from registration date ───────────────────
+const TRIAL_DAYS = 30;
+function getTrialInfo(user) {
+  if (!user?.created_at) return { active: false, daysLeft: 0 };
+  const created = new Date(user.created_at);
+  const expires = new Date(created.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const daysLeft = Math.max(0, Math.ceil((expires - now) / (1000 * 60 * 60 * 24)));
+  return { active: now < expires, daysLeft, expires };
+}
+
 function isAdmin(){try{return localStorage.getItem("inversoria_admin")==="true";}catch{return false;}}
 function getCount(){try{if(isAdmin())return 0;return parseInt(localStorage.getItem("inversoria_count")||"0");}catch{return 0;}}
 function incCount(){try{if(isAdmin())return 0;const n=getCount()+1;localStorage.setItem("inversoria_count",String(n));return n;}catch{return 999;}}
@@ -7043,7 +7084,8 @@ export default function App(){
     setUser(null);setUserPlan("free");
   };
 
-  const isPremium=()=>isAdmin()||userPlan==="basic"||userPlan==="premium";
+  const trialInfo = user ? getTrialInfo(user) : { active: false, daysLeft: 0 };
+  const isPremium=()=>isAdmin()||userPlan==="basic"||userPlan==="premium"||trialInfo.active;
   const isPro=()=>isAdmin()||userPlan==="premium";
 
   const canAnalyze=(ctx="stock")=>{if(isPremium())return true;const c=getCount();if(c>=FREE_LIMIT){setPaywallContext(ctx);setPrevTab(tab);setShowPaywall(true);return false;}return true;};
@@ -7161,6 +7203,23 @@ export default function App(){
             }
           </div>
         </div>
+        {/* ── TRIAL BANNER ── */}
+        {user&&trialInfo.active&&<div style={{background:`linear-gradient(90deg,${T.purple}22,${T.green}15,${T.purple}22)`,borderBottom:`1px solid ${T.green}33`,padding:"5px 28px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,flexWrap:"wrap"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:13}}>🎁</span>
+            <span style={{fontSize:11,color:T.green,fontWeight:600}}>
+              {lang==="es"
+                ?`Trial Premium activo — ${trialInfo.daysLeft} días restantes`
+                :`Premium trial active — ${trialInfo.daysLeft} days left`}
+            </span>
+            <span style={{fontSize:10,color:T.muted,padding:"1px 7px",background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:10}}>
+              {lang==="es"?"✓ Todo desbloqueado":"✓ Everything unlocked"}
+            </span>
+          </div>
+          <span style={{fontSize:10,color:T.muted}}>
+            {lang==="es"?"Sin tarjeta · Cancela cuando quieras":"No credit card · Cancel anytime"}
+          </span>
+        </div>}
         {tab&&<div className="tabs-wrap" style={{display:"flex",gap:0,marginTop:6,borderTop:`1px solid ${T.border}22`,paddingTop:2,overflowX:"auto",alignItems:"center"}}>
           <div style={{width:20,height:20,borderRadius:5,background:T.purple,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginRight:8,marginLeft:4}}>
             <svg width="13" height="13" viewBox="0 0 32 32" fill="none">
@@ -7185,7 +7244,40 @@ export default function App(){
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {showTour&&!user&&<OnboardingTour lang={lang} onFinish={()=>setShowTour(false)}
       onGoToTab={(t)=>{setTab(t);setShowTour(false);}}/>}
-    {tab&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
+    {/* ── SIGNUP WALL — require registration to use app ── */}
+    {tab&&!user&&<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
+      <div style={{fontSize:56,marginBottom:16}}>🔐</div>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:12,fontWeight:700}}>
+        {lang==="es"?"Crea tu cuenta gratis":"Create your free account"}
+      </div>
+      <div style={{fontSize:15,color:T.muted,marginBottom:8,lineHeight:1.8}}>
+        {lang==="es"
+          ?"Regístrate y obtén 30 días de acceso Premium completamente gratis — sin tarjeta de crédito."
+          :"Sign up and get 30 days of full Premium access — no credit card required."}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:320,margin:"0 auto 28px"}}>
+        {[
+          lang==="es"?"🤖 Análisis IA ilimitados":"🤖 Unlimited AI analyses",
+          lang==="es"?"📁 Portafolio ilimitado":"📁 Unlimited portfolio",
+          lang==="es"?"📊 Dashboard completo":"📊 Full dashboard",
+          lang==="es"?"🧬 Perfil de riesgo + portafolio IA":"🧬 Risk profile + AI portfolio",
+        ].map(f=><div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:T.text,background:`${T.green}08`,border:`1px solid ${T.green}22`,borderRadius:8,padding:"8px 14px"}}>
+          <span style={{color:T.green,fontWeight:700}}>✓</span>{f}
+        </div>)}
+      </div>
+      <button className="btn btn-gold" onClick={()=>{setAuthMode("signup");setShowAuth(true);}}
+        style={{fontSize:16,padding:"15px 40px",borderRadius:12,width:"100%",maxWidth:320,boxShadow:`0 4px 24px ${T.gold}33`}}>
+        {lang==="es"?"🚀 Empezar gratis — 30 días Premium":"🚀 Start free — 30 days Premium"}
+      </button>
+      <div style={{fontSize:11,color:T.muted,marginTop:12}}>
+        {lang==="es"?"¿Ya tienes cuenta?":"Already have an account?"}{" "}
+        <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}
+          onClick={()=>{setAuthMode("login");setShowAuth(true);}}>
+          {lang==="es"?"Iniciar sesión":"Sign in"}
+        </span>
+      </div>
+    </div>}
+    {tab&&user&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang} portfolioBalance={portfolioBalance}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
