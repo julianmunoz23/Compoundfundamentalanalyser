@@ -1402,31 +1402,31 @@ function Hero({onStart,lang="en"}){
       <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:"100%"}}>
         {[
           {
-            step:isEs?"Paso 1 — Gratis":"Step 1 — Free",
-            color:T.gold,
-            icon:"🎯",
-            title:isEs?"¿Vale la pena esta acción?":"Is this stock worth it?",
-            desc:isEs?"Escribe el nombre o ticker de cualquier acción. En 30 segundos recibes un score de calidad y una recomendación clara — comprar, esperar o evitar.":"Type any stock name or ticker. In 30 seconds you get a quality score and a clear recommendation — buy, wait, or avoid.",
-            tab:"score",
-            cta:isEs?"Analizar ahora →":"Analyze now →",
-          },
-          {
-            step:isEs?"Paso 2 — Gratis":"Step 2 — Free",
+            step:isEs?"Paso 1 — Siempre gratis":"Step 1 — Always free",
             color:T.blue,
             icon:"🧬",
             title:isEs?"¿Qué tipo de inversor eres?":"What type of investor are you?",
-            desc:isEs?"8 preguntas rápidas. La IA descubre tu perfil de riesgo y te dice exactamente qué tipo de acciones se adaptan a ti.":"8 quick questions. AI discovers your risk profile and tells you exactly what type of stocks suit you.",
+            desc:isEs?"8 preguntas rápidas. La IA descubre si eres Conservador, Moderado o Agresivo — y construye un portafolio personalizado con acciones que se adaptan a ti.":"8 quick questions. AI finds out if you're Conservative, Moderate or Aggressive — and builds a personalized portfolio of stocks that fit you.",
             tab:"profile",
-            cta:isEs?"Hacer el test →":"Take the test →",
+            cta:isEs?"Descubrir mi perfil →":"Find my profile →",
           },
           {
-            step:isEs?"Paso 3 — Gratis hasta 5":"Step 3 — Free up to 5",
+            step:isEs?"Paso 2 — 3 análisis gratis":"Step 2 — 3 free analyses",
+            color:T.gold,
+            icon:"🎯",
+            title:isEs?"Analiza cualquier acción con IA":"Analyze any stock with AI",
+            desc:isEs?"Escribe NVDA, Ecopetrol, Apple o cualquier empresa. En 30 segundos sabes si vale la pena comprarla — score de calidad, análisis del negocio y consenso de Wall Street.":"Type NVDA, Ecopetrol, Apple or any company. In 30 seconds you know if it's worth buying — quality score, business analysis and Wall Street consensus.",
+            tab:"score",
+            cta:isEs?"Analizar una acción →":"Analyze a stock →",
+          },
+          {
+            step:isEs?"Paso 3 — Gratis hasta 5 acciones":"Step 3 — Free up to 5 stocks",
             color:T.green,
             icon:"📁",
             title:isEs?"Sigue tu dinero en tiempo real":"Track your money in real time",
-            desc:isEs?"Agrega tus acciones y ve cuánto ganaste o perdiste hoy. La IA analiza tu portafolio completo y te dice cómo mejorarlo.":"Add your stocks and see how much you gained or lost today. AI analyzes your full portfolio and tells you how to improve it.",
+            desc:isEs?"¿Ya tienes acciones en Trii, HAPI o IBKR? Importa tu portafolio en segundos y ve tu P&G al instante. La IA analiza todo y te dice cómo mejorar.":"Already have stocks in Trii, HAPI or IBKR? Import your portfolio in seconds and see your P&L instantly. AI analyzes everything and tells you how to improve.",
             tab:"portfolio",
-            cta:isEs?"Armar portafolio →":"Build portfolio →",
+            cta:isEs?"Importar mi portafolio →":"Import my portfolio →",
           },
         ].map(({step,color,icon,title,desc,tab,cta})=>(
           <div key={tab} onClick={()=>onStart(tab)}
