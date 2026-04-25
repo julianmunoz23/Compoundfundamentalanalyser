@@ -1126,50 +1126,99 @@ function PhoneFrame({children}){
 }
 
 function FSScreen1(){
+  // Portafolio multi-broker con gráfica de crecimiento
   return<>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:9}}>
-      <div>
-        <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Análisis de Valor</div>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:17,color:T.text,fontWeight:700}}>NVDA</div>
-      </div>
-      <span style={{fontSize:8,fontWeight:600,padding:"2px 7px",borderRadius:6,background:"rgba(167,139,250,0.12)",
-        color:T.gold,border:"1px solid rgba(167,139,250,0.22)",marginTop:2,display:"inline-block"}}>NASDAQ</span>
+    <div style={{fontSize:8,letterSpacing:"0.11em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mi Portafolio</div>
+    <div style={{fontFamily:"'DM Mono',monospace",fontSize:19,color:T.text,fontWeight:500,lineHeight:1}}>$47.320.000</div>
+    <div style={{fontSize:8.5,color:T.green,fontWeight:500,marginTop:2,marginBottom:6}}>+$5.840.000 · +14.1% total</div>
+    <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:8}}>
+      <span style={{fontSize:7,background:"rgba(74,222,128,0.12)",color:T.green,border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"1px 5px"}}>4 brokers</span>
+      {["Trii","HAPI","XTB","IBKR"].map(b=><span key={b} style={{fontSize:7,background:T.accent,color:T.muted,borderRadius:8,padding:"1px 5px"}}>{b}</span>)}
     </div>
-    <div style={{fontFamily:"'DM Mono',monospace",fontSize:21,color:T.text,fontWeight:500,lineHeight:1}}>$875.40</div>
-    <div style={{fontSize:9.5,color:T.green,fontWeight:500,marginTop:2}}>▲ +3.21% hoy</div>
+    {/* Growth chart */}
+    <div style={{background:T.accent,borderRadius:8,padding:"7px 7px 4px",marginBottom:8}}>
+      <div style={{fontSize:7,color:T.muted,marginBottom:3}}>Crecimiento · COP</div>
+      <svg width="100%" height="44" viewBox="0 0 150 44" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="pg1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0 38 C15 36,25 32,40 28 S55 26,70 20 S90 24,105 14 S125 6,140 4 S147 3,150 2" stroke="#a78bfa" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+        <path d="M0 38 C15 36,25 32,40 28 S55 26,70 20 S90 24,105 14 S125 6,140 4 S147 3,150 2 L150 44 L0 44Z" fill="url(#pg1)"/>
+        <circle cx="150" cy="2" r="3" fill="#a78bfa"/>
+        <line x1="0" y1="38" x2="150" y2="38" stroke={T.border} strokeWidth="0.5" strokeDasharray="3,2"/>
+      </svg>
+      <div style={{display:"flex",justifyContent:"space-between",fontSize:6.5,color:T.muted,marginTop:2}}>
+        <span>Ene</span><span>Mar</span><span>Jun</span><span>Hoy</span>
+      </div>
+    </div>
+    {/* Holdings */}
+    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+      {[
+        {t:"TERPEL",broker:"Trii",moneda:"9.568.700 COP",val:"$2.584",chg:"+67.3%"},
+        {t:"NVDA",  broker:"IBKR",moneda:"4.377 USD",    val:"$4.377",chg:"+82.4%"},
+        {t:"ASML",  broker:"XTB", moneda:"1.490 EUR",    val:"$1.620",chg:"+75.7%"},
+        {t:"SPOT",  broker:"HAPI",moneda:"0.34 acc",     val:"$181",  chg:"+13.3%"},
+      ].map(({t,broker,moneda,val,chg})=>(
+        <React.Fragment key={t}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:10,color:T.text,fontWeight:500}}>{t} <span style={{fontSize:7,color:T.muted}}>· {broker}</span></div>
+              <div style={{fontSize:7,color:T.muted}}>{moneda}</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:9,color:T.text}}>{val}</div>
+              <div style={{fontSize:7.5,color:T.green}}>{chg}</div>
+            </div>
+          </div>
+          <div style={{height:"0.5px",background:T.border}}/>
+        </React.Fragment>
+      ))}
+    </div>
+  </>;
+}
+
+function FSScreen2(){
+  // Análisis de acción con score, barras y Wall Street
+  return<>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:4}}>
+      <div>
+        <div style={{fontSize:8,letterSpacing:"0.11em",textTransform:"uppercase",color:T.muted,marginBottom:2}}>Análisis · NYSE</div>
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:17,color:T.text,fontWeight:500}}>NVDA</div>
+      </div>
+      <span style={{fontSize:8,padding:"2px 6px",borderRadius:6,background:"rgba(167,139,250,0.12)",color:T.gold,border:"1px solid rgba(167,139,250,0.22)"}}>NASDAQ</span>
+    </div>
+    <div style={{fontFamily:"'DM Mono',monospace",fontSize:17,color:T.gold}}>$875.40</div>
+    <div style={{fontSize:8.5,color:T.green,marginBottom:7}}>▲ +3.21% hoy</div>
     <MiniChartFS/>
-    <div style={{background:"linear-gradient(135deg,rgba(124,58,237,0.13),rgba(167,139,250,0.06))",
-      border:"1px solid rgba(167,139,250,0.2)",borderRadius:10,padding:"9px 10px",marginBottom:8}}>
-      <div style={{fontSize:7.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.gold,fontWeight:600,marginBottom:5}}>
-        ✦ Score de Calidad — Los 8 Filtros
+    <div style={{background:"rgba(124,58,237,0.1)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:9,padding:"8px 9px",marginBottom:7}}>
+      <div style={{fontSize:7,letterSpacing:"0.1em",textTransform:"uppercase",color:T.gold,marginBottom:4}}>Score · 8 filtros</div>
+      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:26,color:T.green,fontWeight:700,lineHeight:1}}>A+</div>
+        <div><div style={{fontSize:8.5,color:T.green}}>Negocio Excepcional</div><div style={{fontSize:7.5,color:T.muted}}>87/100</div></div>
       </div>
-      <div style={{display:"flex",alignItems:"baseline",gap:7,marginBottom:5}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.green,fontWeight:700,lineHeight:1}}>A+</div>
-        <div style={{fontSize:9,color:T.green,fontWeight:500}}>Negocio Excepcional</div>
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:9,color:T.muted,marginLeft:"auto"}}>87/100</div>
-      </div>
-      {[{l:"📈 Crecimiento",p:92,c:T.gold},{l:"💎 Rentabilidad",p:88,c:T.blue},{l:"💵 Flujo Caja",p:84,c:T.green},{l:"🏰 La Fosa",p:90,c:"#f59e0b"}].map(({l,p,c})=>(
-        <div key={l} style={{display:"grid",gridTemplateColumns:"52px 1fr 22px",alignItems:"center",gap:4,marginBottom:4}}>
-          <span style={{fontSize:7.5,color:T.muted}}>{l}</span>
-          <div style={{height:3,background:T.border,borderRadius:2,overflow:"hidden"}}>
+      {[{l:"Crecimiento",p:92,c:T.gold},{l:"Rentabilidad",p:88,c:T.blue},{l:"Flujo Caja",p:84,c:T.green},{l:"La Fosa",p:90,c:"#f59e0b"}].map(({l,p,c})=>(
+        <div key={l} style={{display:"grid",gridTemplateColumns:"48px 1fr 20px",alignItems:"center",gap:3,marginBottom:3}}>
+          <span style={{fontSize:7,color:T.muted}}>{l}</span>
+          <div style={{height:2.5,background:T.border,borderRadius:2,overflow:"hidden"}}>
             <div style={{height:"100%",width:`${p}%`,background:c,borderRadius:2}}/>
           </div>
-          <span style={{fontFamily:"'DM Mono',monospace",fontSize:7.5,color:T.text,textAlign:"right"}}>{p}%</span>
+          <span style={{fontSize:7,color:T.text,textAlign:"right"}}>{p}%</span>
         </div>
       ))}
     </div>
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:8}}>
-      {[{t:"✓ ROIC 28% ≥ 20%",c:T.green},{t:"✓ FCF Margen 22%",c:T.green},{t:"✓ Ingresos +56%",c:T.green},{t:"⚠ Deuda 2.1x",c:"#f59e0b"}]
-        .map(({t,c})=><div key={t} style={{fontSize:7.5,color:c}}>{t}</div>)}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:7}}>
+      {[{t:"✓ ROIC 28%",c:T.green},{t:"✓ FCF 22%",c:T.green},{t:"✓ Ingresos +56%",c:T.green},{t:"⚠ Deuda 2.1x",c:"#f59e0b"}].map(({t,c})=>
+        <div key={t} style={{fontSize:7.5,color:c}}>{t}</div>)}
     </div>
     <div style={{background:"rgba(52,211,153,0.07)",border:"1px solid rgba(52,211,153,0.18)",borderRadius:8,padding:"7px 9px"}}>
-      <div style={{fontSize:7,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3,fontWeight:600}}>
-        Consenso Wall Street · 42 analistas
-      </div>
+      <div style={{fontSize:7,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3}}>42 analistas Wall Street</div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:12,color:T.green,fontWeight:700}}>Compra Fuerte</div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.gold,fontWeight:500}}>Obj. $940</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.gold}}>Obj. $940</div>
           <div style={{fontSize:8,color:T.green}}>+7.4% upside</div>
         </div>
       </div>
@@ -1177,102 +1226,64 @@ function FSScreen1(){
   </>;
 }
 
-function FSScreen2(){
-  const holdings=[
-    {ticker:"NVDA",alloc:37,val:"$4,617",chg:"+12.4%",up:true,color:T.gold},
-    {ticker:"AAPL",alloc:25,val:"$3,120",chg:"+4.1%",up:true,color:T.blue},
-    {ticker:"MELI",alloc:16,val:"$1,997",chg:"-2.3%",up:false,color:T.green},
-    {ticker:"Otros",alloc:22,val:"$2,746",chg:"+1.8%",up:true,color:"rgba(255,255,255,0.15)"},
-  ];
+function FSScreen3(){
+  // Perfil de riesgo — 3 opciones arriba + 3 preguntas
   return<>
-    <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mi Portafolio</div>
-    <div style={{fontFamily:"'Playfair Display',serif",fontSize:23,color:T.text,fontWeight:700,lineHeight:1}}>$12,480</div>
-    <div style={{fontSize:9.5,color:T.green,fontWeight:500,marginTop:3,marginBottom:11}}>▲ +$840 · +7.2% este mes</div>
-    <DonutChartFS/>
-    <div style={{display:"flex",flexDirection:"column",gap:6}}>
-      {holdings.map(({ticker,alloc,val,chg,up,color})=>(
-        <div key={ticker}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <div style={{width:7,height:7,borderRadius:2,background:color,flexShrink:0}}/>
-              <div>
-                <div style={{fontFamily:"'DM Mono',monospace",fontSize:10.5,fontWeight:500,color:T.text}}>{ticker}</div>
-                <div style={{fontSize:8,color:T.muted}}>{alloc}%</div>
-              </div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:9.5,color:T.text}}>{val}</div>
-              <div style={{fontSize:8.5,fontWeight:500,color:up?T.green:T.red}}>{chg}</div>
-            </div>
-          </div>
-          <div style={{height:2.5,background:T.border,borderRadius:2,marginTop:2,overflow:"hidden"}}>
-            <div style={{height:"100%",width:`${alloc}%`,background:color,borderRadius:2}}/>
+    <div style={{fontSize:8,letterSpacing:"0.11em",textTransform:"uppercase",color:T.muted,marginBottom:7}}>¿Qué tipo de inversor eres?</div>
+    {/* 3 profile options */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,marginBottom:10}}>
+      {[
+        {icon:"🛡️",label:"Conservador",color:T.blue,active:false},
+        {icon:"⚖️",label:"Moderado",   color:T.gold,active:true},
+        {icon:"🚀",label:"Agresivo",   color:T.green,active:false},
+      ].map(({icon,label,color,active})=>(
+        <div key={label} style={{background:active?"rgba(167,139,250,0.12)":T.accent,
+          border:`${active?"1.5":"1"}px solid ${active?color:T.border}`,
+          borderRadius:8,padding:"6px 3px",textAlign:"center"}}>
+          <div style={{fontSize:13,marginBottom:2}}>{icon}</div>
+          <div style={{fontSize:7.5,color,fontWeight:active?600:400}}>{label}</div>
+          <div style={{fontSize:6.5,color:T.muted,marginTop:1}}>{label==="Conservador"?"Bajo riesgo":label==="Moderado"?"Equilibrado":"Alto riesgo"}</div>
+        </div>
+      ))}
+    </div>
+    {/* 3 questions */}
+    <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:9}}>
+      {[
+        {q:"1 · ¿Cuánto tiempo puedes invertir?",opts:["-2 años","2–5 años","+10 años"],sel:1},
+        {q:"2 · Si cae 30%, ¿qué haces?",opts:["Vendo todo","Espero","Compro más"],sel:2},
+        {q:"3 · ¿Tu objetivo principal?",opts:["Seguridad","Equilibrio","Máx. crecimiento"],sel:1},
+      ].map(({q,opts,sel})=>(
+        <div key={q} style={{background:T.accent,borderRadius:7,padding:"7px 8px"}}>
+          <div style={{fontSize:7.5,color:T.muted,marginBottom:4}}>{q}</div>
+          <div style={{display:"flex",gap:3}}>
+            {opts.map((o,i)=>(
+              <div key={o} style={{flex:1,background:i===sel?"rgba(167,139,250,0.12)":T.surface,
+                border:`1px solid ${i===sel?T.gold:T.border}`,
+                borderRadius:5,padding:"3px 2px",textAlign:"center",fontSize:6.5,
+                color:i===sel?T.gold:T.muted}}>{o}</div>
+            ))}
           </div>
         </div>
       ))}
     </div>
-    <div style={{marginTop:9,padding:"7px 9px",background:"rgba(167,139,250,0.08)",
-      border:"1px solid rgba(167,139,250,0.18)",borderRadius:8,
-      display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <div>
-        <div style={{fontSize:7.5,color:T.muted}}>🤖 Diagnóstico IA</div>
-        <div style={{fontSize:8,color:T.muted,marginTop:1}}>Concentración alta en tech</div>
-      </div>
-      <div style={{fontFamily:"'Playfair Display',serif",fontSize:15,color:T.gold,fontWeight:700}}>B+</div>
-    </div>
-  </>;
-}
-
-function FSScreen3(){
-  const news=[
-    {src:"Reuters · 2h",type:"pos",badge:"POSITIVO",body:"Fed mantiene tasas; mercados reaccionan con alza en tech.",tags:"$SPY · $QQQ · $NVDA"},
-    {src:"Bloomberg · 4h",type:"neg",badge:"NEGATIVO",body:"MercadoLibre reporta caída en márgenes en Brasil.",tags:"$MELI · $B3SA3"},
-    {src:"El Economista · 6h",type:"neu",badge:"NEUTRO",body:"Banxico revisa proyecciones de crecimiento para 2025.",tags:"$BMXN · $EWW"},
-  ];
-  const borderColor={pos:T.green,neg:T.red,neu:T.border};
-  const badgeBg={pos:"rgba(52,211,153,0.14)",neg:"rgba(248,113,113,0.14)",neu:"rgba(255,255,255,0.06)"};
-  const badgeColor={pos:T.green,neg:T.red,neu:T.muted};
-  return<>
-    <div style={{fontSize:8.5,letterSpacing:"0.12em",textTransform:"uppercase",color:T.muted,marginBottom:3}}>Mercado hoy</div>
-    <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.text,fontWeight:700,marginBottom:10}}>Noticias & Sentimiento</div>
-    <div style={{display:"flex",height:5,borderRadius:3,overflow:"hidden",gap:2,marginBottom:5}}>
-      <div style={{flex:5.8,background:"linear-gradient(90deg,#34d399,#22c87a)",borderRadius:"3px 0 0 3px"}}/>
-      <div style={{flex:2.4,background:"rgba(255,255,255,0.09)"}}/>
-      <div style={{flex:1.8,background:"linear-gradient(90deg,#f87171,#ef5050)",borderRadius:"0 3px 3px 0"}}/>
-    </div>
-    <div style={{display:"flex",justifyContent:"space-between",fontSize:7.5,marginBottom:10}}>
-      <span style={{color:T.green,fontWeight:600}}>58% Positivo</span>
-      <span style={{color:T.muted}}>24% Neutro</span>
-      <span style={{color:T.red,fontWeight:600}}>18% Neg.</span>
-    </div>
-    {news.map(({src,type,badge,body,tags})=>(
-      <div key={src} style={{background:T.accent,borderRadius:8,padding:"8px 9px",marginBottom:6,borderLeft:`2px solid ${borderColor[type]}`}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
-          <span style={{fontSize:7.5,color:T.muted}}>{src}</span>
-          <span style={{fontSize:7,padding:"1.5px 5px",borderRadius:4,fontWeight:600,background:badgeBg[type],color:badgeColor[type]}}>{badge}</span>
-        </div>
-        <div style={{fontSize:9,color:T.text,lineHeight:1.45}}>{body}</div>
-        <div style={{fontSize:7.5,color:T.blue,marginTop:2,fontWeight:500}}>{tags}</div>
-      </div>
-    ))}
-    <div style={{marginTop:8,padding:"7px 9px",background:"rgba(124,58,237,0.1)",border:"1px solid rgba(124,58,237,0.2)",borderRadius:7}}>
-      <div style={{fontSize:7,color:T.gold,fontWeight:600,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:3}}>✦ Resumen del inversor paciente</div>
-      <div style={{fontSize:8.5,color:T.muted,lineHeight:1.5}}>Tech lidera el rebote. Cautela en LATAM por datos macro de Brasil y México.</div>
+    {/* CTA */}
+    <div style={{background:"#6d3fdc",borderRadius:8,padding:"7px",textAlign:"center",fontSize:8.5,color:"#fff",fontWeight:500}}>
+      Ver mi portafolio personalizado →
     </div>
   </>;
 }
 
 function FeaturesShowcase({onStart,lang="es"}){
   const features=[
-    {num:"01 — Análisis de Valor",title:"Los 8 Filtros del Inversor Paciente",
-     desc:"Score de Calidad con ROIC, FCF, La Fosa del Negocio y consenso de Wall Street en tiempo real.",
-     pill:"🎯 3 análisis gratis · Sin cuenta",tab:"score",screen:<FSScreen1/>},
-    {num:"02 — Mi Portafolio",title:"P&G en Tiempo Real",
-     desc:"Tus posiciones con precios en vivo. La IA evalúa si tu portafolio coincide con tu perfil.",
-     pill:"📁 Hasta 5 acciones gratis",tab:"portfolio",screen:<FSScreen2/>},
-    {num:"03 — Noticias",title:"El Mercado Filtrado para Ti",
-     desc:"La IA clasifica cada noticia por sentimiento y genera el resumen que el inversor paciente necesita leer.",
-     pill:"📰 Actualización diaria",tab:"score",screen:<FSScreen3/>},
+    {num:"01 — Mi Portafolio",title:isEs?"Todas tus acciones, un solo lugar":"All your stocks, one place",
+     desc:isEs?"Trii, HAPI, XTB e IBKR unidos. Tu P&G total en tiempo real con tu moneda local.":"Trii, HAPI, XTB and IBKR unified. Your total P&L in real time in your local currency.",
+     pill:isEs?"📁 Hasta 5 acciones gratis":"📁 Free up to 5 stocks",tab:"portfolio",screen:<FSScreen1/>},
+    {num:"02 — Analizar Acción",title:isEs?"¿Vale la pena comprarla?":"Is it worth buying?",
+     desc:isEs?"Score de calidad, análisis del negocio y consenso de Wall Street en 30 segundos.":"Quality score, business analysis and Wall Street consensus in 30 seconds.",
+     pill:isEs?"🎯 3 análisis gratis · Sin cuenta":"🎯 3 free analyses · No account",tab:"score",screen:<FSScreen2/>},
+    {num:"03 — Perfil de Riesgo",title:isEs?"Tu portafolio IA personalizado":"Your personalized AI portfolio",
+     desc:isEs?"8 preguntas y la IA construye un portafolio con acciones y precios de entrada para tu perfil.":"8 questions and AI builds a portfolio with stocks and entry prices for your profile.",
+     pill:isEs?"🧬 Siempre gratis":"🧬 Always free",tab:"profile",screen:<FSScreen3/>},
   ];
   const bottomTags=[
     {text:"✓ 3 análisis gratis · Sin tarjeta",bg:"rgba(52,211,153,0.08)",border:"rgba(52,211,153,0.2)",color:T.green},
@@ -1289,16 +1300,11 @@ function FeaturesShowcase({onStart,lang="es"}){
       </p>
       <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,4vw,40px)",fontWeight:700,color:T.text,
         textAlign:"center",lineHeight:1.15,margin:"0 auto 6px",maxWidth:600}}>
-        Todo lo que necesitas para{" "}
-        <span style={{color:T.gold}}>invertir con inteligencia</span>
+        {isEs?"Todo en un solo lugar — ":"Everything in one place — "}
+        <span style={{color:T.gold}}>{isEs?"sigue tu dinero":"track your money"}</span>
       </h2>
-      <p style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(13px,2vw,18px)",fontWeight:700,
-        color:T.muted,textAlign:"center",lineHeight:1.3,margin:"0 auto 14px",maxWidth:580}}>
-        ¿Es este negocio lo suficientemente{" "}
-        <span style={{color:T.goldDim}}>bueno para tu dinero?</span>
-      </p>
-      <p style={{textAlign:"center",fontSize:13,color:T.muted,maxWidth:460,margin:"0 auto 48px",lineHeight:1.65}}>
-        Los mejores inversores no buscan acciones baratas. Buscan negocios extraordinarios. Inversoria aplica los 8 filtros del inversor paciente a cualquier acción — en 30 segundos.
+      <p style={{textAlign:"center",fontSize:13,color:T.muted,maxWidth:500,margin:"0 auto 48px",lineHeight:1.65}}>
+        {isEs?"Portafolio multi-broker, análisis de acciones con IA y tu perfil de riesgo personalizado. En español, para Colombia y LATAM.":"Multi-broker portfolio, AI stock analysis and your personalized risk profile. In Spanish, for LATAM."}
       </p>
       {/* Phones grid */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:20,maxWidth:880,margin:"0 auto",alignItems:"start"}}>
