@@ -4625,6 +4625,7 @@ function PortfolioGrowthChart({transactions,prices,lang="es",fmt,fmtShort}){
 function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,aiAnalysis,lang,isPremium,onShowPaywall}){
   const isEs=lang==="es";
   const [showDetails,setShowDetails]=useState(false);
+  const [perfMode,setPerfMode]=useState("pct"); // "pct" | "usd"
 
   // Classify positions into zones
   const winners=enriched.filter(p=>p.pnlPct!=null&&p.pnlPct>=10);
@@ -4762,12 +4763,12 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                 {isEs?"Ordenado de mayor a menor ganancia · Click para analizar":"Sorted best to worst · Click to analyze"}
               </div>
             </div>
-            <button className="seg" onClick={()=>{
-              window._perfMode=window._perfMode==="usd"?"pct":"usd";
-              const btn=document.getElementById("perf-mode-btn");
-              if(btn)btn.textContent=window._perfMode==="usd"?(isEs?"% Rend.":"% Return"):(isEs?"$ Ganancia":"$ P&G");
-            }} style={{fontSize:10,padding:"4px 10px",borderRadius:6,cursor:"pointer"}}>
-              <span id="perf-mode-btn">{isEs?"$ Ganancia":"$ P&G"}</span>
+            <button className="seg" onClick={()=>setPerfMode(m=>m==="usd"?"pct":"usd")}
+              style={{fontSize:10,padding:"4px 10px",borderRadius:6,cursor:"pointer",
+                background:perfMode==="usd"?`${T.gold}20`:"transparent",
+                color:perfMode==="usd"?T.gold:T.muted,
+                border:`1px solid ${perfMode==="usd"?T.goldDim:T.border}`}}>
+              {perfMode==="usd"?(isEs?"% Rend.":"% Return"):(isEs?"$ Ganancia":"$ P&G")}
             </button>
           </div>
 
@@ -4777,7 +4778,7 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
               </div>
             :<div style={{display:"flex",flexDirection:"column",gap:6}}>
               {(()=>{
-                const useUSD=typeof window!=="undefined"&&window._perfMode==="usd";
+                const useUSD=perfMode==="usd";
                 const displayData=useUSD?[...barData].sort((a,b)=>(b.pnlDollar||0)-(a.pnlDollar||0)):barData;
                 const maxVal=useUSD?Math.max(...displayData.map(p=>Math.abs(p.pnlDollar||0)),1):maxPnl;
                 return displayData.map(p=>{
