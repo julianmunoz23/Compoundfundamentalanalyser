@@ -976,7 +976,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
               method: "POST",
               headers: {"Content-Type":"application/json","Authorization":`Bearer ${import.meta.env.VITE_RESEND_KEY||""}`},
               body: JSON.stringify({
-                from: "Inversoria <onboarding@resend.dev>",
+                from: "Inversoria <noreply@inversoria.lat>",
                 to: [email],
                 subject: isEs ? "🎁 Bienvenido a Inversoria — 30 días Premium gratis" : "🎁 Welcome to Inversoria — 30 free Premium days",
                 html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1c1b2e;color:#f0eeff;padding:32px;border-radius:12px">
@@ -1402,17 +1402,12 @@ function Hero({onStart,lang="en"}){
           :"Import your portfolio from Trii, HAPI, XTB or IBKR in seconds. See your P&L in real time, analyze each stock with AI, and make smarter decisions — in Spanish, for LATAM."}
       </p>
       {/* ── POWER TAGLINE ── */}
-      {isEs
-        ?<div style={{display:"inline-flex",alignItems:"center",gap:10,background:`linear-gradient(135deg,${T.gold}18,${T.purple}12)`,border:`1px solid ${T.gold}55`,borderRadius:12,padding:"10px 20px",marginBottom:28}}>
-          <span style={{fontSize:18}}>🏦</span>
-          <span style={{fontSize:15,color:T.gold,fontWeight:700,letterSpacing:"0.01em"}}>
-            La herramienta que los bancos <span style={{color:T.goldLight,textDecoration:"underline",textDecorationStyle:"wavy",textUnderlineOffset:"4px"}}>no quieren</span> que uses
-          </span>
-          <span style={{fontSize:18}}>🤫</span>
-        </div>
-        :<p style={{fontSize:13,color:`${T.muted}88`,marginBottom:28}}>Your personal investment analyst · All of Latin America</p>
-      }
-      {isEs&&<p style={{fontSize:11,color:`${T.muted}66`,marginBottom:28,marginTop:-20}}>Colombia · México · Argentina · Chile · Todo LATAM</p>}
+      <div style={{display:"inline-flex",alignItems:"center",gap:8,background:`${T.purple}15`,border:`1px solid ${T.purple}33`,borderRadius:12,padding:"10px 20px",marginBottom:28}}>
+        <span style={{fontSize:14}}>🇨🇴</span>
+        <span style={{fontSize:13,color:T.gold,fontWeight:600}}>
+          Trii · HAPI · XTB · IBKR · BVC · NYSE · NASDAQ · Europa
+        </span>
+      </div>
 
       {/* CTA buttons */}
       <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:12,padding:"0 8px"}}>
@@ -1428,9 +1423,7 @@ function Hero({onStart,lang="en"}){
 
       {/* Free tier info */}
       <p style={{fontSize:12,color:`${T.muted}77`,marginBottom:0}}>
-        {isEs
-          ?"Empieza gratis · Sin registrarte · Sin tarjeta · Sin excusas"
-          :"3 free analyses · No sign up required · No credit card"}
+        Empieza gratis · Sin tarjeta · Sin compromisos
       </p>
     </div>
 
@@ -1524,43 +1517,48 @@ function Hero({onStart,lang="en"}){
     {/* ── MULTI-BROKER VALUE PROP ── */}
     <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 40px"}}>
       <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}55`,borderRadius:16,padding:"24px 28px",textAlign:"center"}}>
-        <div style={{fontFamily:"'Playfair Display',serif",fontSize:isEs?20:18,color:T.gold,marginBottom:10,fontWeight:700}}>
-          {isEs?"🇨🇴 En Colombia usas varios brokers — Inversoria los une todos":"🇨🇴 In Colombia you use multiple brokers — Inversoria unifies them all"}
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.gold,marginBottom:10,fontWeight:700}}>
+          🇨🇴 En Colombia usas varios brokers — Inversoria los une todos
         </div>
         <div style={{fontSize:13,color:T.muted,lineHeight:1.8,maxWidth:680,margin:"0 auto 20px"}}>
-          {isEs
-            ?<>Trii solo tiene algunas acciones colombianas. Para invertir en <strong style={{color:T.text}}>NYSE, NASDAQ o Europa</strong> usas HAPI, XTB o IBKR. El resultado: tu dinero disperso en 3 o 4 apps distintas, sin una vista clara de cómo vas realmente.</>
-            :<>Trii only has some Colombian stocks. For <strong style={{color:T.text}}>NYSE, NASDAQ or Europe</strong> you use HAPI, XTB or IBKR. The result: your money scattered across 3-4 different apps, with no clear view of how you're really doing.</>}
+          Trii solo tiene algunas acciones colombianas. Para invertir en <strong style={{color:T.text}}>NYSE, NASDAQ o Europa</strong> usas HAPI, XTB o IBKR. El resultado: tu dinero disperso en 3 o 4 apps, sin una vista clara de cómo vas realmente.
         </div>
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",flexWrap:"wrap",marginBottom:20}}>
           {[
-            {flag:"🇨🇴",name:"Trii",desc:isEs?"Acciones BVC":"BVC stocks"},
-            {flag:"🇲🇽",name:"HAPI",desc:isEs?"NYSE · NASDAQ":"NYSE · NASDAQ"},
-            {flag:"🌎",name:"XTB",desc:isEs?"Europa · USA":"Europe · USA"},
-            {flag:"🇺🇸",name:"IBKR",desc:isEs?"Mercados globales":"Global markets"},
+            {flag:"🇨🇴",name:"Trii",desc:"Acciones BVC"},
+            {flag:"🇲🇽",name:"HAPI",desc:"NYSE · NASDAQ"},
+            {flag:"🌎",name:"XTB",desc:"Europa · USA"},
+            {flag:"🇺🇸",name:"IBKR",desc:"Mercados globales"},
           ].map(({flag,name,desc},i)=><React.Fragment key={name}>
-            <div style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 14px",textAlign:"center"}}>
+            <div onClick={()=>onStart("portfolio")} style={{background:T.accent,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 14px",textAlign:"center",cursor:"pointer",transition:"all 0.2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=T.gold;e.currentTarget.style.transform="translateY(-2px)";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.transform="translateY(0)";}}>
               <div style={{fontSize:16,marginBottom:2}}>{flag}</div>
               <div style={{fontSize:12,color:T.text,fontWeight:600}}>{name}</div>
               <div style={{fontSize:10,color:T.muted}}>{desc}</div>
+              <div style={{fontSize:9,color:T.gold,marginTop:3}}>Importar →</div>
             </div>
             {i<3&&<div style={{fontSize:16,color:T.muted}}>+</div>}
           </React.Fragment>)}
           <div style={{fontSize:20,color:T.muted,fontWeight:300}}>→</div>
-          <div style={{background:`linear-gradient(135deg,#6d3fdc,#4f2db0)`,border:`1px solid ${T.purple}`,borderRadius:10,padding:"8px 18px",textAlign:"center",minWidth:100}}>
+          <div onClick={()=>onStart("portfolio")} style={{background:`linear-gradient(135deg,#6d3fdc,#4f2db0)`,border:`1px solid ${T.purple}`,borderRadius:10,padding:"8px 18px",textAlign:"center",minWidth:100,cursor:"pointer"}}>
             <div style={{fontSize:14,marginBottom:2}}>📊</div>
             <div style={{fontSize:12,color:"#fff",fontWeight:600}}>Inversoria</div>
             <div style={{fontSize:10,color:"rgba(255,255,255,0.7)"}}>Todo junto</div>
           </div>
         </div>
-        <div style={{display:"flex",gap:16,justifyContent:"center",flexWrap:"wrap"}}>
+        <div style={{display:"flex",gap:16,justifyContent:"center",flexWrap:"wrap",marginBottom:16}}>
           {[
-            isEs?"✓ Todas tus acciones en un solo lugar":"✓ All your stocks in one place",
-            isEs?"✓ P&G total en tiempo real":"✓ Total P&L in real time",
-            isEs?"✓ Rentabilidad de todas tus operaciones":"✓ Returns across all your trades",
-            isEs?"✓ Análisis IA de cada posición":"✓ AI analysis of each position",
-          ].map(f=><span key={f} style={{fontSize:11,color:T.green}}>{"✓"} {f.replace("✓ ","")}</span>)}
+            "✓ Todas tus acciones en un solo lugar",
+            "✓ P&G total en tiempo real",
+            "✓ Rentabilidad de todas tus operaciones",
+            "✓ Análisis IA de cada posición",
+          ].map(f=><span key={f} style={{fontSize:11,color:T.green}}>{f}</span>)}
         </div>
+        <button onClick={()=>onStart("portfolio")} className="btn btn-gold"
+          style={{fontSize:14,padding:"12px 32px",borderRadius:10}}>
+          📁 Importar mi portafolio ahora →
+        </button>
       </div>
     </div>
 
@@ -7244,36 +7242,34 @@ export default function App(){
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {showTour&&!user&&<OnboardingTour lang={lang} onFinish={()=>setShowTour(false)}
       onGoToTab={(t)=>{setTab(t);setShowTour(false);}}/>}
-    {/* ── SIGNUP WALL — require registration to use app ── */}
+    {/* ── SIGNUP WALL ── */}
     {tab&&!user&&<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
       <div style={{fontSize:56,marginBottom:16}}>🔐</div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:12,fontWeight:700}}>
-        {lang==="es"?"Crea tu cuenta gratis":"Create your free account"}
+        Crea tu cuenta gratis
       </div>
-      <div style={{fontSize:15,color:T.muted,marginBottom:8,lineHeight:1.8}}>
-        {lang==="es"
-          ?"Regístrate y obtén 30 días de acceso Premium completamente gratis — sin tarjeta de crédito."
-          :"Sign up and get 30 days of full Premium access — no credit card required."}
+      <div style={{fontSize:15,color:T.muted,marginBottom:20,lineHeight:1.8}}>
+        Regístrate y obtén <strong style={{color:T.green}}>30 días de acceso Premium completamente gratis</strong> — sin tarjeta de crédito.
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:320,margin:"0 auto 28px"}}>
         {[
-          lang==="es"?"🤖 Análisis IA ilimitados":"🤖 Unlimited AI analyses",
-          lang==="es"?"📁 Portafolio ilimitado":"📁 Unlimited portfolio",
-          lang==="es"?"📊 Dashboard completo":"📊 Full dashboard",
-          lang==="es"?"🧬 Perfil de riesgo + portafolio IA":"🧬 Risk profile + AI portfolio",
+          "🤖 Análisis IA ilimitados de cualquier acción",
+          "📁 Portafolio ilimitado con precios en vivo",
+          "📊 Dashboard completo con P&G en tiempo real",
+          "🧬 Perfil de riesgo + portafolio IA personalizado",
         ].map(f=><div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,color:T.text,background:`${T.green}08`,border:`1px solid ${T.green}22`,borderRadius:8,padding:"8px 14px"}}>
-          <span style={{color:T.green,fontWeight:700}}>✓</span>{f}
+          <span style={{color:T.green,fontWeight:700}}>✓</span>{f.replace("✓ ","")}
         </div>)}
       </div>
       <button className="btn btn-gold" onClick={()=>{setAuthMode("signup");setShowAuth(true);}}
         style={{fontSize:16,padding:"15px 40px",borderRadius:12,width:"100%",maxWidth:320,boxShadow:`0 4px 24px ${T.gold}33`}}>
-        {lang==="es"?"🚀 Empezar gratis — 30 días Premium":"🚀 Start free — 30 days Premium"}
+        🚀 Empezar gratis — 30 días Premium
       </button>
       <div style={{fontSize:11,color:T.muted,marginTop:12}}>
-        {lang==="es"?"¿Ya tienes cuenta?":"Already have an account?"}{" "}
+        ¿Ya tienes cuenta?{" "}
         <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}
           onClick={()=>{setAuthMode("login");setShowAuth(true);}}>
-          {lang==="es"?"Iniciar sesión":"Sign in"}
+          Iniciar sesión
         </span>
       </div>
     </div>}
