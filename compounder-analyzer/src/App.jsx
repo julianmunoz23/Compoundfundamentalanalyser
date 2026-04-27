@@ -4419,7 +4419,17 @@ function SellHistoryTab({transactions, enriched, onEdit, onDelete, lang, fmt}){
   const [editing,setEditing] = useState(null);
   const [editShares,setEditShares] = useState("");
   const [editPrice,setEditPrice] = useState("");
-  const getAvgCost = (ticker) => { const pos = enriched.find(p=>p.ticker===ticker); return pos?.avgCost || 0; };
+  const getAvgCost = (ticker) => {
+    // Try enriched first (open positions)
+    const pos = enriched.find(p=>p.ticker===ticker);
+    if(pos?.avgCost) return pos.avgCost;
+    // Fallback: calc from buy txns (fully closed positions like OXY when all sold)
+    const buys = transactions.filter(t=>t.ticker===ticker && t.type!=="sell");
+    if(!buys.length) return 0;
+    const totalShares = buys.reduce((a,t)=>a+t.shares, 0);
+    const totalCost = buys.reduce((a,t)=>a+(t.shares*(t.price||0)), 0);
+    return totalShares>0 ? totalCost/totalShares : 0;
+  };
   const totalRealized = sells.reduce((sum,t)=>{ const cost = getAvgCost(t.ticker); return sum + (t.price - cost) * t.shares; },0);
   if(!sells.length) return(
     <div style={{textAlign:"center",padding:"32px 0",color:T.muted}}>
