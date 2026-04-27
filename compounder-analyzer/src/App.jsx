@@ -1261,7 +1261,7 @@ function FSScreen2(){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{fontFamily:"'Playfair Display',serif",fontSize:12,color:T.green,fontWeight:700}}>Compra Fuerte</div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.gold}}>Obj. $940</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:T.gold}}>Obj. $940</div>
           <div style={{fontSize:8,color:T.green}}>+7.4% upside</div>
         </div>
       </div>
@@ -3190,7 +3190,7 @@ Respond ONLY with valid JSON, no markdown:
             </ResponsiveContainer>
           </div>
         </Card>
-        <Card s={{padding:14}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:11,color:T.muted,lineHeight:2.2}}><span style={{color:T.gold}}>EV</span> = <span style={{color:T.blue}}>${Math.round(sumPV)}M</span> + <span style={{color:T.gold}}>${Math.round(tPV)}M</span> = <span style={{color:T.text,fontWeight:700}}>${Math.round(ev)}M</span>{"   ·   "}<span style={{color:T.gold}}>Equity</span> = ${Math.round(eq)}M{"   ·   "}<span style={{color:T.green,fontWeight:700}}>Intrinsic = ${ips.toFixed(2)}/share</span></div></Card>
+        <Card s={{padding:14}}><div style={{fontFamily:"'DM Mono',monospace",fontSize:12,color:T.muted,lineHeight:2.2}}><span style={{color:T.gold}}>EV</span> = <span style={{color:T.blue}}>${Math.round(sumPV)}M</span> + <span style={{color:T.gold}}>${Math.round(tPV)}M</span> = <span style={{color:T.text,fontWeight:700}}>${Math.round(ev)}M</span>{"   ·   "}<span style={{color:T.gold}}>Equity</span> = ${Math.round(eq)}M{"   ·   "}<span style={{color:T.green,fontWeight:700}}>Intrinsic = ${ips.toFixed(2)}/share</span></div></Card>
         <AdBanner size="rectangle"/>
       </div>
     </div>
@@ -4990,7 +4990,7 @@ function PortfolioDashboard({enriched,totalCost,totalValue,totalPnL,totalPnLPct,
                   const label=useUSD?`${isPos?"+":""}$${Math.abs(val).toLocaleString("en-US",{maximumFractionDigits:0})}`:(`${isPos?"+":""}${val.toFixed(1)}%`);
                   return(
                     <div key={p.ticker} style={{display:"grid",gridTemplateColumns:"52px 1fr 70px",alignItems:"center",gap:8}}>
-                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:11,fontWeight:700,color:T.text,textAlign:"right"}}>{p.ticker}</span>
+                      <span style={{fontFamily:"'DM Mono',monospace",fontSize:12,fontWeight:700,color:T.text,textAlign:"right"}}>{p.ticker}</span>
                       <div style={{position:"relative",height:22,background:T.accent,borderRadius:4,overflow:"hidden"}}>
                         <div style={{position:"absolute",left:isPos?"50%":"auto",right:isPos?"auto":"50%",width:`${barWidth/2}%`,height:"100%",background:color,borderRadius:isPos?"0 3px 3px 0":"3px 0 0 3px",transition:"width 0.5s ease"}}/>
                         <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.border}}/>
@@ -5974,7 +5974,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     )}
 
         <div id="import-form"/>
-        <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"340px 1fr",gap:18,alignItems:"start"}}>
+        <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
       <Card s={{}} id="add-position-card">
@@ -6237,10 +6237,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                 onDelete={(id)=>{const u=transactions.filter(t=>t.id!==id);setTransactions(u);saveTxns(u);}}
                 lang={lang} fmt={fmt}/>}
               {portTab==="positions"&&<div style={{overflowX:"auto"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",minWidth:750}}>
+                <table style={{width:"100%",borderCollapse:"collapse",minWidth:860}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
                     {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price","P&G No Real.","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
-                      <th key={i} style={{padding:"10px 12px",textAlign:i<=1||i===11?"center":"right",fontSize:9,color:h==="P&L $"||h==="P&L %"?T.green:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
+                      <th key={i} style={{padding:"12px 16px",textAlign:i<=1||i===11?"center":"right",fontSize:9,color:h==="P&L $"||h==="P&L %"?T.green:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
                     ))}
                   </tr></thead>
                   <tbody>
@@ -6259,18 +6259,18 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                           {p.realizedPnL!==0&&<div style={{fontSize:8,color:p.realizedPnL>=0?T.green:T.red,marginTop:1}}>Real: {p.realizedPnL>=0?"+":""}${Math.abs(p.realizedPnL).toFixed(0)}</div>}
                           <TxnHistory entries={p.entries||[]} avgCost={p.avgCost} lang={lang}/>
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12}>{p.totalShares.toFixed(3)}</Mn></td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.avgCost.toFixed(2)}</Mn></td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12}>{p.totalShares.toFixed(3)}</Mn></td>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.avgCost.toFixed(2)}</Mn></td>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}>
                           {p.currentPrice?<Mn sz={13} c={T.gold} s={{fontWeight:700}}>${p.currentPrice.toFixed(2)}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}>
                           {p.pnlDollar!=null?<Mn sz={12} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}>
                           {p.pnlPct!=null?<span style={{fontSize:12,padding:"2px 8px",borderRadius:20,background:p.pnlPct>=0?`${T.green}18`:`${T.red}18`,color:p.pnlPct>=0?T.green:T.red,fontWeight:600}}>{p.pnlPct>=0?"+":""}{p.pnlPct.toFixed(2)}%</span>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
-                        <td style={{padding:"10px 12px",textAlign:"right"}}>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}>
                           {verdict?<span style={{fontSize:11,padding:"3px 8px",borderRadius:20,background:`${verdictColor(verdict.verdict)}18`,color:verdictColor(verdict.verdict),border:`1px solid ${verdictColor(verdict.verdict)}33`,fontWeight:600,whiteSpace:"nowrap"}}>{verdict.verdict}</span>:<span style={{fontSize:11,color:T.muted}}>{lang==="es"?"Analizar":"Run AI"}</span>}
                         </td>
                         <td style={{padding:"8px 10px",textAlign:"right"}}>
@@ -7377,7 +7377,7 @@ export default function App(){
         </span>
       </div>
     </div>}
-    {tab&&(user||tab==="compound")&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
+    {tab&&(user||tab==="compound")&&<div className="page-wrap" style={{maxWidth:1600,margin:"0 auto",padding:"24px 20px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang} portfolioBalance={portfolioBalance}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
