@@ -1441,33 +1441,36 @@ function Hero({onStart,lang="en"}){
       <div className="hero-steps" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,maxWidth:"100%"}}>
         {[
           {
-            step:isEs?"Paso 1 — Siempre gratis":"Step 1 — Always free",
-            color:T.blue,
-            icon:"🧬",
-            title:isEs?"¿Qué tipo de inversor eres?":"What type of investor are you?",
-            desc:isEs?"8 preguntas rápidas. La IA descubre si eres Conservador, Moderado o Agresivo — y construye un portafolio personalizado con acciones que se adaptan a ti.":"8 quick questions. AI finds out if you're Conservative, Moderate or Aggressive — and builds a personalized portfolio of stocks that fit you.",
-            tab:"profile",
-            cta:isEs?"Descubrir mi perfil →":"Find my profile →",
-          },
-          {
-            step:isEs?"Paso 2 — 3 análisis gratis":"Step 2 — 3 free analyses",
-            color:T.gold,
-            icon:"🎯",
-            title:isEs?"Analiza cualquier acción con IA":"Analyze any stock with AI",
-            desc:isEs?"Escribe NVDA, Ecopetrol, Apple o cualquier empresa. En 30 segundos sabes si vale la pena comprarla — score de calidad, análisis del negocio y consenso de Wall Street.":"Type NVDA, Ecopetrol, Apple or any company. In 30 seconds you know if it's worth buying — quality score, business analysis and Wall Street consensus.",
-            tab:"score",
-            cta:isEs?"Analizar una acción →":"Analyze a stock →",
-          },
-          {
-            step:isEs?"Paso 3 — Gratis hasta 5 acciones":"Step 3 — Free up to 5 stocks",
+            step:"Paso 1 — Gratis hasta 5 acciones",
             color:T.green,
             icon:"📁",
-            title:isEs?"Sigue tu dinero en tiempo real":"Track your money in real time",
-            desc:isEs?"¿Ya tienes acciones en Trii, HAPI o IBKR? Importa tu portafolio en segundos y ve tu P&G al instante. La IA analiza todo y te dice cómo mejorar.":"Already have stocks in Trii, HAPI or IBKR? Import your portfolio in seconds and see your P&L instantly. AI analyzes everything and tells you how to improve.",
+            title:"Sube tu portafolio en segundos",
+            desc:"¿Tienes acciones en Trii, HAPI, XTB o IBKR? Sube una captura de pantalla o escribe tus posiciones manualmente. Inversoria detecta todo automáticamente y muestra tu P&G en tiempo real — en pesos o dólares.",
             tab:"portfolio",
-            cta:isEs?"Importar mi portafolio →":"Import my portfolio →",
+            cta:"Importar mi portafolio →",
+            tip:"💡 También puedes agregar posiciones manualmente",
           },
-        ].map(({step,color,icon,title,desc,tab,cta})=>(
+          {
+            step:"Paso 2 — 3 análisis gratis · Sin cuenta",
+            color:T.gold,
+            icon:"🎯",
+            title:"Analiza cada acción con IA",
+            desc:"Desde tu portafolio, haz click en cualquier acción para ver su análisis completo — o escribe directamente el ticker de cualquier empresa. Score de calidad, análisis del negocio y consenso de Wall Street en 30 segundos.",
+            tab:"score",
+            cta:"Analizar una acción →",
+            tip:"💡 Funciona con BVC, NYSE, NASDAQ y Europa",
+          },
+          {
+            step:"Paso 3 — Siempre gratis",
+            color:T.blue,
+            icon:"🧬",
+            title:"La IA personaliza tu estrategia",
+            desc:"Responde 8 preguntas sobre tus metas y tolerancia al riesgo. La IA define tu perfil (Conservador, Moderado o Agresivo) y te dice exactamente cómo rebalancear tu portafolio y qué acciones considerar.",
+            tab:"profile",
+            cta:"Descubrir mi perfil →",
+            tip:"💡 Necesario para el rebalanceo inteligente",
+          },
+        ].map(({step,color,icon,title,desc,tab,cta,tip})=>(
           <div key={tab} onClick={()=>onStart(tab)}
             style={{cursor:"pointer",background:T.card,border:`1px solid ${color}33`,borderRadius:14,padding:"22px 20px",textAlign:"center",transition:"all 0.2s"}}
             onMouseEnter={e=>{e.currentTarget.style.borderColor=color;e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow=`0 8px 24px ${color}18`;}}
