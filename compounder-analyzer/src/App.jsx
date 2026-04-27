@@ -189,6 +189,12 @@ const css=`
     .portfolio-grid{grid-template-columns:1fr!important;}
     .analyze-row{flex-direction:column!important;}
     .analyze-row>*{width:100%!important;min-width:unset!important;}
+    /* Nicolas demo — stack KPIs on mobile */
+    .demo-kpi{grid-template-columns:1fr 1fr!important;}
+    /* Phones mockup — single column on mobile */
+    .phones-grid{grid-template-columns:1fr!important;max-width:260px!important;margin:0 auto!important;}
+    /* Signup wall */
+    .signup-wall{padding:40px 16px!important;}
   }
 `;
 
@@ -1341,7 +1347,7 @@ function FeaturesShowcase({onStart,lang="es"}){
         {isEs?"Portafolio multi-broker, análisis de acciones con IA y tu perfil de riesgo personalizado. En español, para Colombia y LATAM.":"Multi-broker portfolio, AI stock analysis and your personalized risk profile. In Spanish, for LATAM."}
       </p>
       {/* Phones grid */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,maxWidth:860,margin:"0 auto",alignItems:"start"}}>
+      <div className="phones-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24,maxWidth:860,margin:"0 auto",alignItems:"start"}}>
         {features.map(({num,title,desc,pill,tab,screen},i)=>(
           <div key={num} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:20}}>
             <PhoneFrame>{screen}</PhoneFrame>
@@ -1473,6 +1479,91 @@ function Hero({onStart,lang="en"}){
             <div style={{fontSize:12,color,fontWeight:600}}>{cta}</div>
           </div>
         ))}
+      </div>
+    </div>
+
+
+    {/* ── DEMO PORTAFOLIO REAL — Nicolás ── */}
+    <div style={{maxWidth:960,margin:"0 auto",padding:"0 28px 48px"}}>
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{fontSize:11,color:T.muted,letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>
+          📊 Ejemplo real — así se ve Inversoria
+        </div>
+        <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.text,fontWeight:700}}>
+          El portafolio de <span style={{color:T.gold}}>Nicolás</span> — inversor colombiano
+        </div>
+        <div style={{fontSize:13,color:T.muted,marginTop:6}}>
+          Acciones en Trii 🇨🇴 + IBKR 🇺🇸 vistas en un solo lugar
+        </div>
+      </div>
+      <div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`,borderRadius:16,overflow:"hidden"}}>
+        {/* KPI bar */}
+        <div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",borderBottom:`1px solid ${T.border}`}}>
+          {[
+            {l:"Valor actual",v:"$68.420.000",sub:"COP",c:T.gold},
+            {l:"Total invertido",v:"$52.100.000",sub:"capital base",c:T.muted},
+            {l:"Retorno total",v:"+31.3%",sub:"+$16.320.000",c:T.green},
+            {l:"Mejor posición",v:"TERPEL +67%",sub:"515 acciones · Trii",c:T.green},
+          ].map(({l,v,sub,c})=>(
+            <div key={l} style={{padding:"16px 20px",borderRight:`1px solid ${T.border}`}}>
+              <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{l}</div>
+              <div style={{fontFamily:"'Playfair Display',serif",fontSize:18,color:c,fontWeight:700}}>{v}</div>
+              <div style={{fontSize:10,color:T.muted,marginTop:2}}>{sub}</div>
+            </div>
+          ))}
+        </div>
+        {/* Mini portfolio table — scrollable on mobile */}
+        <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+            <thead>
+              <tr style={{background:T.accent}}>
+                {["Ticker","Broker","Acciones","Costo Prom.","Precio","P&G","Retorno"].map((h,i)=>(
+                  <th key={h} style={{padding:"10px 16px",textAlign:i<2?"left":"right",fontSize:9,color:T.muted,
+                    letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600,
+                    borderBottom:`1px solid ${T.border}`}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {t:"TERPEL",b:"🇨🇴 Trii",acc:"515",cp:"$9.850",pr:"$16.350",pg:"+$3.3M",ret:"+66.0%",pos:true},
+                {t:"GEB",   b:"🇨🇴 Trii",acc:"4.215",cp:"$3.100",pr:"$3.450",pg:"+$1.5M",ret:"+11.3%",pos:true},
+                {t:"NVDA",  b:"🇺🇸 IBKR",acc:"5",cp:"$480.00",pr:"$875.40",pg:"+$1.9M",ret:"+82.4%",pos:true},
+                {t:"NUCO",  b:"🇨🇴 Trii",acc:"231",cp:"$48.500",pr:"$51.200",pg:"+$624K",ret:"+5.6%",pos:true},
+                {t:"ASML",  b:"🌎 XTB", acc:"2",cp:"€780",pr:"€890",pg:"+€220",ret:"+14.1%",pos:true},
+                {t:"NKECO", b:"🇨🇴 Trii",acc:"4",cp:"$162.000",pr:"$106.000",pg:"-$224K",ret:"-34.6%",pos:false},
+              ].map(({t,b,acc,cp,pr,pg,ret,pos})=>(
+                <tr key={t} style={{borderBottom:`1px solid ${T.border}22`}}>
+                  <td style={{padding:"10px 16px",fontFamily:"'DM Mono',monospace",fontWeight:700,color:T.gold}}>{t}</td>
+                  <td style={{padding:"10px 16px",fontSize:11,color:T.muted}}>{b}</td>
+                  <td style={{padding:"10px 16px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:T.text}}>{acc}</td>
+                  <td style={{padding:"10px 16px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:T.muted}}>{cp}</td>
+                  <td style={{padding:"10px 16px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:T.gold,fontWeight:600}}>{pr}</td>
+                  <td style={{padding:"10px 16px",textAlign:"right",fontFamily:"'DM Mono',monospace",color:pos?T.green:T.red,fontWeight:600}}>{pg}</td>
+                  <td style={{padding:"10px 16px",textAlign:"right"}}>
+                    <span style={{fontSize:11,padding:"2px 8px",borderRadius:12,
+                      background:pos?`${T.green}18`:`${T.red}18`,
+                      color:pos?T.green:T.red,fontWeight:600}}>{ret}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Bottom CTA */}
+        <div style={{padding:"16px 20px",background:`${T.purple}15`,borderTop:`1px solid ${T.border}`,
+          display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+          <div style={{fontSize:12,color:T.muted}}>
+            ✨ <span style={{color:T.green,fontWeight:600}}>Nicolás importó este portafolio en 30 segundos</span> — subió un screenshot de Trii y otro de IBKR
+          </div>
+          <button onClick={()=>onStart("portfolio")} className="btn btn-gold"
+            style={{fontSize:13,padding:"10px 24px",borderRadius:10}}>
+            📁 Crear mi portafolio →
+          </button>
+        </div>
+      </div>
+      <div style={{textAlign:"center",marginTop:12,fontSize:11,color:T.muted}}>
+        * Datos de ejemplo ilustrativos. Los valores reales varían según el mercado.
       </div>
     </div>
 
@@ -7252,8 +7343,8 @@ export default function App(){
     {!tab&&<Hero onStart={handleStart} lang={lang}/>}
     {showTour&&!user&&<OnboardingTour lang={lang} onFinish={()=>setShowTour(false)}
       onGoToTab={(t)=>{setTab(t);setShowTour(false);}}/>}
-    {/* ── SIGNUP WALL ── */}
-    {tab&&!user&&<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
+    {/* ── SIGNUP WALL — compound tab is always free ── */}
+    {tab&&!user&&tab!=="compound"&&<div className="signup-wall" style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
       <div style={{fontSize:56,marginBottom:16}}>🔐</div>
       <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:T.gold,marginBottom:12,fontWeight:700}}>
         Crea tu cuenta gratis
@@ -7283,7 +7374,7 @@ export default function App(){
         </span>
       </div>
     </div>}
-    {tab&&user&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
+    {tab&&(user||tab==="compound")&&<div className="page-wrap" style={{maxWidth:1380,margin:"0 auto",padding:"24px 28px"}}>
       {tab==="compound"&&<CompoundTab onGoToTab={(t)=>setTab(t)} lang={lang} portfolioBalance={portfolioBalance}/>}
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
