@@ -4218,9 +4218,14 @@ Return ONLY a valid JSON array, no markdown, no explanation:
 [{"ticker":"AAPL","shares":10.5,"currentValue":1800,"pnlPct":20.5,"date":"2024-01-15"},...]
 
 Rules:
-- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE (Nike, always include even if logo looks like checkmark), NUCO→NUCO (keep as BVC stock), PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL, EXITO→CNEC. Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA, PEI, CNEC.
-- shares: exact number of shares. IMPORTANT: "231.0 Acciones" means 231 shares (not 2310). "515.0 Acciones" means 515 shares. Remove the ".0" decimal suffix.
-- currentValue: the total value shown, converted to USD. For COP values (format like $9.568.700,0): remove dots/commas, divide by ${copRate} (live rate). For MXN divide by ${mxnRate}. For USD keep as-is.
+- ticker: use standard exchange symbol. Map Trii-specific tickers: BRKBCO→BRK.B, PFECO→PFE, NKECO→NKE (Nike, always include even if logo looks like checkmark), NUCO→NUCO (keep as BVC stock), PFGRUPSURA→GRUPOSURA, PFAVAL→AVAL, EXITO→CNEC. Keep BVC tickers as-is: TERPEL, CIBEST, GEB, ECOPETROL, BOGOTA, CELSIA, ISA, PEI, BVC, CNEC, PFGRUPSURA, PFAVAL, AVAL, CORFICOLCF. These are ALL priced in COP — always convert to USD using copRate.
+- shares: exact number of shares. CRITICAL RULES:
+  * "90.0 Acciones" = 90 shares. "231.0 Acciones" = 231 shares. "515.0 Acciones" = 515 shares. "1300.0 Acciones" = 1300 shares. "4215.0 Acciones" = 4215 shares.
+  * In Colombian/Trii format, the DOT is a THOUSANDS separator, NOT a decimal. So "1.300" = 1300, "4.215" = 4215, "90" = 90. The ".0" suffix just means zero decimals.
+  * NEVER multiply shares by 10, 100, 1000 or 10000. The number you see is the exact number of shares.
+  * If you see "90.0 Acciones" the answer is exactly 90. Not 900, not 9000, not 900000.
+- price: for BVC stocks (PEI, TERPEL, GEB, ECOPETROL, BOGOTA, ISA, BVC, CNEC, PFGRUPSURA, CIBEST, NUCO, CELSIA), the price shown in Trii is in COP. Divide by ${copRate} to get USD. Example: PEI at $62.000 COP = $62000/${copRate} USD ≈ $15.
+- currentValue: the total value shown in Trii, converted to USD. For COP values (format like $5.580.000,0 or $9.568.700,0): strip ALL dots and commas to get the raw number (5580000), then divide by ${copRate}. For USD keep as-is.
 - pnlPct: percentage gain/loss as number (13.28 for +13.28%, -21.11 for -21.11%). If "No disponible" or missing, use 0.
 - date: today if not shown
 - Skip cash or bond positions
