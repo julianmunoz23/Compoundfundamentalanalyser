@@ -2904,13 +2904,13 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const tickerToUse=resolvedTicker;
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
-      // fundamentalsCtx built AFTER fhResult resolves (uses Finnhub basicFinancials)
-      // Defined below after Promise.allSettled
+      // Step 1: Fetch Finnhub first to get real fundamentals for AI context
+      const fhData = await callFinnhub(tickerToUse).catch(()=>null);
+      const yFundamentals = fhData?.basicFinancials || null;
+      const fundamentalsCtx = buildFundamentalsContext(yFundamentals, tickerToUse);
 
-      const [fhResult,aiResult]=await Promise.allSettled([
-        callFinnhub(tickerToUse),
-        // For LATAM stocks, use web_search tool inside callAI via direct fetch
-        isLatamStock
+      // Step 2: Run AI analysis with real fundamentals injected
+      const aiResult = await (isLatamStock
           ? (async()=>{
               const r=await fetch("https://api.anthropic.com/v1/messages",{
                 method:"POST",
@@ -2922,14 +2922,12 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               });
               const d=await r.json();
               const t=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").replace(/```json|```/g,"").trim();
-              return JSON.parse(t);
+              return {status:"fulfilled", value:JSON.parse(t)};
             })()
-          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR).${fundamentalsCtx} JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`),
-      ]);
-      let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
-      // Build fundamentals context from Finnhub basicFinancials (real data)
-      const yFundamentals = fhData?.basicFinancials || null;
-      const fundamentalsCtx = buildFundamentalsContext(yFundamentals, tickerToUse);
+          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR).${fundamentalsCtx} JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`)
+            .then(v=>({status:"fulfilled",value:v})).catch(e=>({status:"rejected",reason:e}))
+      );
+      const fhResult = {status: fhData?"fulfilled":"rejected", value: fhData};
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0){
         try{
@@ -2944,7 +2942,15 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         if(p.sector)setSector(p.sector);setInfo(p);
       }else{throw new Error(aiResult.reason?.message||"AI analysis failed");}
       setLocked(true);onAnalysis();
-    }catch(e){setErr(`Error: ${e.message||"Could not analyze."}`);}
+    }catch(e){
+      const msg = e.message||"";
+      let userMsg = "⚠️ No se pudo completar el análisis. Intenta de nuevo.";
+      if(msg.includes("credit")||msg.includes("balance")||msg.includes("billing"))
+        userMsg = "⚠️ Servicio de análisis no disponible en este momento. Intenta más tarde.";
+      else if(msg.includes("overload")||msg.includes("529"))
+        userMsg = "⚡ Servicio ocupado. Intenta en unos segundos.";
+      setErr(userMsg);
+    }
     setLoading(false);
   };
 
@@ -5853,7 +5859,17 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
       const raw=portfolioData.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
       const p=JSON.parse(raw);
       setAiAnalysis(p);
-    }catch(e){setErr(`Analysis error: ${e.message||"Could not analyze. Try again."}`);setAiAnalysis(null);}
+    }catch(e){
+      const msg = e.message||"";
+      let userMsg = "⚠️ No se pudo completar el análisis. Intenta de nuevo.";
+      if(msg.includes("credit")||msg.includes("balance")||msg.includes("billing"))
+        userMsg = "⚠️ Servicio de análisis temporalmente no disponible. Intenta más tarde.";
+      else if(msg.includes("overload")||msg.includes("529"))
+        userMsg = "⚡ Servicio ocupado. Intenta en unos segundos.";
+      else if(msg.includes("rate")||msg.includes("429"))
+        userMsg = "⏳ Demasiadas consultas. Espera un momento.";
+      setErr(userMsg);setAiAnalysis(null);
+    }
     setLoadingAI(false);
   };
 
