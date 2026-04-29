@@ -438,9 +438,101 @@ function ScoreRing({score,size=80,lang="en"}){
 }
 
 // ── AI HELPER ─────────────────────────────────────────────────────────────────
+// ── AI CACHE — keyed by ticker + market session ──────────────────────────────
+// Analysis stays valid until the relevant market closes for the day
+const _aiCache = {};
+
+function _getMarket(ticker){
+  const bvc = ["TERPEL","GEB","ECOPETROL","BOGOTA","CELSIA","ISA","PEI","BVC","CNEC",
+               "PFGRUPSURA","PFAVAL","AVAL","CORFICOLCF","CIBEST","NUCO","GRUPOSURA"];
+  const europe = ["ASML","LVMH","SAP","NESN","NOVO","SHELL","TTE","SIE","AIR","OR",
+                  "PHIA","DTE","ALV","BNP","SAN","HSBA","BP","VOD","GSK","AZN"];
+  if(bvc.includes(ticker)) return "BVC";
+  if(europe.includes(ticker)) return "EUROPE";
+  return "NYSE"; // default US
+}
+
+function isMarketOpen(ticker){
+  const now = new Date();
+  const market = _getMarket(ticker);
+  let marketHour;
+  if(market === "BVC"){
+    marketHour = now.getUTCHours() - 5;
+    return marketHour >= 9 && marketHour < 16;
+  }
+  if(market === "EUROPE"){
+    const cetOffset = now.getMonth() >= 2 && now.getMonth() <= 10 ? 2 : 1;
+    marketHour = now.getUTCHours() + cetOffset;
+    return marketHour >= 9 && marketHour < 17;
+  }
+  const etOffset = now.getMonth() >= 2 && now.getMonth() <= 10 ? -4 : -5;
+  marketHour = now.getUTCHours() + etOffset;
+  return marketHour >= 9 && marketHour < 16;
+}
+
+function getMarketLabel(ticker){
+  const market = _getMarket(ticker);
+  const open = isMarketOpen(ticker);
+  if(market==="BVC")    return open ? null : "🕐 Mercado BVC cerrado · Análisis del último cierre";
+  if(market==="EUROPE") return open ? null : "🕐 Mercado europeo cerrado · Análisis del último cierre";
+  return open ? null : "🕐 NYSE cerrado · Análisis del último cierre";
+}
+
+function _marketSessionId(ticker){
+  // Returns a string that changes only when the relevant market closes
+  // so same ticker = same cache key within a trading session
+  const now = new Date();
+  const market = _getMarket(ticker);
+  
+  // Convert to market local time
+  let marketHour;
+  if(market === "BVC"){
+    // Colombia UTC-5 — BVC closes at 4:00 PM (16:00) Colombia time
+    marketHour = now.getUTCHours() - 5;
+    const closed = marketHour >= 16 || marketHour < 9;
+    const dateStr = now.toISOString().split("T")[0];
+    return `${ticker}_BVC_${dateStr}`;  // same key all day — valid after close too
+  }
+  if(market === "EUROPE"){
+    // CET = UTC+1 (winter) / UTC+2 (summer) — Euronext closes 5:30 PM CET
+    const cetOffset = now.getMonth() >= 2 && now.getMonth() <= 10 ? 2 : 1;
+    marketHour = now.getUTCHours() + cetOffset;
+    const closed = marketHour >= 17 || marketHour < 9;
+    const dateStr = now.toISOString().split("T")[0];
+    return `${ticker}_EU_${dateStr}`;
+  }
+  // NYSE/NASDAQ — ET = UTC-4 (summer) / UTC-5 (winter) — closes 4:00 PM ET
+  const etOffset = now.getMonth() >= 2 && now.getMonth() <= 10 ? -4 : -5;
+  marketHour = now.getUTCHours() + etOffset;
+  const closed = marketHour >= 16 || marketHour < 9;
+  const dateStr = now.toISOString().split("T")[0];
+  return `${ticker}_NYSE_${dateStr}_${closed?"closed":"open"}`;
+}
+
+function _cacheKey(prompt){
+  // Extract ticker from prompt
+  const m = prompt.match(/(?:ticker|Analyze|análisis)[:\s"]+([A-Z]{1,5}(?:\.[A-Z])?)/i)
+         || prompt.match(/([A-Z]{2,5})/);
+  if(!m) return `generic_${new Date().toISOString().split("T")[0]}`;
+  const ticker = m[1].toUpperCase();
+  return _marketSessionId(ticker);
+}
+
 async function callAI(prompt){
-  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
-  const d=await res.json();if(d.error)throw new Error(d.error.message);
+  const cKey=_cacheKey(prompt);
+  if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:900,messages:[{role:"user",content:prompt}]})});
+  const d=await res.json();
+  if(d.error){
+    const t=d.error.type||""; const m=d.error.message||"";
+    if(t==="authentication_error"||m.includes("credit")||m.includes("balance"))
+      throw new Error("⚠️ Análisis no disponible en este momento. Intenta más tarde.");
+    if(t==="overloaded_error")
+      throw new Error("⚡ Servicio ocupado. Intenta en unos segundos.");
+    if(t==="rate_limit_error")
+      throw new Error("⏳ Demasiadas consultas. Espera un momento.");
+    throw new Error("⚠️ No se pudo completar el análisis. Intenta de nuevo.");
+  }
   const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();return JSON.parse(txt);
 }
 
@@ -482,6 +574,9 @@ async function callFinnhub(ticker){
     const epsEst=await safe(()=>finnhubGet("/stock/eps-estimate",ticker));
     await delay(200);
     const revEst=await safe(()=>finnhubGet("/stock/revenue-estimate",ticker));
+    await delay(200);
+    // Basic financials — margins, ROE, P/E, revenue growth
+    const metrics=await safe(()=>finnhubGet("/stock/metric?metric=all",ticker));
 
     // Recommendations — most recent period
     const recData=rec.status==="fulfilled"&&rec.value?.length?rec.value[0]:null;
@@ -512,6 +607,20 @@ async function callFinnhub(ticker){
     const revData=revEst.status==="fulfilled"&&revEst.value?.data?.length?revEst.value.data[0]:null;
     const revGrowth=revData?.growth!=null?(revData.growth*100).toFixed(1):null;
 
+    // Basic financials from Finnhub /stock/metric
+    const mData = metrics.status==="fulfilled" ? metrics.value?.metric : null;
+    const basicFinancials = mData ? {
+      grossMarginTTM:      mData.grossMarginTTM      || null,
+      operatingMarginTTM:  mData.operatingMarginTTM  || null,
+      netProfitMarginTTM:  mData.netProfitMarginTTM  || null,
+      roeTTM:              mData.roeTTM              || null,
+      roaTTM:              mData.roaTTM              || null,
+      revenueGrowthTTMYoy: mData.revenueGrowthTTMYoy || null,
+      epsGrowthTTMYoy:     mData.epsGrowthTTMYoy     || null,
+      peNormalizedAnnual:  mData.peNormalizedAnnual  || null,
+      debtEquityAnnual:    mData["totalDebt/totalEquityAnnual"] || null,
+    } : null;
+
     return{
       rating,
       totalAnalysts,
@@ -525,6 +634,7 @@ async function callFinnhub(ticker){
       epsGrowthNext:epsGrowth?`+${epsGrowth}%`:null,
       revGrowthNext:revGrowth?`+${revGrowth}%`:null,
       period:recData?.period||null,
+      basicFinancials,
       source:"Wall Street Consensus — Live Data",
     };
   }catch(e){
@@ -685,6 +795,41 @@ async function fetchBVCPrice(ticker){
       market: latam.market,
     };
   }catch(e){ return null; }
+}
+
+// ── FUNDAMENTALS — uses Finnhub /stock/metric (already integrated, no Yahoo needed) ──
+// This is called before AI analysis — fhData.basicFinancials has real margins/ROE
+// For the score tab, fundamentals come from the same callFinnhub() call
+async function fetchYahooFundamentals(ticker){
+  // No longer using Yahoo Finance (blocked by Vercel)
+  // Fundamentals now come from Finnhub via callFinnhub().basicFinancials
+  // This function returns null so buildFundamentalsContext uses fhData instead
+  return null;
+}
+
+function buildFundamentalsContext(f, ticker){
+  if(!f) return "";
+  const lines = [];
+  lines.push(`\n--- DATOS REALES FINNHUB (${ticker}) ---`);
+  // Finnhub field names
+  if(f.revenueGrowthTTMYoy!=null) lines.push(`Crecimiento ingresos TTM YoY: ${f.revenueGrowthTTMYoy.toFixed(1)}%`);
+  if(f.epsGrowthTTMYoy!=null)     lines.push(`Crecimiento EPS TTM YoY: ${f.epsGrowthTTMYoy.toFixed(1)}%`);
+  if(f.grossMarginTTM!=null)      lines.push(`Margen bruto TTM: ${f.grossMarginTTM.toFixed(1)}%`);
+  if(f.operatingMarginTTM!=null)  lines.push(`Margen operativo TTM: ${f.operatingMarginTTM.toFixed(1)}%`);
+  if(f.netProfitMarginTTM!=null)  lines.push(`Margen neto TTM: ${f.netProfitMarginTTM.toFixed(1)}%`);
+  if(f.roeTTM!=null)              lines.push(`ROE TTM: ${f.roeTTM.toFixed(1)}%`);
+  if(f.roaTTM!=null)              lines.push(`ROA TTM: ${f.roaTTM.toFixed(1)}%`);
+  if(f.peNormalizedAnnual!=null)  lines.push(`P/E normalizado anual: ${f.peNormalizedAnnual.toFixed(1)}x`);
+  if(f.debtEquityAnnual!=null)    lines.push(`Deuda/Equity anual: ${f.debtEquityAnnual.toFixed(2)}x`);
+  // Yahoo Finance field names (kept for compatibility)
+  if(f.revenueGrowthYoY!=null)    lines.push(`Crecimiento ingresos YoY: ${f.revenueGrowthYoY}%`);
+  if(f.grossMargins!=null)        lines.push(`Margen bruto: ${f.grossMargins}%`);
+  if(f.operatingMargins!=null)    lines.push(`Margen operativo: ${f.operatingMargins}%`);
+  if(f.returnOnEquity!=null)      lines.push(`ROE: ${f.returnOnEquity}%`);
+  if(f.trailingPE!=null)          lines.push(`P/E trailing: ${f.trailingPE.toFixed(1)}x`);
+  if(f.targetMeanPrice)           lines.push(`Precio objetivo promedio: $${f.targetMeanPrice.toFixed(2)}`);
+  lines.push(`--- USA ESTOS DATOS REALES. Son más recientes que tu entrenamiento. ---`);
+  return lines.join("\n");
 }
 
 const KNOWN_TICKERS={
@@ -2759,6 +2904,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const tickerToUse=resolvedTicker;
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
+      // fundamentalsCtx built AFTER fhResult resolves (uses Finnhub basicFinancials)
+      // Defined below after Promise.allSettled
+
       const [fhResult,aiResult]=await Promise.allSettled([
         callFinnhub(tickerToUse),
         // For LATAM stocks, use web_search tool inside callAI via direct fetch
@@ -2767,7 +2915,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               const r=await fetch("https://api.anthropic.com/v1/messages",{
                 method:"POST",
                 headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-                body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1800,
+                body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1800,
                   tools:[{"type":"web_search_20250305","name":"web_search"}],
                   messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
                 })
@@ -2776,14 +2924,16 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               const t=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").replace(/```json|```/g,"").trim();
               return JSON.parse(t);
             })()
-          : callAI(`You are a value investing analyst using the patient investor method (quality businesses, competitive advantages, long-term compounding). Analyze "${tickerToUse}" using real data up to your knowledge cutoff. FCF metric: use FCF GROWTH RATE (3-5Y CAGR %) not ratio. Respond ONLY with valid JSON, no markdown: {"metrics":{"revenueCAGR":<number>,"fcfGrowth":<FCF CAGR %>,"tamGrowth":<number>,"roic":<number>,"grossMargin":<number>,"opMargin":<number>,"fcfMarginPct":<number>,"debtEbitda":<number>,"interestCover":<number>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<sector>","summary":"<2-3 sentences thesis and key risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<e.g. +56% CAGR>","roicDisplay":"<e.g. 18%>","fcfGrowthDisplay":"<e.g. +67% CAGR>","fcfMarginDisplay":"<e.g. 19%>","debtEquity":"<e.g. 0.2x>","epsGrowth":"<e.g. +38%>"}}`),
+          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR).${fundamentalsCtx} JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`),
       ]);
       let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
+      // Build fundamentals context from Finnhub basicFinancials (real data)
+      const yFundamentals = fhData?.basicFinancials || null;
+      const fundamentalsCtx = buildFundamentalsContext(yFundamentals, tickerToUse);
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0){
         try{
-          const consensus=await callAI(`For the stock "${tickerToUse}", provide a Wall Street analyst consensus estimate based on the most recent public data available. Respond ONLY with valid JSON, no markdown:
-{"rating":"<Strong Buy|Buy|Hold|Sell|Strong Sell>","totalAnalysts":<number 5-50>,"bullish":<number>,"bearish":<number>,"hold":<number>,"currentPrice":<number or null>,"targetMean":"<e.g. 285.00>","targetHigh":"<e.g. 350.00>","targetLow":"<e.g. 180.00>","upside":"<e.g. 18.5>","epsGrowthNext":"<e.g. +12.4%>","breakdown":{"strongBuy":<n>,"buy":<n>,"hold":<n>,"sell":<n>,"strongSell":<n>},"isAiEstimate":true}`);
+          const consensus=await callAI(`Wall Street consensus for "${tickerToUse}".${fundamentalsCtx} If real analyst data above is available, use it. JSON only:{"rating":"<Strong Buy|Buy|Hold|Sell|Strong Sell>","totalAnalysts":<n>,"bullish":<n>,"bearish":<n>,"hold":<n>,"currentPrice":<n>,"targetMean":"<285.00>","targetHigh":"<350.00>","targetLow":"<180.00>","upside":"<18.5>","epsGrowthNext":"<+12.4%>","breakdown":{"strongBuy":<n>,"buy":<n>,"hold":<n>,"sell":<n>,"strongSell":<n>},"isAiEstimate":true}`);
           fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
         }catch(e){fhData=null;}
       }
@@ -4206,7 +4356,7 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
+          model:"claude-haiku-4-5-20251001",
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
@@ -5674,7 +5824,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const portfolioRes=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:2500,
         ...(hasLatam?{tools:[{"type":"web_search_20250305","name":"web_search"}]}:{}),
         messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment).${hasLatam?` Before analyzing, search for recent news on: ${latamTickers.join(", ")} using queries like "[TICKER] resultados financieros 2025 2026 dividendo analistas". Use sources: bloomberglinea.com, valoraanalitik.com, stockanalysis.com. Then analyze this portfolio:`:" Analyze this portfolio:"}
 ${summary}
@@ -6316,6 +6466,12 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         {/* AI Analysis result */}
         <div id="ai-result-section"/>
         {aiAnalysis&&<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
+          {/* Market closed notice */}
+          {(()=>{const label=getMarketLabel(currentTicker||"");return label&&<div style={{
+            display:"flex",alignItems:"center",gap:6,
+            background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.25)",
+            borderRadius:8,padding:"6px 14px",marginBottom:12,fontSize:11,color:"#fbbf24"
+          }}>{label}</div>;})()}
           {/* Profile Match Banner */}
           {savedProfile&&aiAnalysis?.profileMatch&&aiAnalysis.profileMatch!=="No Profile Data"&&<div style={{
             padding:"12px 16px",borderRadius:10,marginBottom:14,
