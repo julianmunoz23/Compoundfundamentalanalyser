@@ -2916,7 +2916,7 @@ function TradingViewChart({ticker, lang}){
 
   return(
     <div style={{background:"#1a1540",borderRadius:12,overflow:"hidden",
-      border:"1px solid rgba(167,139,250,0.15)",marginBottom:16}}>
+      border:"1px solid rgba(167,139,250,0.15)",marginBottom:0,height:"100%",minHeight:600}}>
       <div style={{padding:"10px 16px",display:"flex",alignItems:"center",
         justifyContent:"space-between",borderBottom:"1px solid rgba(74,58,128,0.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
@@ -2934,7 +2934,7 @@ function TradingViewChart({ticker, lang}){
         </div>
       </div>
       <div id={containerId} 
-        style={{height:580,width:"100%"}}
+        style={{height:"calc(100% - 40px)",width:"100%",minHeight:600}}
         className="tradingview-widget-container">
       </div>
     </div>
@@ -3065,7 +3065,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         </span>
       </div>
       {/* ── CHART + COMPACT SUMMARY — 2 column layout ── */}
-      {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16,marginBottom:16,alignItems:"start"}}>
+      {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:16,marginBottom:16,alignItems:"stretch"}}>
         {/* LEFT — TradingView Chart */}
         <div>
           {locked&&company&&<TradingViewChart ticker={company.trim().toUpperCase()} lang={lang}/>}
