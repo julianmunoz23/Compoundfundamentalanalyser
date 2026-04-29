@@ -2903,7 +2903,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
       // Step 1: Fetch Finnhub first to get real fundamentals for AI context
-      const fhData = await callFinnhub(tickerToUse).catch(()=>null);
+      let fhData = await callFinnhub(tickerToUse).catch(()=>null);
       const yFundamentals = fhData?.basicFinancials || null;
       const fundamentalsCtx = buildFundamentalsContext(yFundamentals, tickerToUse);
 
