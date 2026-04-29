@@ -2902,13 +2902,10 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const tickerToUse=resolvedTicker;
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
-      // Step 1: Fetch Finnhub first to get real fundamentals for AI context
-      let fhData = await callFinnhub(tickerToUse).catch(()=>null);
-      const yFundamentals = fhData?.basicFinancials || null;
-      const fundamentalsCtx = buildFundamentalsContext(yFundamentals, tickerToUse);
-
-      // Step 2: Run AI analysis with real fundamentals injected
-      const aiResult = await (isLatamStock
+      // Run Finnhub + AI in parallel (original working flow)
+      const[fhResult,aiResult]=await Promise.allSettled([
+        callFinnhub(tickerToUse),
+        isLatamStock
           ? (async()=>{
               const r=await fetch("https://api.anthropic.com/v1/messages",{
                 method:"POST",
@@ -2920,12 +2917,13 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               });
               const d=await r.json();
               const t=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").replace(/```json|```/g,"").trim();
-              return {status:"fulfilled", value:JSON.parse(t)};
+              return JSON.parse(t);
             })()
-          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR).${fundamentalsCtx} JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`)
-            .then(v=>({status:"fulfilled",value:v})).catch(e=>({status:"rejected",reason:e}))
-      );
-      const fhResult = {status: fhData?"fulfilled":"rejected", value: fhData};
+          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR). JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`)
+      ]);
+      let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
+      // Enrich AI prompt context from Finnhub fundamentals (for future consensus call)
+      const fundamentalsCtx = buildFundamentalsContext(fhData?.basicFinancials||null, tickerToUse);
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0){
         try{
