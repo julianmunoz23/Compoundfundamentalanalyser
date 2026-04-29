@@ -223,7 +223,7 @@ function setCurrencyGlobal(curr,rate=1){_currency={..._currency,...curr};_exRate
 // Fetch live exchange rates from frankfurter.app (European Central Bank — free, no key)
 async function fetchExchangeRates(){
   try{
-    const res=await fetch("https://api.frankfurter.app/latest?from=USD&to=COP,MXN,ARS,PEN,CLP,BRL,EUR,GBP");
+    const res=await fetch("/api/rates"); // proxy to avoid CORS
     const data=await res.json();
     if(data?.rates){
       Object.keys(CURRENCIES).forEach(code=>{
@@ -552,10 +552,10 @@ function _fhThrottle(){
   return Promise.resolve();
 }
 
-async function finnhubGet(path,ticker){
+async function finnhubGet(path,ticker,extra=""){
   await _fhThrottle();
   const key=import.meta.env.VITE_FINNHUB_KEY;
-  const res=await fetch(`${FH}${path}?symbol=${ticker}&token=${key}`);
+  const res=await fetch(`${FH}${path}?symbol=${ticker}&token=${key}${extra}`);
   if(!res.ok)throw new Error(`Finnhub ${res.status}`);
   return res.json();
 }
@@ -567,16 +567,11 @@ async function callFinnhub(ticker){
     const safe=async(fn)=>{try{return{status:"fulfilled",value:await fn()};}catch(e){return{status:"rejected",reason:e};}};
     const rec=await safe(()=>finnhubGet("/stock/recommendation",ticker));
     await delay(200);
-    const pt=await safe(()=>finnhubGet("/stock/price-target",ticker));
-    await delay(200);
     const quote=await safe(()=>finnhubGet("/quote",ticker));
     await delay(200);
-    const epsEst=await safe(()=>finnhubGet("/stock/eps-estimate",ticker));
-    await delay(200);
-    const revEst=await safe(()=>finnhubGet("/stock/revenue-estimate",ticker));
-    await delay(200);
-    // Basic financials — margins, ROE, P/E, revenue growth
-    const metrics=await safe(()=>finnhubGet("/stock/metric?metric=all",ticker));
+    // Basic financials — margins, ROE, P/E (free tier)
+    const metrics=await safe(()=>finnhubGet("/stock/metric",ticker,"&metric=all"));
+    // Note: price-target, eps-estimate, revenue-estimate require Finnhub premium
 
     // Recommendations — most recent period
     const recData=rec.status==="fulfilled"&&rec.value?.length?rec.value[0]:null;
@@ -594,18 +589,12 @@ async function callFinnhub(ticker){
     }
 
     // Price target
-    const ptData=pt.status==="fulfilled"?pt.value:null;
     const currentPrice=quote.status==="fulfilled"?quote.value?.c:null;
-    const targetMean=ptData?.targetMean||null;
-    const upside=currentPrice&&targetMean?((targetMean-currentPrice)/currentPrice*100).toFixed(1):null;
-
-    // EPS estimate next year
-    const epsData=epsEst.status==="fulfilled"&&epsEst.value?.data?.length?epsEst.value.data[0]:null;
-    const epsGrowth=epsData?.growth!=null?(epsData.growth*100).toFixed(1):null;
-
-    // Revenue estimate next year
-    const revData=revEst.status==="fulfilled"&&revEst.value?.data?.length?revEst.value.data[0]:null;
-    const revGrowth=revData?.growth!=null?(revData.growth*100).toFixed(1):null;
+    // Price target and EPS estimates require Finnhub premium — using AI estimates instead
+    const targetMean=null;
+    const upside=null;
+    const epsGrowth=null;
+    const revGrowth=null;
 
     // Basic financials from Finnhub /stock/metric
     const mData = metrics.status==="fulfilled" ? metrics.value?.metric : null;
@@ -627,12 +616,12 @@ async function callFinnhub(ticker){
       bullish,bearish,hold:recData?.hold||0,
       breakdown:recData?{strongBuy:recData.strongBuy,buy:recData.buy,hold:recData.hold,sell:recData.sell,strongSell:recData.strongSell}:null,
       currentPrice,
-      targetMean:targetMean?targetMean.toFixed(2):null,
-      targetHigh:ptData?.targetHigh?.toFixed(2)||null,
-      targetLow:ptData?.targetLow?.toFixed(2)||null,
-      upside,
-      epsGrowthNext:epsGrowth?`+${epsGrowth}%`:null,
-      revGrowthNext:revGrowth?`+${revGrowth}%`:null,
+      targetMean:null,
+      targetHigh:null,
+      targetLow:null,
+      upside:null,
+      epsGrowthNext:null,
+      revGrowthNext:null,
       period:recData?.period||null,
       basicFinancials,
       source:"Wall Street Consensus — Live Data",
@@ -2944,12 +2933,8 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       setLocked(true);onAnalysis();
     }catch(e){
       const msg = e.message||"";
-      let userMsg = "⚠️ No se pudo completar el análisis. Intenta de nuevo.";
-      if(msg.includes("credit")||msg.includes("balance")||msg.includes("billing"))
-        userMsg = "⚠️ Servicio de análisis no disponible en este momento. Intenta más tarde.";
-      else if(msg.includes("overload")||msg.includes("529"))
-        userMsg = "⚡ Servicio ocupado. Intenta en unos segundos.";
-      setErr(userMsg);
+      // Show full error temporarily for diagnosis
+      setErr(`Error: ${msg}`);
     }
     setLoading(false);
   };
