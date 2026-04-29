@@ -555,17 +555,16 @@ function _fhThrottle(){
   return Promise.resolve();
 }
 
-async function finnhubGet(path,ticker,extra=""){
+async function finnhubGet(path,ticker){
   await _fhThrottle();
   const key=import.meta.env.VITE_FINNHUB_KEY;
-  const res=await fetch(`${FH}${path}?symbol=${ticker}&token=${key}${extra}`);
+  const res=await fetch(`${FH}${path}?symbol=${ticker}&token=${key}`);
   if(!res.ok)throw new Error(`Finnhub ${res.status}`);
   return res.json();
 }
 
 async function callFinnhub(ticker){
   try{
-    // Sequential calls to respect rate limits — small delay between each
     const delay=ms=>new Promise(r=>setTimeout(r,ms));
     const safe=async(fn)=>{try{return{status:"fulfilled",value:await fn()};}catch(e){return{status:"rejected",reason:e};}};
     const rec=await safe(()=>finnhubGet("/stock/recommendation",ticker));
@@ -577,10 +576,7 @@ async function callFinnhub(ticker){
     const epsEst=await safe(()=>finnhubGet("/stock/eps-estimate",ticker));
     await delay(200);
     const revEst=await safe(()=>finnhubGet("/stock/revenue-estimate",ticker));
-    await delay(200);
-    const metrics=await safe(()=>finnhubGet("/stock/metric",ticker,"&metric=all"));
 
-    // Recommendations — most recent period
     const recData=rec.status==="fulfilled"&&rec.value?.length?rec.value[0]:null;
     const totalAnalysts=recData?(recData.strongBuy+recData.buy+recData.hold+recData.sell+recData.strongSell):0;
     const bullish=recData?(recData.strongBuy+recData.buy):0;
@@ -594,8 +590,6 @@ async function callFinnhub(ticker){
       else if(score>=2.0)rating="Sell";
       else rating="Strong Sell";
     }
-
-    // Price target
     const ptData=pt.status==="fulfilled"?pt.value:null;
     const currentPrice=quote.status==="fulfilled"?quote.value?.c:null;
     const targetMean=ptData?.targetMean||null;
@@ -605,24 +599,8 @@ async function callFinnhub(ticker){
     const revData=revEst.status==="fulfilled"&&revEst.value?.data?.length?revEst.value.data[0]:null;
     const revGrowth=revData?.growth!=null?(revData.growth*100).toFixed(1):null;
 
-    // Basic financials from Finnhub /stock/metric
-    const mData = metrics.status==="fulfilled" ? metrics.value?.metric : null;
-    const basicFinancials = mData ? {
-      grossMarginTTM:      mData.grossMarginTTM      || null,
-      operatingMarginTTM:  mData.operatingMarginTTM  || null,
-      netProfitMarginTTM:  mData.netProfitMarginTTM  || null,
-      roeTTM:              mData.roeTTM              || null,
-      roaTTM:              mData.roaTTM              || null,
-      revenueGrowthTTMYoy: mData.revenueGrowthTTMYoy || null,
-      epsGrowthTTMYoy:     mData.epsGrowthTTMYoy     || null,
-      peNormalizedAnnual:  mData.peNormalizedAnnual  || null,
-      debtEquityAnnual:    mData["totalDebt/totalEquityAnnual"] || null,
-    } : null;
-
     return{
-      rating,
-      totalAnalysts,
-      bullish,bearish,hold:recData?.hold||0,
+      rating,totalAnalysts,bullish,bearish,hold:recData?.hold||0,
       breakdown:recData?{strongBuy:recData.strongBuy,buy:recData.buy,hold:recData.hold,sell:recData.sell,strongSell:recData.strongSell}:null,
       currentPrice,
       targetMean:targetMean?targetMean.toFixed(2):null,
@@ -632,7 +610,6 @@ async function callFinnhub(ticker){
       epsGrowthNext:epsGrowth?`+${epsGrowth}%`:null,
       revGrowthNext:revGrowth?`+${revGrowth}%`:null,
       period:recData?.period||null,
-      basicFinancials,
       source:"Wall Street Consensus — Live Data",
     };
   }catch(e){
@@ -2923,7 +2900,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       ]);
       let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
       // Enrich AI prompt context from Finnhub fundamentals (for future consensus call)
-      const fundamentalsCtx = buildFundamentalsContext(fhData?.basicFinancials||null, tickerToUse);
+      const fundamentalsCtx = ""; // FMP integration pending — Phase 2
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0){
         try{
