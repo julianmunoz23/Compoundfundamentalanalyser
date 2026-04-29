@@ -521,7 +521,7 @@ function _cacheKey(prompt){
 async function callAI(prompt){
   const cKey=_cacheKey(prompt);
   if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
-  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:900,messages:[{role:"user",content:prompt}]})});
+  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
   const d=await res.json();
   if(d.error){
     const t=d.error.type||""; const m=d.error.message||"";
@@ -533,7 +533,10 @@ async function callAI(prompt){
       throw new Error("⏳ Demasiadas consultas. Espera un momento.");
     throw new Error("⚠️ No se pudo completar el análisis. Intenta de nuevo.");
   }
-  const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();return JSON.parse(txt);
+  const txt=d.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
+  const parsed=JSON.parse(txt);
+  _aiCache[cKey]=parsed; // cache parsed result
+  return parsed;
 }
 
 // ── FINNHUB HELPER — Real-time market data ────────────────────────────────────
@@ -567,11 +570,15 @@ async function callFinnhub(ticker){
     const safe=async(fn)=>{try{return{status:"fulfilled",value:await fn()};}catch(e){return{status:"rejected",reason:e};}};
     const rec=await safe(()=>finnhubGet("/stock/recommendation",ticker));
     await delay(200);
+    const pt=await safe(()=>finnhubGet("/stock/price-target",ticker));
+    await delay(200);
     const quote=await safe(()=>finnhubGet("/quote",ticker));
     await delay(200);
-    // Basic financials — margins, ROE, P/E (free tier)
+    const epsEst=await safe(()=>finnhubGet("/stock/eps-estimate",ticker));
+    await delay(200);
+    const revEst=await safe(()=>finnhubGet("/stock/revenue-estimate",ticker));
+    await delay(200);
     const metrics=await safe(()=>finnhubGet("/stock/metric",ticker,"&metric=all"));
-    // Note: price-target, eps-estimate, revenue-estimate require Finnhub premium
 
     // Recommendations — most recent period
     const recData=rec.status==="fulfilled"&&rec.value?.length?rec.value[0]:null;
@@ -589,12 +596,14 @@ async function callFinnhub(ticker){
     }
 
     // Price target
+    const ptData=pt.status==="fulfilled"?pt.value:null;
     const currentPrice=quote.status==="fulfilled"?quote.value?.c:null;
-    // Price target and EPS estimates require Finnhub premium — using AI estimates instead
-    const targetMean=null;
-    const upside=null;
-    const epsGrowth=null;
-    const revGrowth=null;
+    const targetMean=ptData?.targetMean||null;
+    const upside=currentPrice&&targetMean?((targetMean-currentPrice)/currentPrice*100).toFixed(1):null;
+    const epsData=epsEst.status==="fulfilled"&&epsEst.value?.data?.length?epsEst.value.data[0]:null;
+    const epsGrowth=epsData?.growth!=null?(epsData.growth*100).toFixed(1):null;
+    const revData=revEst.status==="fulfilled"&&revEst.value?.data?.length?revEst.value.data[0]:null;
+    const revGrowth=revData?.growth!=null?(revData.growth*100).toFixed(1):null;
 
     // Basic financials from Finnhub /stock/metric
     const mData = metrics.status==="fulfilled" ? metrics.value?.metric : null;
@@ -616,12 +625,12 @@ async function callFinnhub(ticker){
       bullish,bearish,hold:recData?.hold||0,
       breakdown:recData?{strongBuy:recData.strongBuy,buy:recData.buy,hold:recData.hold,sell:recData.sell,strongSell:recData.strongSell}:null,
       currentPrice,
-      targetMean:null,
-      targetHigh:null,
-      targetLow:null,
-      upside:null,
-      epsGrowthNext:null,
-      revGrowthNext:null,
+      targetMean:targetMean?targetMean.toFixed(2):null,
+      targetHigh:ptData?.targetHigh?.toFixed(2)||null,
+      targetLow:ptData?.targetLow?.toFixed(2)||null,
+      upside,
+      epsGrowthNext:epsGrowth?`+${epsGrowth}%`:null,
+      revGrowthNext:revGrowth?`+${revGrowth}%`:null,
       period:recData?.period||null,
       basicFinancials,
       source:"Wall Street Consensus — Live Data",
