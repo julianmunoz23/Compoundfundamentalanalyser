@@ -2854,6 +2854,80 @@ Respond ONLY with valid JSON, no markdown:
   );
 }
 
+
+// ── TRADINGVIEW CHART WIDGET ──────────────────────────────────────────────────
+function TradingViewChart({ticker, lang}){
+  const containerId = `tv_chart_${ticker}`;
+  
+  // Map tickers to TradingView exchange format
+  const getTVSymbol = (t) => {
+    const bvc = {"TERPEL":"BVC:TERPEL","GEB":"BVC:GEB","ECOPETROL":"BVC:ECOPETROL",
+      "BOGOTA":"BVC:BOGOTA","ISA":"BVC:ISA","CELSIA":"BVC:CELSIA",
+      "CNEC":"BVC:CNEC","PEI":"BVC:PEI","BVC":"BVC:BVC",
+      "CIBEST":"BVC:CIBEST","NUCO":"BVC:NUCO","PFGRUPSURA":"BVC:PFGRUPSURA"};
+    if(bvc[t]) return bvc[t];
+    // European stocks
+    const eu = {"ASML":"NASDAQ:ASML","LVMH":"EURONEXT:MC","SAP":"XETRA:SAP",
+      "NESN":"SWX:NESN","SHELL":"LSE:SHEL","AZN":"NASDAQ:AZN","GSK":"NYSE:GSK"};
+    if(eu[t]) return eu[t];
+    return `NASDAQ:${t}`; // default US stocks
+  };
+
+  useEffect(()=>{
+    const container = document.getElementById(containerId);
+    if(!container) return;
+    container.innerHTML = "";
+    
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: getTVSymbol(ticker),
+      interval: "D",
+      timezone: "America/Bogota",
+      theme: "dark",
+      style: "1",
+      locale: lang==="es" ? "es" : "en",
+      backgroundColor: "rgba(26, 21, 64, 0)",
+      gridColor: "rgba(74, 58, 128, 0.15)",
+      hide_top_toolbar: false,
+      hide_legend: false,
+      save_image: false,
+      calendar: false,
+      hide_volume: false,
+      support_host: "https://www.tradingview.com",
+      allow_symbol_change: false,
+      studies: ["RSI@tv-basicstudies","MACD@tv-basicstudies"],
+    });
+    container.appendChild(script);
+    
+    return () => { if(container) container.innerHTML = ""; };
+  }, [ticker]);
+
+  return(
+    <div style={{background:"#1a1540",borderRadius:12,overflow:"hidden",
+      border:"1px solid rgba(167,139,250,0.15)",marginBottom:16}}>
+      <div style={{padding:"10px 16px",display:"flex",alignItems:"center",
+        justifyContent:"space-between",borderBottom:"1px solid rgba(74,58,128,0.2)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:11,color:"#a78bfa",fontWeight:600,
+            textTransform:"uppercase",letterSpacing:"0.08em"}}>
+            📈 {ticker} — Gráfica en tiempo real
+          </span>
+        </div>
+        <span style={{fontSize:9,color:"rgba(133,133,168,0.6)"}}>
+          Powered by TradingView
+        </span>
+      </div>
+      <div id={containerId} 
+        style={{height:400,width:"100%"}}
+        className="tradingview-widget-container">
+      </div>
+    </div>
+  );
+}
+
 function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAnalysis,canAnalyze,onGoToProfile,lang="en"}){
   const LS=LANG[lang]||LANG.en;
   const [loading,setLoading]=useState(false);
@@ -2877,6 +2951,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const resolvedTicker=await resolveTicker(company);
       if(resolvedTicker!==company.trim().toUpperCase())setCompany(resolvedTicker);
       const tickerToUse=resolvedTicker;
+      setTickerToUse(resolvedTicker); // expose for TradingView widget
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
       // Run Finnhub + AI in parallel (original working flow)
@@ -2977,6 +3052,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             :"This analysis is educational and does not constitute certified financial advice. All investments involve risk of loss. Consult an advisor before investing."}
         </span>
       </div>
+      {/* ── TRADINGVIEW CHART ── */}
+      {locked&&tickerToUse&&<TradingViewChart ticker={tickerToUse} lang={lang}/>}
+
       {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
       {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
