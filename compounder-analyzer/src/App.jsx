@@ -3064,90 +3064,50 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             :"This analysis is educational and does not constitute certified financial advice. All investments involve risk of loss. Consult an advisor before investing."}
         </span>
       </div>
-      {/* ── CHART + CONSENSUS — 2 column layout ── */}
-      {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:16,marginBottom:16,alignItems:"start"}}>
+      {/* ── CHART + COMPACT SUMMARY — 2 column layout ── */}
+      {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"1fr 320px",gap:16,marginBottom:16,alignItems:"start"}}>
         {/* LEFT — TradingView Chart */}
         <div>
           {locked&&company&&<TradingViewChart ticker={company.trim().toUpperCase()} lang={lang}/>}
         </div>
-        {/* RIGHT — Score + Consensus */}
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {/* Score ring compact */}
-          {locked&&info&&<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"14px",textAlign:"center"}}>
+        {/* RIGHT — Score + Consensus Summary */}
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {locked&&info&&<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"16px",textAlign:"center"}}>
             <div style={{fontSize:9,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>Score de Calidad</div>
             <ScoreRing score={score} size={90} lang={lang}/>
             <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:g.c,marginTop:4,fontWeight:700}}>{g.label}</div>
-            <div style={{fontSize:10,color:T.muted,marginTop:3}}>{checklist.filter(c=>c.p).length}/8 criterios</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10}}>
-              {catS.map(({cat,s})=><div key={cat} style={{background:T.accent,borderRadius:6,padding:"6px 8px",textAlign:"left"}}>
-                <div style={{fontSize:9,color:T.muted,marginBottom:2}}>{cat}</div>
+            <div style={{fontSize:10,color:T.muted,marginTop:2}}>{checklist.filter(c=>c.p).length}/8 criterios</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5,marginTop:10}}>
+              {catS.map(({cat,s})=><div key={cat} style={{background:T.accent,borderRadius:6,padding:"5px 7px",textAlign:"left"}}>
+                <div style={{fontSize:8,color:T.muted}}>{cat}</div>
                 <div style={{fontSize:11,color:s>=60?T.green:s>=40?T.gold:T.red,fontWeight:600}}>{s}%</div>
               </div>)}
             </div>
           </div>}
-          {/* ── LIVE FINNHUB CONSENSUS ── */}
-          {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:16}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          {fh.isAiEstimate
-          ?<span style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>🤖 Consenso Estimado por IA · Wall Street</span>
-          :<div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontSize:10,color:T.green,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
-                <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#34d399"/></svg>
-                {lang==="es"?"Datos en tiempo real · Wall Street":"Live data · Wall Street consensus"}
-              </span>
-              <span style={{fontSize:9,color:T.muted,background:T.accent,border:`1px solid ${T.border}`,borderRadius:4,padding:"1px 6px"}}>
-                Finnhub · {lang==="es"?"Analistas reales":"Real analysts"}
-              </span>
+          {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:12,padding:"14px",textAlign:"center"}}>
+            <div style={{fontSize:9,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>
+              {fh.isAiEstimate?"🤖 Consenso IA":"📊 Wall St. Consensus"}
+            </div>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:28,color:ratingColor(fh.rating),fontWeight:700,marginBottom:4}}>{fh.rating}</div>
+            <div style={{fontSize:11,color:T.muted,marginBottom:10}}>{fh.totalAnalysts} analistas</div>
+            {fh.targetMean&&<div style={{fontSize:12,color:T.text,marginBottom:4}}>
+              Objetivo: <span style={{color:T.gold,fontWeight:700}}>${fh.targetMean}</span>
             </div>}
-          {fh.period&&!fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Period: {fh.period}</span>}
-          {fh.isAiEstimate&&<span style={{fontSize:10,color:T.muted}}>· Estimación basada en datos públicos recientes</span>}
-        </div>
-        <div className="score-card-grid" style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:20,alignItems:"center"}}>
-          {/* Big rating */}
-          <div style={{textAlign:"center",padding:"16px 10px",background:ratingBg(fh.rating),borderRadius:12,border:`1px solid ${ratingColor(fh.rating)}33`}}>
-            <div style={{fontSize:10,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8}}>Wall St. Consensus</div>
-            <div style={{fontFamily:"'Playfair Display',serif",fontSize:32,color:ratingColor(fh.rating),fontWeight:700,marginBottom:6}}>{fh.rating}</div>
-            <div style={{fontSize:12,color:T.muted,marginBottom:10}}>{fh.totalAnalysts} analysts</div>
-            {fh.currentPrice&&<div style={{fontSize:13,color:T.text,marginBottom:4}}>Current: <span style={{color:T.gold,fontWeight:700}}>${fh.currentPrice.toFixed(2)}</span></div>}
-            {fh.targetMean&&<div style={{fontSize:13,color:T.text}}>Target: <span style={{color:T.gold,fontWeight:700}}>${fh.targetMean}</span></div>}
-            {fh.upside&&<div style={{fontSize:14,color:parseFloat(fh.upside)>=0?T.green:T.red,fontWeight:700,marginTop:6}}>{parseFloat(fh.upside)>=0?"+":""}{fh.upside}% upside</div>}
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {/* Analyst breakdown bar */}
-            {fh.breakdown&&<div>
-              <div style={{fontSize:11,color:T.muted,marginBottom:8}}>Analyst Breakdown — {fh.totalAnalysts} total</div>
-              <div style={{display:"flex",borderRadius:8,overflow:"hidden",height:28,gap:1}}>
-                {[{l:"Strong Buy",v:fh.breakdown.strongBuy,c:"#1a9e3f"},{l:"Buy",v:fh.breakdown.buy,c:T.green},{l:"Hold",v:fh.breakdown.hold,c:T.gold},{l:"Sell",v:fh.breakdown.sell,c:"#e67e22"},{l:"Strong Sell",v:fh.breakdown.strongSell,c:T.red}].filter(x=>x.v>0).map(({l,v,c})=>(
-                  <div key={l} title={`${l}: ${v}`} style={{flex:v,background:c,display:"flex",alignItems:"center",justifyContent:"center",minWidth:v>0?24:0}}>
-                    {v>0&&<span style={{fontSize:10,color:"#fff",fontWeight:700}}>{v}</span>}
+            {fh.upside&&<div style={{fontSize:13,color:parseFloat(fh.upside)>=0?T.green:T.red,fontWeight:700}}>
+              {parseFloat(fh.upside)>=0?"+":""}{fh.upside}% upside
+            </div>}
+            {fh.breakdown&&<div style={{marginTop:10}}>
+              <div style={{display:"flex",borderRadius:6,overflow:"hidden",height:20,gap:1}}>
+                {[{l:"SB",v:fh.breakdown.strongBuy,c:"#1a9e3f"},{l:"B",v:fh.breakdown.buy,c:T.green},{l:"H",v:fh.breakdown.hold,c:T.gold},{l:"S",v:fh.breakdown.sell,c:"#e67e22"},{l:"SS",v:fh.breakdown.strongSell,c:T.red}].filter(x=>x.v>0).map(({l,v,c})=>(
+                  <div key={l} title={`${l}: ${v}`} style={{flex:v,background:c,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:9,color:"#fff",fontWeight:700}}>{v}</span>
                   </div>
                 ))}
               </div>
-              <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
-                {[{l:"Strong Buy",v:fh.breakdown.strongBuy,c:"#1a9e3f"},{l:"Buy",v:fh.breakdown.buy,c:T.green},{l:"Hold",v:fh.breakdown.hold,c:T.gold},{l:"Sell",v:fh.breakdown.sell,c:"#e67e22"},{l:"Strong Sell",v:fh.breakdown.strongSell,c:T.red}].map(({l,v,c})=>(
-                  <div key={l} style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:8,height:8,borderRadius:2,background:c}}/><span style={{fontSize:10,color:T.muted}}>{l}: <span style={{color:T.text,fontWeight:600}}>{v}</span></span></div>
-                ))}
-              </div>
             </div>}
-            {/* Price targets + estimates */}
-            <div className="kpi-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
-              {[
-                {l:lang==="es"?"Precio Objetivo":"Price Target",v:fh.targetMean?`$${fh.targetMean}`:"—",c:T.gold},
-                {l:lang==="es"?"Target Alto":"Target High",v:fh.targetHigh?`$${fh.targetHigh}`:"—",c:T.green},
-                {l:lang==="es"?"Target Bajo":"Target Low",v:fh.targetLow?`$${fh.targetLow}`:"—",c:T.red},
-                {l:lang==="es"?"Crecimiento EPS (est.)":"EPS Growth (est.)",v:fh.epsGrowthNext||"—",c:T.green},
-              ].map(({l,v,c},pi)=><div key={pi} style={{background:T.card,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:4}}>{l}</div>
-                <Mn sz={15} c={c} s={{fontWeight:600}}>{v}</Mn>
-              </div>)}
-            </div>
-            <div style={{fontSize:10,color:T.muted}}>{fh.isAiEstimate?"🤖 Consenso IA · Estimación basada en datos públicos recientes":"Datos en tiempo real · Consenso Wall Street · "+new Date().toLocaleDateString("es-CO",{month:"short",day:"numeric",year:"numeric"})} {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
-          </div>
-        </div>
           </div>}
-        </div>{/* end right column */}
-      </div>}{/* end grid right+consensus */}
-      </div>}{/* end chart-consensus-grid */}
+        </div>
+      </div>}
       {!fh&&info&&<div style={{padding:"10px 14px",background:`${T.muted}10`,border:`1px solid ${T.border}`,borderRadius:8,fontSize:11,color:T.muted}}>
         ⚠️ Datos en tiempo real no disponibles para {company} — verifica la configuración en Vercel.
       </div>}
