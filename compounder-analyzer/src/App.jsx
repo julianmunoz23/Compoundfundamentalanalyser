@@ -2951,7 +2951,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const resolvedTicker=await resolveTicker(company);
       if(resolvedTicker!==company.trim().toUpperCase())setCompany(resolvedTicker);
       const tickerToUse=resolvedTicker;
-      setTickerToUse(resolvedTicker); // expose for TradingView widget
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
       // Run Finnhub + AI in parallel (original working flow)
@@ -3053,7 +3052,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         </span>
       </div>
       {/* ── TRADINGVIEW CHART ── */}
-      {locked&&tickerToUse&&<TradingViewChart ticker={tickerToUse} lang={lang}/>}
+      {locked&&company&&<TradingViewChart ticker={company.trim().toUpperCase()} lang={lang}/>}
 
       {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
       {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
