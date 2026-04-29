@@ -2911,17 +2911,21 @@ function TradingViewChart({ticker, lang}){
       <div style={{padding:"10px 16px",display:"flex",alignItems:"center",
         justifyContent:"space-between",borderBottom:"1px solid rgba(74,58,128,0.2)"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#34d399"/></svg>
           <span style={{fontSize:11,color:"#a78bfa",fontWeight:600,
             textTransform:"uppercase",letterSpacing:"0.08em"}}>
-            📈 {ticker} — Gráfica en tiempo real
+            {ticker} — Precio en tiempo real
           </span>
         </div>
-        <span style={{fontSize:9,color:"rgba(133,133,168,0.6)"}}>
-          Powered by TradingView
-        </span>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{fontSize:9,color:"rgba(133,133,168,0.5)"}}>Gráfica por</span>
+          <span style={{fontSize:9,color:"rgba(133,133,168,0.8)",fontWeight:600}}>TradingView</span>
+          <span style={{fontSize:9,color:"rgba(133,133,168,0.3)"}}>·</span>
+          <span style={{fontSize:9,color:"rgba(133,133,168,0.5)"}}>Precios Finnhub</span>
+        </div>
       </div>
       <div id={containerId} 
-        style={{height:400,width:"100%"}}
+        style={{height:520,width:"100%"}}
         className="tradingview-widget-container">
       </div>
     </div>
