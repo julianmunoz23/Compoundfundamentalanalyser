@@ -2861,16 +2861,24 @@ function TradingViewChart({ticker, lang}){
   
   // Map tickers to TradingView exchange format
   const getTVSymbol = (t) => {
+    // BVC Colombia — need explicit exchange
     const bvc = {"TERPEL":"BVC:TERPEL","GEB":"BVC:GEB","ECOPETROL":"BVC:ECOPETROL",
       "BOGOTA":"BVC:BOGOTA","ISA":"BVC:ISA","CELSIA":"BVC:CELSIA",
       "CNEC":"BVC:CNEC","PEI":"BVC:PEI","BVC":"BVC:BVC",
       "CIBEST":"BVC:CIBEST","NUCO":"BVC:NUCO","PFGRUPSURA":"BVC:PFGRUPSURA"};
     if(bvc[t]) return bvc[t];
+    // NYSE listed stocks — need correct exchange
+    const nyse = ["BRK.B","JPM","BAC","GS","MS","WMT","JNJ","PG","KO","XOM",
+      "CVX","IBM","GE","MMM","HON","CAT","BA","UNH","MRK","PFE","ABT",
+      "T","VZ","DIS","NKE","MCD","V","MA","AXP","C","WFC","OXY","SHOP"];
+    if(nyse.includes(t)) return `NYSE:${t}`;
     // European stocks
     const eu = {"ASML":"NASDAQ:ASML","LVMH":"EURONEXT:MC","SAP":"XETRA:SAP",
-      "NESN":"SWX:NESN","SHELL":"LSE:SHEL","AZN":"NASDAQ:AZN","GSK":"NYSE:GSK"};
+      "NESN":"SWX:NESN","SHELL":"LSE:SHEL","AZN":"NASDAQ:AZN","GSK":"NYSE:GSK",
+      "NOVO":"NASDAQ:NVO","PHIA":"EURONEXT:PHIA"};
     if(eu[t]) return eu[t];
-    return `NASDAQ:${t}`; // default US stocks
+    // For all other US stocks — let TradingView auto-resolve (most reliable)
+    return t;
   };
 
   useEffect(()=>{
