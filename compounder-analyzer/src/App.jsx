@@ -170,6 +170,7 @@ const css=`
 
     /* Portfolio form */
     .portfolio-grid{grid-template-columns:1fr!important;}
+    .chart-consensus-grid{grid-template-columns:1fr!important;}
   }
 
   /* Ensure proper mobile viewport */
@@ -2933,7 +2934,7 @@ function TradingViewChart({ticker, lang}){
         </div>
       </div>
       <div id={containerId} 
-        style={{height:520,width:"100%"}}
+        style={{height:580,width:"100%"}}
         className="tradingview-widget-container">
       </div>
     </div>
@@ -3063,11 +3064,29 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             :"This analysis is educational and does not constitute certified financial advice. All investments involve risk of loss. Consult an advisor before investing."}
         </span>
       </div>
-      {/* ── TRADINGVIEW CHART ── */}
-      {locked&&company&&<TradingViewChart ticker={company.trim().toUpperCase()} lang={lang}/>}
-
-      {/* ── LIVE FINNHUB CONSENSUS — real-time data ── */}
-      {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:20,marginBottom:4}}>
+      {/* ── CHART + CONSENSUS — 2 column layout ── */}
+      {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:16,marginBottom:16,alignItems:"start"}}>
+        {/* LEFT — TradingView Chart */}
+        <div>
+          {locked&&company&&<TradingViewChart ticker={company.trim().toUpperCase()} lang={lang}/>}
+        </div>
+        {/* RIGHT — Score + Consensus */}
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {/* Score ring compact */}
+          {locked&&info&&<div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:"14px",textAlign:"center"}}>
+            <div style={{fontSize:9,color:T.muted,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>Score de Calidad</div>
+            <ScoreRing score={score} size={90} lang={lang}/>
+            <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:g.c,marginTop:4,fontWeight:700}}>{g.label}</div>
+            <div style={{fontSize:10,color:T.muted,marginTop:3}}>{checklist.filter(c=>c.p).length}/8 criterios</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10}}>
+              {catS.map(({cat,s})=><div key={cat} style={{background:T.accent,borderRadius:6,padding:"6px 8px",textAlign:"left"}}>
+                <div style={{fontSize:9,color:T.muted,marginBottom:2}}>{cat}</div>
+                <div style={{fontSize:11,color:s>=60?T.green:s>=40?T.gold:T.red,fontWeight:600}}>{s}%</div>
+              </div>)}
+            </div>
+          </div>}
+          {/* ── LIVE FINNHUB CONSENSUS ── */}
+          {fh&&<div style={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`2px solid ${ratingColor(fh.rating)}44`,borderRadius:14,padding:16}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
           {fh.isAiEstimate
           ?<span style={{fontSize:10,color:T.gold,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>🤖 Consenso Estimado por IA · Wall Street</span>
@@ -3125,7 +3144,10 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             <div style={{fontSize:10,color:T.muted}}>{fh.isAiEstimate?"🤖 Consenso IA · Estimación basada en datos públicos recientes":"Datos en tiempo real · Consenso Wall Street · "+new Date().toLocaleDateString("es-CO",{month:"short",day:"numeric",year:"numeric"})} {new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</div>
           </div>
         </div>
-      </div>}
+          </div>}
+        </div>{/* end right column */}
+      </div>}{/* end grid right+consensus */}
+      </div>}{/* end chart-consensus-grid */}
       {!fh&&info&&<div style={{padding:"10px 14px",background:`${T.muted}10`,border:`1px solid ${T.border}`,borderRadius:8,fontSize:11,color:T.muted}}>
         ⚠️ Datos en tiempo real no disponibles para {company} — verifica la configuración en Vercel.
       </div>}
@@ -3164,6 +3186,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           </Card>
         </div>
       </div>
+
       <AdBanner size="leaderboard"/>
     </>}
 
