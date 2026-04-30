@@ -5314,7 +5314,7 @@ function PieChart({data,stockCount,size=220}){
   </svg>;
 }
 
-function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null}){
+function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null,currencyTick=0}){
   const [paywallCtx,setPaywallCtx]=useState(null);
   const [portTab,setPortTab]=useState("positions");
   // Read risk profile if user came from Risk Profile tab
@@ -6194,8 +6194,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
     <div id="ai-analysis-section"/>
+    {/* currency re-render trigger */}
     {grouped.length>0&&(
       <PortfolioDashboard
+        key={`dashboard-${currencyTick}`}
         enriched={enriched}
         totalCost={totalCost}
         totalValue={totalValue}
@@ -7620,7 +7622,7 @@ export default function App(){
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
-      {tab==="portfolio"&&<PortfolioTab key={`portfolio-${currencyTick}`} canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user} userPlan={userPlan} onBalanceChange={(bal)=>setPortfolioBalance(bal)}/>}
+      {tab==="portfolio"&&<PortfolioTab key={`portfolio-${currencyTick}`} currencyTick={currencyTick} canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user} userPlan={userPlan} onBalanceChange={(bal)=>setPortfolioBalance(bal)}/>}
       {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
   ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
   :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
