@@ -511,9 +511,9 @@ function _marketSessionId(ticker){
 }
 
 function _cacheKey(prompt){
-  // Extract ticker from prompt
-  const m = prompt.match(/(?:ticker|Analyze|análisis)[:\s"]+([A-Z]{1,5}(?:\.[A-Z])?)/i)
-         || prompt.match(/([A-Z]{2,5})/);
+  // Extract ticker from prompt — try multiple patterns
+  const m = prompt.match(/(?:ticker|Analyze|consensus for)[:\s"]+([A-Z]{1,5}(?:\.[A-Z])?)/i)
+         || prompt.match(/"([A-Z]{2,5}(?:\.[A-Z])?)"/); // quoted ticker like "NVDA"
   if(!m) return `generic_${new Date().toISOString().split("T")[0]}`;
   const ticker = m[1].toUpperCase();
   return _marketSessionId(ticker);
