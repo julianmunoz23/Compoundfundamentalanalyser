@@ -2990,9 +2990,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       // Enrich AI prompt context from Finnhub fundamentals (for future consensus call)
       const fundamentalsCtx = ""; // FMP integration pending — Phase 2
       // If Finnhub has no analyst data, use AI to estimate consensus
-      if(!fhData||fhData.totalAnalysts===0||!fhData.targetMean||
-        (fhData.targetMean&&fhData.currentPrice&&parseFloat(fhData.targetMean)<fhData.currentPrice*0.85)){
-        // Trigger AI consensus when: no data, no target, or target is >15% below current price (stale data)
+      if(!fhData||fhData.totalAnalysts===0){
         try{
           const consensus=await callAI(`Wall Street consensus for "${tickerToUse}".${fundamentalsCtx} If real analyst data above is available, use it. JSON only:{"rating":"<Strong Buy|Buy|Hold|Sell|Strong Sell>","totalAnalysts":<n>,"bullish":<n>,"bearish":<n>,"hold":<n>,"currentPrice":<n>,"targetMean":"<285.00>","targetHigh":"<350.00>","targetLow":"<180.00>","upside":"<18.5>","epsGrowthNext":"<+12.4%>","breakdown":{"strongBuy":<n>,"buy":<n>,"hold":<n>,"sell":<n>,"strongSell":<n>},"isAiEstimate":true}`);
           fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
