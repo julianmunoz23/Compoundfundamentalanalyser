@@ -7358,10 +7358,13 @@ export default function App(){
   const liveRate=currCode==="USD"?1:(liveRates[currCode]||CURRENCIES[currCode]?.rate||1);
   setCurrencyGlobal(currObj,liveRate); // sync global fmt with live rate
 
+  const [currencyTick,setCurrencyTick]=useState(0); // forces re-render on currency change
+
   const changeCurrency=(code)=>{
     setCurrCode(code);
     const rate=code==="USD"?1:(liveRates[code]||CURRENCIES[code]?.rate||1);
     setCurrencyGlobal(CURRENCIES[code],rate);
+    setCurrencyTick(t=>t+1); // trigger re-render so fmt() uses new rate
     try{localStorage.setItem("compoundr_currency",code);}catch{}
     setShowCurrMenu(false);
   };
@@ -7617,7 +7620,7 @@ export default function App(){
       {tab==="whatif"&&<WhatIfTab lang={lang}/>}
       {tab==="score"&&<ScoreTab m={m} setM={setM} moat={moat} setMoat={setMoat} company={company} setCompany={setCompany} sector={sector} setSector={setSector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToProfile={()=>setTab("profile")} lang={lang}/>}
       {tab==="profile"&&<ProfileTab onAnalysis={onAnalysis} canAnalyze={canAnalyze} onGoToPortfolio={()=>setTab("portfolio")} onGoToStrategy={()=>setTab("strategy")} lang={lang} user={user}/>}
-      {tab==="portfolio"&&<PortfolioTab canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user} userPlan={userPlan} onBalanceChange={(bal)=>setPortfolioBalance(bal)}/>}
+      {tab==="portfolio"&&<PortfolioTab key={`portfolio-${currencyTick}`} canAnalyze={canAnalyze} onShowPaywall={(ctx)=>{setPaywallContext(ctx);setPrevTab("portfolio");setShowPaywall(true);}} onGoToProfile={()=>setTab("profile")} lang={lang} user={user} userPlan={userPlan} onBalanceChange={(bal)=>setPortfolioBalance(bal)}/>}
       {tab==="strategy"&&(userPlan==="premium"||userPlan==="basic"||isAdmin()
   ?<StrategyTab onGoToProfile={()=>setTab("profile")} onGoToPortfolio={()=>setTab("portfolio")} lang={lang} user={user}/>
   :<div style={{maxWidth:560,margin:"80px auto",textAlign:"center",padding:"0 24px"}}>
