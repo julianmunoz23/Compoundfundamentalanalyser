@@ -2992,9 +2992,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0||fhData.rating==="N/A"||!fhData.rating){
         try{
-          const consensus=await callAI(`Provide Wall Street analyst consensus for ${tickerToUse} stock. Use your training data. Return ONLY valid JSON, no markdown, no explanation:
-{"rating":"Strong Buy","totalAnalysts":45,"bullish":32,"bearish":5,"hold":8,"currentPrice":372.50,"targetMean":"380.00","targetHigh":"450.00","targetLow":"200.00","upside":"2.0","epsGrowthNext":"+12.4%","breakdown":{"strongBuy":20,"buy":12,"hold":8,"sell":3,"strongSell":2},"isAiEstimate":true}
-Now do the same for ${tickerToUse}. Replace all values with real estimates for ${tickerToUse}.`);
+          const consensus=await callAI(`Wall Street analyst consensus for "${tickerToUse}". Based on your training data, provide realistic estimates. Return ONLY valid JSON, no markdown:{"rating":"<Strong Buy|Buy|Hold|Sell|Strong Sell>","totalAnalysts":<number>,"bullish":<number>,"bearish":<number>,"hold":<number>,"currentPrice":<number>,"targetMean":"<number>","targetHigh":"<number>","targetLow":"<number>","upside":"<number>","epsGrowthNext":"<+X.X%>","breakdown":{"strongBuy":<n>,"buy":<n>,"hold":<n>,"sell":<n>,"strongSell":<n>},"isAiEstimate":true}`);
           fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
         }catch(e){console.warn("AI consensus failed:",e.message);fhData=null;}
       }
