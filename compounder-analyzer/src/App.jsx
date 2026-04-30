@@ -1063,7 +1063,6 @@ const LANG = {
     strat_no_sub: "Crea tu Perfil de Riesgo, genera un portafolio IA y haz clic en '✅ Sí — Seguir Mi Estrategia' para empezar a rastrear tu plan aquí.",
     strat_create: "🧬 Crear Mi Perfil de Riesgo →",
     strat_plan: "📊 Plan vs Realidad",
-    strat_refresh: "🔄 Actualizar Precios",
   }
 };
 
