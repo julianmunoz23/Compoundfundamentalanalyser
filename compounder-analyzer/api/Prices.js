@@ -1,8 +1,9 @@
 // /api/prices.js — Proxy seguro para Finnhub
 // La FINNHUB_KEY NUNCA llega al browser
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "https://www.inversoria.lat");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
+module.exports = async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  if(req.method === "OPTIONS") return res.status(200).end();
   res.setHeader("Cache-Control", "s-maxage=30, stale-while-revalidate=60");
 
   const key = process.env.FINNHUB_KEY;
@@ -11,7 +12,6 @@ export default async function handler(req, res) {
   const { path, symbol, metric } = req.query;
   if(!symbol) return res.status(400).json({error:"symbol required"});
 
-  // Whitelist allowed paths — prevent misuse
   const allowed = [
     "quote","stock/recommendation","stock/price-target",
     "stock/eps-estimate","stock/revenue-estimate","stock/metric"
