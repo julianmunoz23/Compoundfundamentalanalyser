@@ -237,7 +237,7 @@ async function fetchExchangeRates(){
     // Fallback to recent approximate rates if API fails
     const fallback={COP:3700,MXN:20.3,ARS:1050,PEN:3.75,CLP:920,BRL:5.78,EUR:0.92};
     Object.keys(fallback).forEach(code=>{CURRENCIES[code].rate=fallback[code];});
-    console.warn("Exchange rate API unavailable, using fallback rates");
+    // Exchange rate API unavailable — using fallback rates (silent)
     return fallback;
   }
 }
@@ -5853,17 +5853,26 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     if(!grouped.length){setErr("Add at least one position first.");return;}
     if(!isAdmin()){onShowPaywall("portfolio");return;}
     setLoadingAI(true);setErr("");setAiAnalysis(null);
-    const summary=enriched.map(p=>{
+    // Limit to top 20 by value to keep prompt manageable
+    const sortedEnriched = [...enriched].sort((a,b)=>{
+      const aVal=(a.currentPrice||a.avgCost)*a.totalShares;
+      const bVal=(b.currentPrice||b.avgCost)*b.totalShares;
+      return bVal-aVal;
+    });
+    const topPositions = sortedEnriched.slice(0,20);
+    const summary=topPositions.map(p=>{
       const current=p.currentPrice||p.avgCost;
       const pnl=((current-p.avgCost)/p.avgCost*100).toFixed(1);
-      return`${p.ticker}: ${p.totalShares.toFixed(3)} shares @ avg $${p.avgCost.toFixed(2)}, current ~$${current.toFixed(2)}, P&L ${pnl}%, Realized P&G: $${p.realizedPnL.toFixed(2)}`;
-    }).join(" | ");
+      return`${p.ticker}:avg$${p.avgCost.toFixed(2)},now$${current.toFixed(2)},P&L${pnl}%`;
+    }).join("|");
+    const skipped = enriched.length - topPositions.length;
 
     // Identify LATAM/European tickers for web search enrichment
     const latamTickers = enriched
       .filter(p => getLatamSymbol(p.ticker) !== null)
-      .map(p => p.ticker);
-    const hasLatam = latamTickers.length > 0;
+      .map(p => p.ticker)
+      .slice(0,3); // limit web searches to avoid timeout
+    const hasLatam = latamTickers.length > 0 && enriched.length <= 15; // skip web search for large portfolios
 
     try{
       const profileCtx=savedProfile?`Risk Profile: ${typeof savedProfile.label==="object"?savedProfile.label.en:savedProfile.label}. ${typeof savedProfile.desc==="object"?savedProfile.desc.en:savedProfile.desc}`:"No risk profile.";
@@ -5871,7 +5880,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const portfolioRes=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2500,
+        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,
         ...(hasLatam?{tools:[{"type":"web_search_20250305","name":"web_search"}]}:{}),
         messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment).${hasLatam?` Before analyzing, search for recent news on: ${latamTickers.join(", ")} using queries like "[TICKER] resultados financieros 2025 2026 dividendo analistas". Use sources: bloomberglinea.com, valoraanalitik.com, stockanalysis.com. Then analyze this portfolio:`:" Analyze this portfolio:"}
 ${summary}
@@ -5896,7 +5905,11 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 `}]})
       });
       const portfolioData=await portfolioRes.json();
-      if(portfolioData.error)throw new Error(portfolioData.error.message);
+      if(portfolioData.error){
+        const m=portfolioData.error.message||"";
+        if(m.includes("credit")||m.includes("balance"))throw new Error("credits");
+        throw new Error(m);
+      }
       const raw=portfolioData.content.map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
       const p=JSON.parse(raw);
       setAiAnalysis(p);
@@ -6523,12 +6536,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
         {/* AI Analysis result */}
         <div id="ai-result-section"/>
         {aiAnalysis&&<Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`,border:`1px solid ${T.goldDim}44`}}>
-          {/* Market closed notice */}
-          {(()=>{const label=getMarketLabel(currentTicker||"");return label&&<div style={{
-            display:"flex",alignItems:"center",gap:6,
-            background:"rgba(251,191,36,0.08)",border:"1px solid rgba(251,191,36,0.25)",
-            borderRadius:8,padding:"6px 14px",marginBottom:12,fontSize:11,color:"#fbbf24"
-          }}>{label}</div>;})()}
+          {/* Market closed notice — N/A for portfolio (multiple tickers) */}
           {/* Profile Match Banner */}
           {savedProfile&&aiAnalysis?.profileMatch&&aiAnalysis.profileMatch!=="No Profile Data"&&<div style={{
             padding:"12px 16px",borderRadius:10,marginBottom:14,
