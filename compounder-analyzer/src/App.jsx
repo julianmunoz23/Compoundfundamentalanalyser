@@ -7559,29 +7559,28 @@ export default function App(){
   useEffect(()=>{
     if(!supabase)return;
 
-    // Detect password recovery from URL (Supabase sends #access_token=...&type=recovery)
-    const hashParams = new URLSearchParams(window.location.hash.replace('#',''));
-    const isRecovery = hashParams.get('type')==='recovery' || 
-                       window.location.search.includes('type=recovery') ||
-                       window.location.hash.includes('type=recovery');
+    // Detect recovery BEFORE Supabase processes the hash
+    const rawHash = window.location.hash;
+    const isRecovery = rawHash.includes('type=recovery');
+    if(isRecovery){
+      setShowResetModal(true);
+    }
 
     supabase.auth.getSession().then(({data:{session}})=>{
       if(session?.user){
         setUser(session.user);
         syncUserPlan(session.user.id);
-        if(isRecovery){
-          // Show reset modal immediately
-          setShowResetModal(true);
-          window.history.replaceState(null,'',window.location.pathname);
-        } else {
-          setTab("portfolio");
-        }
+        if(!isRecovery) setTab("portfolio");
       }
     });
     // Listen for auth changes
     const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
       if(event==="PASSWORD_RECOVERY"){
-        // User clicked reset password link — show reset modal
+        setShowResetModal(true);
+        if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+        return;
+      }
+      if(event==="SIGNED_IN"&&window.location.hash.includes('type=recovery')){
         setShowResetModal(true);
         if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
         return;
