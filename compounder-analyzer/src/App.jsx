@@ -1075,6 +1075,94 @@ const LANG = {
 };
 
 
+
+// ── RESET PASSWORD MODAL ─────────────────────────────────────────────────────
+function ResetPasswordModal({onClose, lang}){
+  const isEs = lang==="es";
+  const [pwd, setPwd] = useState("");
+  const [pwd2, setPwd2] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const handleReset = async() => {
+    setErr("");
+    if(pwd.length < 6){ setErr(isEs?"Mínimo 6 caracteres":"Minimum 6 characters"); return; }
+    if(pwd !== pwd2){ setErr(isEs?"Las contraseñas no coinciden":"Passwords don't match"); return; }
+    setLoading(true);
+    try{
+      const {error} = await supabase.auth.updateUser({password: pwd});
+      if(error) throw error;
+      setSuccess(true);
+      setTimeout(()=>onClose(), 2000);
+    }catch(e){
+      setErr(e.message||"Error");
+    }
+    setLoading(false);
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:2000,
+      display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
+      <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,
+        padding:"32px",maxWidth:400,width:"100%",position:"relative"}}>
+        <button onClick={onClose} style={{position:"absolute",top:16,right:16,
+          background:"transparent",border:"none",color:T.muted,fontSize:20,cursor:"pointer"}}>✕</button>
+        
+        <div style={{textAlign:"center",marginBottom:24}}>
+          <div style={{fontSize:40,marginBottom:8}}>🔐</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:22,color:T.gold,fontWeight:700}}>
+            {isEs?"Nueva contraseña":"New password"}
+          </div>
+          <div style={{fontSize:13,color:T.muted,marginTop:6}}>
+            {isEs?"Elige una contraseña segura para tu cuenta":"Choose a secure password for your account"}
+          </div>
+        </div>
+
+        {success ? (
+          <div style={{textAlign:"center",padding:"16px",background:`${T.green}15`,
+            borderRadius:10,color:T.green,fontSize:14}}>
+            ✅ {isEs?"¡Contraseña actualizada! Redirigiendo...":"Password updated! Redirecting..."}
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <div>
+              <label style={{fontSize:11,color:T.muted,textTransform:"uppercase",
+                letterSpacing:"0.08em",display:"block",marginBottom:4}}>
+                {isEs?"Nueva contraseña":"New password"}
+              </label>
+              <input type="password" value={pwd} onChange={e=>setPwd(e.target.value)}
+                placeholder={isEs?"Mínimo 6 caracteres":"Minimum 6 characters"}
+                style={{width:"100%",padding:"10px 14px",borderRadius:8,fontSize:14,
+                  background:T.accent,border:`1px solid ${T.border}`,color:T.text,boxSizing:"border-box"}}/>
+            </div>
+            <div>
+              <label style={{fontSize:11,color:T.muted,textTransform:"uppercase",
+                letterSpacing:"0.08em",display:"block",marginBottom:4}}>
+                {isEs?"Confirmar contraseña":"Confirm password"}
+              </label>
+              <input type="password" value={pwd2} onChange={e=>setPwd2(e.target.value)}
+                placeholder={isEs?"Repite la contraseña":"Repeat password"}
+                onKeyDown={e=>e.key==="Enter"&&handleReset()}
+                style={{width:"100%",padding:"10px 14px",borderRadius:8,fontSize:14,
+                  background:T.accent,border:`1px solid ${T.border}`,color:T.text,boxSizing:"border-box"}}/>
+            </div>
+            {err&&<div style={{padding:"8px 12px",background:`${T.red}15`,borderRadius:8,
+              fontSize:12,color:T.red}}>{err}</div>}
+            <button onClick={handleReset} disabled={loading}
+              style={{background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",color:"#fff",
+                border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:600,
+                cursor:"pointer",marginTop:4}}>
+              {loading?<><span className="sp">⟳</span> {isEs?" Guardando...":" Saving..."}</>
+                :isEs?"✅ Guardar contraseña":"✅ Save password"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── AUTH MODAL ────────────────────────────────────────────────────────────────
 function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
   const [mode, setMode] = useState(initialMode); // signup | login | reset
@@ -7509,6 +7597,7 @@ export default function App(){
     {showMethodology&&<MethodologyModal onClose={()=>setShowMethodology(false)} lang={lang}/>}
     {showPaywall&&<PaywallModal onClose={()=>{setShowPaywall(false);setTab(prevTab||"score");setPrevTab(null);}} context={paywallContext} lang={lang}
       onSignUp={()=>{setShowPaywall(false);setAuthMode("signup");setShowAuth(true);}}/>}
+    {showResetModal&&<ResetPasswordModal onClose={()=>setShowResetModal(false)} lang={lang}/>}
     {showAuth&&<AuthModal lang={lang} initialMode={authMode}
       onClose={()=>setShowAuth(false)}
       onAuth={(u)=>{setUser(u);setShowAuth(false);}}/>}
