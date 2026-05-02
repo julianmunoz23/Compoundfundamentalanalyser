@@ -7563,7 +7563,13 @@ export default function App(){
       if(session?.user){setUser(session.user);syncUserPlan(session.user.id);setTab("portfolio");}
     });
     // Listen for auth changes
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
+      if(event==="PASSWORD_RECOVERY"){
+        // User clicked reset password link — show reset modal
+        setShowResetModal(true);
+        if(session?.user){setUser(session.user);syncUserPlan(session.user.id);}
+        return;
+      }
       if(session?.user){setUser(session.user);syncUserPlan(session.user.id);setTab(t=>t===null?"portfolio":t);}
       else{setUser(null);setUserPlan("free");setTab(null);}
     });
