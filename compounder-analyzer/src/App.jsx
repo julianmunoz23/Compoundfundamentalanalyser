@@ -4,7 +4,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // ── SUPABASE CLIENT ──────────────────────────────────────────────────────────
 const SUPA_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY) : null;
+const supabase = SUPA_URL && SUPA_KEY ? createClient(SUPA_URL, SUPA_KEY, {
+  auth: {
+    persistSession: true,
+    detectSessionInUrl: false,
+    flowType: 'implicit',
+  }
+}) : null;
 
 // Helper — save user data to Supabase or fallback to localStorage
 async function cloudSave(table, key, data, userId) {
