@@ -3035,35 +3035,100 @@ Now return the same structure for ${tickerToUse}. Use real analyst data from you
   const ratingColor=r=>{if(!r)return T.muted;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return T.green;if(r.includes("Sell")||r.includes("Under"))return T.red;return T.gold;};
   const ratingBg=r=>{if(!r)return T.border;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return`${T.green}20`;if(r.includes("Sell")||r.includes("Under"))return`${T.red}20`;return`${T.gold}20`;};
 
-  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
-    <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12,alignItems:"center",padding:"12px 16px",background:`${T.gold}10`,border:`1px solid ${T.goldDim}55`,borderRadius:8}}>
-      <span style={{fontSize:12,color:T.gold}}>{lang==="es"?LS.score_label:"🎯 Analizador de Acciones — Los 8 Filtros del Inversor Paciente · Consenso Wall Street · 3 análisis gratis"}</span>
-      <button onClick={()=>onGoToProfile&&onGoToProfile()} style={{background:`${T.purple}20`,border:`1px solid ${T.purple}55`,borderRadius:8,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,whiteSpace:"nowrap"}}>
-        <span style={{fontSize:12}}>🧬</span>
-        <span style={{fontSize:11,color:T.purple,fontWeight:600}}>{lang==="es"?LS.score_build_portfolio:"Build me a portfolio →"}</span>
-      </button>
-    </div>
-    <MarketCycleBanner ticker={company} sector={sector} lang={lang} canAnalyze={canAnalyze}/>
+  const popularStocks=[
+    {t:"NVDA",l:"Nvidia"},{t:"AAPL",l:"Apple"},{t:"TSLA",l:"Tesla"},
+    {t:"ECOPETROL",l:"Ecopetrol"},{t:"GEB",l:"GEB"},{t:"AMZN",l:"Amazon"},
+  ];
 
-    <Card s={{background:`linear-gradient(135deg,${T.card},${T.accent})`}}>
-      <div className="analyze-row" style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:200}}>
-          <Lbl>{lang==="es"?LS.score_input_label:"Ticker or Company Name"}</Lbl>
-          <input type="text" value={company} onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}} placeholder={lang==="es"?LS.score_input_placeholder:"NVDA, Apple, Google, Tesla, Costco..."} onKeyDown={e=>e.key==="Enter"&&analyze()} style={{fontSize:16,fontWeight:700,letterSpacing:"0.05em",padding:"12px 16px"}}/>
-        </div>
-        <div style={{width:150}}><Lbl>{lang==="es"?"Sector":"Sector"}</Lbl><select value={sector} onChange={e=>setSector(e.target.value)}>{SECTORS.map(s=><option key={s}>{s}</option>)}</select></div>
-        <button className="btn btn-gold" onClick={analyze} disabled={loading} style={{height:44,padding:"0 24px",fontSize:14}}>
-          {loading?<span className="sp">⟳</span>:lang==="es"?LS.score_btn:"🎯 Analyze with AI"}
-        </button>
-        {locked&&<button className="seg" onClick={()=>setLocked(false)} style={{height:44,color:T.gold,borderColor:T.goldDim}}>🔓 Unlock</button>}
+  return<div className="fi" style={{display:"flex",flexDirection:"column",gap:18}}>
+
+    {/* ── HERO — solo visible antes del análisis ── */}
+    {!info&&!loading&&<div style={{textAlign:"center",padding:"28px 20px 4px"}}>
+      <div style={{fontFamily:"'Playfair Display',serif",fontSize:"clamp(22px,3vw,34px)",
+        color:T.text,fontWeight:700,lineHeight:1.2,marginBottom:8}}>
+        {lang==="es"
+          ?<>¿Vale la pena <span style={{color:T.gold}}>comprar esta acción?</span></>
+          :<>Is this stock <span style={{color:T.gold}}>worth buying?</span></>}
       </div>
-      {!info&&!loading&&!err&&<div style={{textAlign:"center",paddingTop:10,fontSize:12,color:T.muted,borderTop:`1px solid ${T.border}33`,marginTop:12}}>
-        {lang==="es"?LS.score_hint:"Type a ticker (NVDA) or company name (Google, Apple, Tesla) → AI finds the stock and analyzes it"}
+      <div style={{fontSize:13,color:T.muted,maxWidth:440,margin:"0 auto"}}>
+        {lang==="es"
+          ?"NYSE, NASDAQ, BVC y Europa. Score de calidad + consenso Wall Street en 30 segundos."
+          :"NYSE, NASDAQ, BVC and Europe. Quality score + Wall Street consensus in 30 seconds."}
+      </div>
+    </div>}
+
+    {/* ── SEARCH BOX ── */}
+    <div style={{maxWidth:620,margin:"0 auto",width:"100%"}}>
+      <div style={{display:"flex",gap:8,alignItems:"center",
+        background:T.card,border:`2px solid ${company?T.gold:T.border}`,
+        borderRadius:16,padding:"6px 6px 6px 16px",
+        boxShadow:company?`0 0 0 3px ${T.gold}18`:"none",transition:"all 0.2s"}}>
+        <span style={{fontSize:18,flexShrink:0}}>🔍</span>
+        <input type="text" value={company}
+          onChange={e=>{setCompany(e.target.value);setLocked(false);setInfo(null);}}
+          placeholder={lang==="es"?"NVDA, Ecopetrol, Tesla, Apple, GEB...":"NVDA, Apple, Tesla, Ecopetrol, GEB..."}
+          onKeyDown={e=>e.key==="Enter"&&analyze()}
+          style={{flex:1,fontSize:17,fontWeight:600,background:"transparent",
+            border:"none",outline:"none",color:T.text,padding:"8px 0"}}/>
+        <button className="btn btn-gold" onClick={analyze} disabled={loading}
+          style={{borderRadius:12,padding:"10px 22px",fontSize:14,flexShrink:0,whiteSpace:"nowrap"}}>
+          {loading?<><span className="sp">⟳</span></>:lang==="es"?"Analizar →":"Analyze →"}
+        </button>
+      </div>
+
+      {/* Chips populares */}
+      {!info&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10,justifyContent:"center",alignItems:"center"}}>
+        <span style={{fontSize:11,color:T.muted}}>{lang==="es"?"Populares:":"Popular:"}</span>
+        {popularStocks.map(({t})=>(
+          <button key={t} onClick={()=>{setCompany(t);setLocked(false);setInfo(null);setTimeout(()=>analyze(),50);}}
+            style={{fontSize:11,padding:"3px 10px",borderRadius:16,cursor:"pointer",
+              background:company===t?`${T.gold}20`:T.accent,
+              border:`1px solid ${company===t?T.gold:T.border}`,
+              color:company===t?T.gold:T.muted}}>
+            {t}
+          </button>
+        ))}
       </div>}
-      {loading&&<div style={{textAlign:"center",padding:12,fontSize:12,color:T.gold,background:`${T.gold}08`,borderRadius:8,marginTop:10}}><span className="sp">⟳</span>  Analyzing <strong>{company}</strong>...</div>}
-      {err&&<div style={{padding:10,background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,border:`1px solid ${T.red}33`,marginTop:10}}>{err}</div>}
-      {locked&&<div style={{padding:"6px 10px",background:`${T.green}10`,borderRadius:6,fontSize:11,color:T.green,border:`1px solid ${T.green}33`,marginTop:10}}>🔒 Metrics locked to AI data — click Unlock to edit</div>}
-    </Card>
+
+      {/* Sector + perfil — compacto */}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8,justifyContent:"center",flexWrap:"wrap"}}>
+        <span style={{fontSize:11,color:T.muted}}>Sector:</span>
+        <select value={sector} onChange={e=>setSector(e.target.value)}
+          style={{fontSize:11,padding:"3px 8px",borderRadius:6,background:T.accent,
+            border:`1px solid ${T.border}`,color:T.muted}}>
+          {SECTORS.map(s=><option key={s}>{s}</option>)}
+        </select>
+        <button onClick={()=>onGoToProfile&&onGoToProfile()}
+          style={{fontSize:11,padding:"3px 10px",borderRadius:6,cursor:"pointer",
+            background:`${T.purple}15`,border:`1px solid ${T.purple}44`,color:T.purple}}>
+          🧬 {lang==="es"?"Mi perfil →":"My profile →"}
+        </button>
+      </div>
+    </div>
+
+    {loading&&<div style={{textAlign:"center",padding:"20px 12px",fontSize:13,color:T.gold,
+      background:`${T.gold}08`,borderRadius:12,maxWidth:480,margin:"0 auto",width:"100%"}}>
+      <span className="sp" style={{fontSize:20}}>⟳</span>
+      <div style={{marginTop:6}}>{lang==="es"?"Analizando":"Analyzing"} <strong>{company}</strong>...</div>
+      <div style={{fontSize:11,color:T.muted,marginTop:3}}>
+        {lang==="es"?"Finnhub + IA · ~15 segundos":"Finnhub + AI · ~15 seconds"}
+      </div>
+    </div>}
+    {err&&<div style={{padding:"10px 16px",background:`${T.red}15`,borderRadius:10,
+      fontSize:12,color:T.red,border:`1px solid ${T.red}33`,
+      maxWidth:480,margin:"0 auto",textAlign:"center"}}>{err}</div>}
+    {locked&&<div style={{padding:"6px 12px",background:`${T.green}10`,borderRadius:8,
+      fontSize:11,color:T.green,border:`1px solid ${T.green}33`,
+      maxWidth:480,margin:"0 auto",display:"flex",alignItems:"center",gap:8,justifyContent:"center"}}>
+      🔒 {lang==="es"?"Métricas bloqueadas":"Metrics locked"}
+      <button className="seg" onClick={()=>setLocked(false)}
+        style={{height:22,fontSize:10,color:T.gold,borderColor:T.goldDim,padding:"0 8px"}}>
+        🔓 Unlock
+      </button>
+    </div>}
+
+    {/* Ciclo de mercado — solo después del análisis */}
+    {info&&<MarketCycleBanner ticker={company} sector={sector} lang={lang} canAnalyze={canAnalyze}/>}
 
     {info&&<>
       {/* ── DISCLAIMER BADGE ── */}
@@ -3077,6 +3142,8 @@ Now return the same structure for ${tickerToUse}. Use real analyst data from you
       </div>
       {/* ── CHART + COMPACT SUMMARY — 2 column layout ── */}
       {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:16,marginBottom:16,alignItems:"stretch"}}>
+        {/* LEFT — TradingView Chart */}
+
         {/* LEFT — TradingView Chart */}
         <div>
           {locked&&company&&<TradingViewChart ticker={company.trim().toUpperCase()} lang={lang}/>}
