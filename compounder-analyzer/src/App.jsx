@@ -205,14 +205,14 @@ const css=`
 // Base config — rates are fetched live from frankfurter.app (European Central Bank)
 const CURRENCIES={
   USD:{symbol:"$",  code:"USD",name:"US Dollar",      flag:"🇺🇸",locale:"en-US",rate:1},
-  COP:{symbol:"$",  code:"COP",name:"Peso Colombiano",flag:"🇨🇴",locale:"es-CO",rate:1},
-  MXN:{symbol:"$",  code:"MXN",name:"Peso Mexicano",  flag:"🇲🇽",locale:"es-MX",rate:1},
-  ARS:{symbol:"$",  code:"ARS",name:"Peso Argentino", flag:"🇦🇷",locale:"es-AR",rate:1},
-  PEN:{symbol:"S/", code:"PEN",name:"Sol Peruano",    flag:"🇵🇪",locale:"es-PE",rate:1},
-  CLP:{symbol:"$",  code:"CLP",name:"Peso Chileno",   flag:"🇨🇱",locale:"es-CL",rate:1},
-  BRL:{symbol:"R$", code:"BRL",name:"Real Brasileño", flag:"🇧🇷",locale:"pt-BR",rate:1},
-  EUR:{symbol:"€",  code:"EUR",name:"Euro",           flag:"🇪🇺",locale:"de-DE",rate:1},
-  GBP:{symbol:"£",  code:"GBP",name:"Libra Esterlina", flag:"🇬🇧",locale:"en-GB",rate:1},
+  COP:{symbol:"$",  code:"COP",name:"Peso Colombiano",flag:"🇨🇴",locale:"es-CO",rate:3650},
+  MXN:{symbol:"$",  code:"MXN",name:"Peso Mexicano",  flag:"🇲🇽",locale:"es-MX",rate:20.3},
+  ARS:{symbol:"$",  code:"ARS",name:"Peso Argentino", flag:"🇦🇷",locale:"es-AR",rate:1050},
+  PEN:{symbol:"S/", code:"PEN",name:"Sol Peruano",    flag:"🇵🇪",locale:"es-PE",rate:3.75},
+  CLP:{symbol:"$",  code:"CLP",name:"Peso Chileno",   flag:"🇨🇱",locale:"es-CL",rate:920},
+  BRL:{symbol:"R$", code:"BRL",name:"Real Brasileño", flag:"🇧🇷",locale:"pt-BR",rate:5.78},
+  EUR:{symbol:"€",  code:"EUR",name:"Euro",           flag:"🇪🇺",locale:"de-DE",rate:0.92},
+  GBP:{symbol:"£",  code:"GBP",name:"Libra Esterlina", flag:"🇬🇧",locale:"en-GB",rate:0.79},
 };
 
 // Global currency state — updated by App
@@ -235,7 +235,7 @@ async function fetchExchangeRates(){
     return data.rates||{};
   }catch(e){
     // Fallback to recent approximate rates if API fails
-    const fallback={COP:3700,MXN:20.3,ARS:1050,PEN:3.75,CLP:920,BRL:5.78,EUR:0.92};
+    const fallback={COP:3650,MXN:20.3,ARS:1050,PEN:3.75,CLP:920,BRL:5.78,EUR:0.92,GBP:0.79};
     Object.keys(fallback).forEach(code=>{CURRENCIES[code].rate=fallback[code];});
     // Exchange rate API unavailable — using fallback rates (silent)
     return fallback;
@@ -523,7 +523,7 @@ async function callAI(prompt){
   const cKey=_cacheKey(prompt);
   if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
   const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
+    body:JSON.stringify({model:"claude-sonnet-4-6-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
   const d=await res.json();
   if(d.error){
     const t=d.error.type||""; const m=d.error.message||"";
@@ -2975,7 +2975,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               const r=await fetch("/api/analyze",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1800,
+                body:JSON.stringify({model:"claude-sonnet-4-6-20250514",max_tokens:1800,
                   tools:[{"type":"web_search_20250305","name":"web_search"}],
                   messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
                 })
@@ -2994,7 +2994,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         try{
           // Direct fetch for consensus — bypasses callAI JSON cache issues
           const cRes=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,
+            body:JSON.stringify({model:"claude-sonnet-4-6-20250514",max_tokens:400,
               messages:[{role:"user",content:`You are a financial data API. Return Wall Street consensus data for ${tickerToUse} as JSON only.
 Example for NVDA: {"rating":"Strong Buy","totalAnalysts":64,"bullish":52,"bearish":4,"hold":8,"currentPrice":875.40,"targetMean":"1050.00","targetHigh":"1200.00","targetLow":"700.00","upside":"19.9","epsGrowthNext":"+38.2%","breakdown":{"strongBuy":38,"buy":14,"hold":8,"sell":3,"strongSell":1},"isAiEstimate":true}
 Now return the same structure for ${tickerToUse}. Use real analyst data from your training. Return ONLY the JSON object, nothing else.`}]})});
@@ -4414,7 +4414,7 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
+          model:"claude-sonnet-4-6-20250514",
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
@@ -5890,7 +5890,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const portfolioRes=await fetch("/api/analyze",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,
+        body:JSON.stringify({model:"claude-sonnet-4-6-20250514",max_tokens:3000,
         ...(hasLatam?{tools:[{"type":"web_search_20250305","name":"web_search"}]}:{}),
         messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment).${hasLatam?` Before analyzing, search for recent news on: ${latamTickers.join(", ")} using queries like "[TICKER] resultados financieros 2025 2026 dividendo analistas". Use sources: bloomberglinea.com, valoraanalitik.com, stockanalysis.com. Then analyze this portfolio:`:" Analyze this portfolio:"}
 ${summary}
