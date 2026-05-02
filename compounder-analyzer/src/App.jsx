@@ -2956,14 +2956,16 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const catS=Object.entries(CRITERIA).map(([cat,cs])=>({cat:catLabel(cat),s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length)}));
   const radarD=MOAT_KEYS.map(k=>({subject:moatLabel(k,lang).split(" ")[0],value:moat[k],fullMark:5}));
 
-  const analyze=async()=>{
-    if(!company.trim()){setErr("Enter a company name or ticker.");return;}
+  const analyze=async(overrideTicker)=>{
+    const companyToUse = overrideTicker || company;
+    if(!companyToUse.trim()){setErr("Enter a company name or ticker.");return;}
     if(!canAnalyze())return;
     setLoading(true);setErr("");setInfo(null);setFh(null);setLocked(false);
     try{
       // Resolve company name to ticker if needed
-      const resolvedTicker=await resolveTicker(company);
-      if(resolvedTicker!==company.trim().toUpperCase())setCompany(resolvedTicker);
+      if(overrideTicker) setCompany(overrideTicker);
+      const resolvedTicker=await resolveTicker(companyToUse);
+      if(resolvedTicker!==companyToUse.trim().toUpperCase())setCompany(resolvedTicker);
       const tickerToUse=resolvedTicker;
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
@@ -3080,7 +3082,7 @@ Now return the same structure for ${tickerToUse}. Use real analyst data from you
       {!info&&<div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:10,justifyContent:"center",alignItems:"center"}}>
         <span style={{fontSize:11,color:T.muted}}>{lang==="es"?"Populares:":"Popular:"}</span>
         {popularStocks.map(({t})=>(
-          <button key={t} onClick={()=>{setCompany(t);setLocked(false);setInfo(null);setTimeout(()=>analyze(),50);}}
+          <button key={t} onClick={()=>{setLocked(false);setInfo(null);analyze(t);}}
             style={{fontSize:11,padding:"3px 10px",borderRadius:16,cursor:"pointer",
               background:company===t?`${T.gold}20`:T.accent,
               border:`1px solid ${company===t?T.gold:T.border}`,
@@ -3136,13 +3138,12 @@ Now return the same structure for ${tickerToUse}. Use real analyst data from you
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:T.gold,flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span style={{fontSize:10,color:T.muted,lineHeight:1.5}}>
           {lang==="es"
-            ?"Este análisis es educativo y no constituye asesoría financiera certificada. Toda inversión implica riesgo de pérdida. Consulta un asesor antes de invertir. Inversoria no tiene afiliación con ningún inversor, fondo o entidad financiera mencionada como referencia metodológica."
+            ?"Este análisis es educativo y no constituye asesoría financiera certificada. Toda inversión implica riesgo de pérdida. Consulta un asesor antes de invertir."
             :"This analysis is educational and does not constitute certified financial advice. All investments involve risk of loss. Consult an advisor before investing."}
         </span>
       </div>
       {/* ── CHART + COMPACT SUMMARY — 2 column layout ── */}
       {(locked||fh)&&<div className="chart-consensus-grid" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:16,marginBottom:16,alignItems:"stretch"}}>
-        {/* LEFT — TradingView Chart */}
 
         {/* LEFT — TradingView Chart */}
         <div>
