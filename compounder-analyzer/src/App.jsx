@@ -3001,7 +3001,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         try{
           // Direct fetch for consensus — bypasses callAI JSON cache issues
             body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,
-              messages:[{role:"user",content:"You are a financial data API. Return Wall Street consensus data for "+tickerToUse+" as JSON only. Return ONLY the JSON object, nothing else. Format: {rating,totalAnalysts,bullish,bearish,hold,currentPrice,targetMean,targetHigh,targetLow,upside,epsGrowthNext,breakdown:{strongBuy,buy,hold,sell,strongSell},isAiEstimate:true}"}]})});
+                messages:[{role:"user",content:"Wall Street consensus for "+tickerToUse+". JSON only, no text: rating(Strong Buy/Buy/Hold/Sell/Strong Sell), totalAnalysts, bullish, bearish, hold, currentPrice, targetMean, targetHigh, targetLow, upside, epsGrowthNext, breakdown, isAiEstimate true."}]})});
           const cData=await cRes.json();
           const cTxt=(cData.content||[]).map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
           const consensus=JSON.parse(cTxt);
