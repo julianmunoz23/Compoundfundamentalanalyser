@@ -3001,11 +3001,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         try{
           // Direct fetch for consensus — bypasses callAI JSON cache issues
             body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,
-              messages:[{role:"user",content:`You are a financial data API. Return Wall Street consensus data for ${tickerToUse} as JSON only.
-Example for NVDA: {"rating":"Strong Buy","totalAnalysts":64,"bullish":52,"bearish":4,"hold":8,"currentPrice":875.40,"targetMean":"1050.00","targetHigh":"1200.00","targetLow":"700.00","upside":"19.9","epsGrowthNext":"+38.2%","breakdown":{"strongBuy":38,"buy":14,"hold":8,"sell":3,"strongSell":1},"isAiEstimate":true}
-Now return the same structure for ${tickerToUse}. Use real analyst data from your training. Return ONLY the JSON object, nothing else.`}]})});
+              messages:[{role:"user",content:"You are a financial data API. Return Wall Street consensus data for "+tickerToUse+" as JSON only. Return ONLY the JSON object, nothing else. Format: {rating,totalAnalysts,bullish,bearish,hold,currentPrice,targetMean,targetHigh,targetLow,upside,epsGrowthNext,breakdown:{strongBuy,buy,hold,sell,strongSell},isAiEstimate:true}"}]})});
           const cData=await cRes.json();
-          const cTxt=(cData.content||[]).map(i=>i.text||"").join("").replace(/\`\`\`json|\`\`\`/g,"").trim();
+          const cTxt=(cData.content||[]).map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
           const consensus=JSON.parse(cTxt);
           if(consensus.rating&&consensus.totalAnalysts){
             fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
