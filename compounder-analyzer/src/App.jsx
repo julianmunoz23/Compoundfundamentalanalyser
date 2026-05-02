@@ -7494,6 +7494,7 @@ export default function App(){
   const [userPlan,setUserPlan]=useState("free"); // free | basic | premium
   const [showAuth,setShowAuth]=useState(false);
   const [authMode,setAuthMode]=useState("signup");
+  const [showResetModal,setShowResetModal]=useState(false);
   const [lang,setLang]=useState(()=>{try{return localStorage.getItem("compoundr_lang")||"en";}catch{return "en";}});
   const L=LANG[lang]||LANG.en;
   const toggleLang=()=>{const nl=lang==="en"?"es":"en";setLang(nl);try{localStorage.setItem("compoundr_lang",nl);}catch{} };
