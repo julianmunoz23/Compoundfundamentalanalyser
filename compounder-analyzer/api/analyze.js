@@ -54,7 +54,7 @@ export default async function handler(req, res) {
   try {
     const body = req.body;
     if (!body?.messages?.length) return res.status(400).json({error: 'Invalid request'});
-    if (!body.model) body.model = 'claude-sonnet-4-20250514';
+    if (!body.model) body.model = 'claude-sonnet-4-6-20250514';
     if (!body.max_tokens) body.max_tokens = 1400;
 
     // Cap max_tokens para evitar abuso
