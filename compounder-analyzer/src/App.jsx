@@ -528,7 +528,7 @@ function _cacheKey(prompt){
 async function callAI(prompt){
   const cKey=_cacheKey(prompt);
   if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
-  const res=await fetch("/api/analyze",{method:"POST",
+  const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
   const d=await res.json();
   if(d.error){
@@ -4479,6 +4479,7 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
       const mediaType=file.type||"image/jpeg";
       const resp=await fetch("/api/analyze",{
         method:"POST",
+        headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:1000,
@@ -5955,6 +5956,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       // Use higher token limit for large portfolios
       const portfolioRes=await fetch("/api/analyze",{
         method:"POST",
+        headers:{"Content-Type":"application/json"},
         body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,
         ...(hasLatam?{tools:[{"type":"web_search_20250305","name":"web_search"}]}:{}),
         messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment).${hasLatam?` Before analyzing, search for recent news on: ${latamTickers.join(", ")} using queries like "[TICKER] resultados financieros 2025 2026 dividendo analistas". Use sources: bloomberglinea.com, valoraanalitik.com, stockanalysis.com. Then analyze this portfolio:`:" Analyze this portfolio:"}
