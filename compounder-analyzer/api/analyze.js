@@ -3,7 +3,7 @@
 
 // Rate limit: max 50 requests per IP per hour
 const rateLimitMap = new Map();
-const RATE_LIMIT = 10;
+const RATE_LIMIT = 50;
 const WINDOW_MS = 60 * 60 * 1000; // 1 hora
 
 function checkRateLimit(ip) {
@@ -30,7 +30,7 @@ setInterval(() => {
 }, WINDOW_MS);
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.inversoria.lat');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
