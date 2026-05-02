@@ -2982,6 +2982,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           ? (async()=>{
               const r=await fetch("/api/analyze",{
                 method:"POST",
+                headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1800,
                   tools:[{"type":"web_search_20250305","name":"web_search"}],
                   messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
