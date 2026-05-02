@@ -2999,13 +2999,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0||fhData.rating==="N/A"||!fhData.rating){
         try{
-          // Direct fetch for consensus — bypasses callAI JSON cache issues
-            body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,
-                messages:[{role:"user",content:"Wall Street consensus for "+tickerToUse+". JSON only, no text: rating(Strong Buy/Buy/Hold/Sell/Strong Sell), totalAnalysts, bullish, bearish, hold, currentPrice, targetMean, targetHigh, targetLow, upside, epsGrowthNext, breakdown, isAiEstimate true."}]})});
-          const cData=await cRes.json();
-          const cTxt=(cData.content||[]).map(i=>i.text||"").join("").replace(/```json|```/g,"").trim();
-          const consensus=JSON.parse(cTxt);
-          if(consensus.rating&&consensus.totalAnalysts){
+          const consensusPrompt = "Wall Street consensus for " + tickerToUse + ". Return JSON only: rating, totalAnalysts, bullish, bearish, hold, currentPrice, targetMean, targetHigh, targetLow, upside, epsGrowthNext, breakdown with strongBuy buy hold sell strongSell, isAiEstimate true.";
+          const consensus = await callAI(consensusPrompt);
+          if(consensus && consensus.rating && consensus.totalAnalysts){
             fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
           }
         }catch(e){console.warn("AI consensus failed:",e.message);}
