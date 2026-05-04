@@ -2951,6 +2951,99 @@ Respond ONLY with valid JSON, no markdown:
 }
 
 
+
+// ── EARNINGS CALENDAR ────────────────────────────────────────────────────────
+async function fetchEarnings(ticker){
+  try{
+    const res = await fetch(`/api/earnings?symbol=${encodeURIComponent(ticker)}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    if(!data.earnings?.length) return null;
+    // Return the next upcoming earnings
+    const upcoming = data.earnings.find(e => !e.epsActual && e.date >= new Date().toISOString().split('T')[0]);
+    return upcoming || data.earnings[0];
+  }catch(e){ return null; }
+}
+
+
+function EarningsIndicator({ticker}){
+  const [days, setDays] = React.useState(null);
+  React.useEffect(()=>{
+    fetchEarnings(ticker).then(e=>{
+      if(!e) return;
+      const d = Math.ceil((new Date(e.date+'T12:00:00') - new Date())/(1000*60*60*24));
+      if(d >= 0 && d <= 14) setDays(d);
+    });
+  },[ticker]);
+  if(days===null) return null;
+  return(
+    <span title={`Earnings en ${days} días`} style={{
+      fontSize:9,padding:"1px 5px",borderRadius:8,fontWeight:700,
+      background:days<=3?"rgba(251,191,36,0.2)":"rgba(74,222,128,0.15)",
+      color:days<=3?"#fbbf24":T.green,
+    }}>
+      📅{days===0?"HOY":days===1?"MAÑANA":`${days}d`}
+    </span>
+  );
+}
+
+function EarningsBadge({ticker, lang}){
+  const [earning, setEarning] = React.useState(null);
+  const isEs = lang==="es";
+
+  React.useEffect(()=>{
+    if(!ticker) return;
+    fetchEarnings(ticker).then(setEarning);
+  }, [ticker]);
+
+  if(!earning) return null;
+
+  const date = new Date(earning.date + 'T12:00:00');
+  const today = new Date();
+  const daysUntil = Math.ceil((date - today) / (1000*60*60*24));
+  
+  if(daysUntil < 0 || daysUntil > 14) return null; // only show if within 14 days
+
+  const isToday = daysUntil === 0;
+  const isTomorrow = daysUntil === 1;
+  const isUrgent = daysUntil <= 3;
+
+  const dateLabel = isToday ? (isEs?"Hoy":"Today") 
+    : isTomorrow ? (isEs?"Mañana":"Tomorrow")
+    : isEs ? `En ${daysUntil} días` : `In ${daysUntil} days`;
+
+  const formattedDate = date.toLocaleDateString(isEs?'es-CO':'en-US', {
+    month:'short', day:'numeric', year:'numeric'
+  });
+
+  return(
+    <div style={{
+      display:"flex",alignItems:"center",gap:10,
+      padding:"10px 14px",borderRadius:10,marginBottom:12,
+      background:isUrgent?`rgba(251,191,36,0.1)`:`rgba(74,222,128,0.08)`,
+      border:`1px solid ${isUrgent?"rgba(251,191,36,0.35)":"rgba(74,222,128,0.25)"}`,
+    }}>
+      <span style={{fontSize:18}}>📅</span>
+      <div style={{flex:1}}>
+        <div style={{fontSize:12,fontWeight:700,color:isUrgent?"#fbbf24":T.green}}>
+          {isEs?"Próximos resultados trimestrales":"Upcoming Earnings Report"}
+          {" · "}<span style={{fontWeight:800}}>{dateLabel}</span>
+        </div>
+        <div style={{fontSize:11,color:T.muted,marginTop:2}}>
+          {ticker} · {formattedDate}
+          {earning.epsEstimate!=null&&<span> · {isEs?"EPS estimado":"EPS est."}: <strong style={{color:T.gold}}>${earning.epsEstimate}</strong></span>}
+          {earning.quarter&&<span> · Q{earning.quarter} {earning.year}</span>}
+        </div>
+      </div>
+      <div style={{fontSize:9,padding:"2px 8px",borderRadius:10,
+        background:isUrgent?"rgba(251,191,36,0.2)":"rgba(74,222,128,0.15)",
+        color:isUrgent?"#fbbf24":T.green,fontWeight:700,whiteSpace:"nowrap"}}>
+        {isUrgent?"⚡ PRONTO":"📊 EARNINGS"}
+      </div>
+    </div>
+  );
+}
+
 // ── TRADINGVIEW CHART WIDGET ──────────────────────────────────────────────────
 function TradingViewChart({ticker, lang}){
   const containerId = `tv_chart_${ticker}`;
@@ -3218,6 +3311,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
 
     {/* Ciclo de mercado — solo después del análisis */}
     {info&&<MarketCycleBanner ticker={company} sector={sector} lang={lang} canAnalyze={canAnalyze}/>}
+    {info&&company&&<EarningsBadge ticker={company.trim().toUpperCase()} lang={lang}/>}
 
     {info&&<>
       {/* ── DISCLAIMER BADGE ── */}
@@ -6647,7 +6741,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                           <div style={{width:8,height:8,borderRadius:"50%",background:pc?.color||T.muted,margin:"0 auto"}}/>
                         </td>
                         <td style={{padding:"8px 12px",textAlign:"center",minWidth:90}}>
-                          <div style={{fontWeight:700,fontSize:13,color:T.text,fontFamily:"'DM Mono',monospace"}}>{p.ticker}</div>
+                          <div style={{fontWeight:700,fontSize:13,color:T.text,fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",gap:5}}>{p.ticker}<EarningsIndicator ticker={p.ticker}/></div>
                           {p.realizedPnL!==0&&<div style={{fontSize:8,color:p.realizedPnL>=0?T.green:T.red,marginTop:1}}>Real: {p.realizedPnL>=0?"+":""}${Math.abs(p.realizedPnL).toFixed(0)}</div>}
                           <TxnHistory entries={p.entries||[]} avgCost={p.avgCost} lang={lang}/>
                         </td>
