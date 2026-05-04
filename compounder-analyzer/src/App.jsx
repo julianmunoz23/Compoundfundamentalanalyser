@@ -5564,6 +5564,7 @@ function PieChart({data,stockCount,size=220}){
 }
 
 function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null,currencyTick=0}){
+  const isMobile = typeof window!=="undefined" && window.innerWidth <= 768;
   const [paywallCtx,setPaywallCtx]=useState(null);
   const [portTab,setPortTab]=useState("positions");
   // Read risk profile if user came from Risk Profile tab
@@ -6444,7 +6445,21 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     {/* ── PORTFOLIO DASHBOARD — Premium visual summary ── */}
     <div id="ai-analysis-section"/>
     {/* currency re-render trigger */}
-    {grouped.length>0&&(
+    {/* Mobile KPI summary */}
+    {isMobile&&grouped.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"0 0 12px"}}>
+      {[
+        {l:lang==="es"?"Valor total":"Total value",v:fmt(totalValue),c:T.gold},
+        {l:lang==="es"?"Retorno":"Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct?.toFixed(1)||0}%`,c:totalPnLPct>=0?T.green:T.red},
+        {l:lang==="es"?"Ganancia":"P&G",v:fmt(Math.abs(totalPnL)),c:totalPnL>=0?T.green:T.red},
+        {l:lang==="es"?"Posiciones":"Positions",v:String(grouped.length),c:T.muted},
+      ].map(({l,v,c})=>(
+        <div key={l} style={{background:T.accent,borderRadius:8,padding:"8px 12px"}}>
+          <div style={{fontSize:10,color:T.muted,marginBottom:2}}>{l}</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,color:c,fontWeight:500}}>{v}</div>
+        </div>
+      ))}
+    </div>}
+    {!isMobile&&grouped.length>0&&(
       <PortfolioDashboard
         key={`dashboard-${currencyTick}`}
         enriched={enriched}
@@ -6722,7 +6737,63 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                 onEdit={(id,updates)=>{const u=transactions.map(t=>t.id===id?{...t,...updates}:t);setTransactions(u);saveTxns(u);}}
                 onDelete={(id)=>{const u=transactions.filter(t=>t.id!==id);setTransactions(u);saveTxns(u);}}
                 lang={lang} fmt={fmt}/>}
-              {portTab==="positions"&&<div style={{overflowX:"auto"}}>
+              {portTab==="positions"&&(isMobile ? (
+                <div style={{display:"flex",flexDirection:"column",gap:8,padding:"8px 12px 12px"}}>
+                  {grouped.map(p=>{
+                    const cur=p.currentPrice||p.avgCost;
+                    const pct=((cur-p.avgCost)/p.avgCost*100);
+                    const isPos=pct>=0;
+                    const barW=Math.min(Math.abs(pct),100);
+                    const brokerFlag={"Trii":"🇨🇴","HAPI":"🇲🇽","XTB":"🌎","IBKR":"🇺🇸","Manual":"✏️"}[p.broker]||"📊";
+                    return(
+                      <div key={p.ticker} style={{background:T.accent,border:`0.5px solid ${T.border}`,
+                        borderRadius:10,padding:"10px 12px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                          <div>
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <span style={{fontFamily:"'DM Mono',monospace",fontSize:14,fontWeight:700,color:T.gold}}>{p.ticker}</span>
+                              <span style={{fontSize:9,color:T.muted,background:`${T.surface}`,padding:"1px 5px",borderRadius:4}}>
+                                {brokerFlag} {p.broker||"—"}
+                              </span>
+                              <EarningsIndicator ticker={p.ticker}/>
+                            </div>
+                            <div style={{fontSize:11,color:T.muted,marginTop:2}}>
+                              {p.totalShares.toFixed(2)} acc · costo {fmt(p.avgCost)}
+                            </div>
+                          </div>
+                          <div style={{textAlign:"right"}}>
+                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:T.gold,fontWeight:500}}>{fmt(cur)}</div>
+                            <div style={{fontSize:12,color:isPos?T.green:T.red,fontWeight:500}}>
+                              {isPos?"+":""}{pct.toFixed(1)}%
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{height:3,background:`${T.border}`,borderRadius:2,overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${barW}%`,background:isPos?T.green:T.red,
+                            borderRadius:2,transition:"width 0.5s ease"}}/>
+                        </div>
+                        <div style={{display:"flex",gap:6,marginTop:8}}>
+                          <button onClick={()=>onAnalysis&&onAnalysis(p.ticker)}
+                            style={{flex:1,fontSize:11,padding:"5px 0",borderRadius:6,cursor:"pointer",
+                              background:`${T.purple}20`,border:`0.5px solid ${T.purple}44`,color:T.purple}}>
+                            🎯 Analizar
+                          </button>
+                          <button onClick={()=>{setSellTicker(p.ticker);setSellShares("");setSellPrice("");setShowSell(true);}}
+                            style={{flex:1,fontSize:11,padding:"5px 0",borderRadius:6,cursor:"pointer",
+                              background:`${T.green}12`,border:`0.5px solid ${T.green}33`,color:T.green}}>
+                            💰 Vender
+                          </button>
+                          <button onClick={()=>removePosition(p.ticker)}
+                            style={{width:32,fontSize:11,padding:"5px 0",borderRadius:6,cursor:"pointer",
+                              background:`${T.red}10`,border:`0.5px solid ${T.red}22`,color:T.red}}>
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:860}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
                     {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price","P&G No Real.","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
@@ -6790,7 +6861,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                     </td>
                   </tr></tfoot>
                 </table>
-              </div>}
+              </div>)}
             </Card>
           </>}
 
