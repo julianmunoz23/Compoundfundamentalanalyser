@@ -6463,7 +6463,8 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
           <div style={{fontFamily:"'DM Mono',monospace",fontSize:15,color:c,fontWeight:500}}>{v}</div>
         </div>
       ))}
-    </div>}
+    </div>
+    </>}
     {!isMobile&&grouped.length>0&&(
       <PortfolioDashboard
         key={`dashboard-${currencyTick}`}
