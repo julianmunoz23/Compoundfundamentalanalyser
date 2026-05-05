@@ -6740,10 +6740,11 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               {portTab==="positions"&&(isMobile ? (
                 <div style={{display:"flex",flexDirection:"column",gap:8,padding:"8px 12px 12px"}}>
                   {grouped.map(p=>{
-                    const cur=p.currentPrice||p.avgCost;
-                    const pct=((cur-p.avgCost)/p.avgCost*100);
+                    const cur=p.currentPrice&&p.currentPrice>0?p.currentPrice:null;
+                    const pct=cur&&p.avgCost>0?((cur-p.avgCost)/p.avgCost*100):null;
+                    const pnlDollar=cur&&p.totalShares?((cur-p.avgCost)*p.totalShares):null;
                     const isPos=pct>=0;
-                    const barW=Math.min(Math.abs(pct),100);
+                    const barW=pct!=null?Math.min(Math.abs(pct),100):0;
                     const brokerFlag={"Trii":"🇨🇴","HAPI":"🇲🇽","XTB":"🌎","IBKR":"🇺🇸","Manual":"✏️"}[p.broker]||"📊";
                     return(
                       <div key={p.ticker} style={{background:T.accent,border:`0.5px solid ${T.border}`,
@@ -6762,10 +6763,18 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                             </div>
                           </div>
                           <div style={{textAlign:"right"}}>
-                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:T.gold,fontWeight:500}}>{fmt(cur)}</div>
-                            <div style={{fontSize:12,color:isPos?T.green:T.red,fontWeight:500}}>
-                              {isPos?"+":""}{pct.toFixed(1)}%
+                            <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:T.gold,fontWeight:500}}>
+                              {cur?fmt(cur):<span style={{color:T.muted,fontSize:11}}>Sin precio</span>}
                             </div>
+                            {pct!=null&&<div style={{fontSize:12,color:isPos?T.green:T.red,fontWeight:500}}>
+                              {isPos?"+":""}{pct.toFixed(1)}%
+                              {pnlDollar!=null&&<span style={{fontSize:10,color:isPos?T.green:T.red,marginLeft:4}}>
+                                ({isPos?"+":""}{fmt(Math.abs(pnlDollar))})
+                              </span>}
+                            </div>}
+                            {pct===null&&cur&&<div style={{fontSize:10,color:T.muted}}>
+                              {lang==="es"?"Actualiza precios":"Refresh prices"}
+                            </div>}
                           </div>
                         </div>
                         <div style={{height:3,background:`${T.border}`,borderRadius:2,overflow:"hidden"}}>
