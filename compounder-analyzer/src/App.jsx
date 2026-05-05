@@ -6086,10 +6086,10 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
 
   // Auto-refresh prices on mount and every 5 minutes
   useEffect(()=>{
-    if(transactions.length>0&&Object.keys(prices).length===0){
-      fetchPrices();
+    if(transactions.length>0){
+      fetchPrices(); // Always fetch on mount to ensure fresh prices
     }
-  },[transactions.length]);
+  },[]);
 
   // Fetch prices for any new tickers not yet in prices state
   useEffect(()=>{
@@ -6446,7 +6446,12 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     <div id="ai-analysis-section"/>
     {/* currency re-render trigger */}
     {/* Mobile KPI summary */}
-    {isMobile&&grouped.length>0&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"0 0 12px"}}>
+    {isMobile&&grouped.length>0&&<>
+    {loadingPrices&&<div style={{textAlign:"center",padding:"8px",fontSize:12,color:T.gold,
+      background:`${T.gold}08`,borderRadius:8,marginBottom:8}}>
+      <span className="sp">⟳</span> {lang==="es"?" Actualizando precios...":" Updating prices..."}
+    </div>}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"0 0 12px"}}>
       {[
         {l:lang==="es"?"Valor total":"Total value",v:fmt(totalValue),c:T.gold},
         {l:lang==="es"?"Retorno":"Return",v:`${totalPnLPct>=0?"+":""}${totalPnLPct?.toFixed(1)||0}%`,c:totalPnLPct>=0?T.green:T.red},
@@ -6739,6 +6744,19 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                 lang={lang} fmt={fmt}/>}
               {portTab==="positions"&&(isMobile ? (
                 <div style={{display:"flex",flexDirection:"column",gap:8,padding:"8px 12px 12px"}}>
+                  {/* Mobile action bar */}
+                  <div style={{display:"flex",gap:8,marginBottom:4}}>
+                    <button onClick={()=>fetchPrices()} disabled={loadingPrices}
+                      style={{flex:1,padding:"9px",borderRadius:8,fontSize:12,cursor:"pointer",fontWeight:600,
+                        background:T.accent,border:`1px solid ${T.border}`,color:T.muted}}>
+                      {loadingPrices?<><span className="sp">⟳</span> Cargando...</>:"🔄 Actualizar precios"}
+                    </button>
+                    <button onClick={analyzePortfolio} disabled={loadingAI}
+                      style={{flex:1,padding:"9px",borderRadius:8,fontSize:12,cursor:"pointer",fontWeight:600,
+                        background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",border:"none",color:"#fff"}}>
+                      {loadingAI?<><span className="sp">⟳</span> Analizando...</>:"🤖 Análisis IA"}
+                    </button>
+                  </div>
                   {grouped.map(p=>{
                     // Use enriched computed values (already has live prices applied)
                     const cur=p.currentPrice&&p.currentPrice>0?p.currentPrice:null;
