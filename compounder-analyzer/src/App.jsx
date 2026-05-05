@@ -6758,7 +6758,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                       {loadingAI?<><span className="sp">⟳</span> Analizando...</>:"🤖 Análisis IA"}
                     </button>
                   </div>
-                  {grouped.map(p=>{
+                  {enriched.map(p=>{
                     // Use enriched computed values (already has live prices applied)
                     const cur=p.currentPrice&&p.currentPrice>0?p.currentPrice:null;
                     const pct=p.pnlPct!=null?p.pnlPct:null;
@@ -6802,12 +6802,12 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                             borderRadius:2,transition:"width 0.5s ease"}}/>
                         </div>
                         <div style={{display:"flex",gap:6,marginTop:8}}>
-                          <button onClick={()=>onAnalysis&&onAnalysis(p.ticker)}
+                          <button onClick={()=>{if(onAnalysis)onAnalysis(p.ticker);}}
                             style={{flex:1,fontSize:11,padding:"5px 0",borderRadius:6,cursor:"pointer",
                               background:`${T.purple}20`,border:`0.5px solid ${T.purple}44`,color:T.purple}}>
                             🎯 Analizar
                           </button>
-                          <button onClick={()=>{setSellTicker(p.ticker);setSellShares("");setSellPrice("");setShowSell(true);}}
+                          <button onClick={()=>setSellTarget({...p,currentPrice:prices[p.ticker]?.price||null})}
                             style={{flex:1,fontSize:11,padding:"5px 0",borderRadius:6,cursor:"pointer",
                               background:`${T.green}12`,border:`0.5px solid ${T.green}33`,color:T.green}}>
                             💰 Vender
