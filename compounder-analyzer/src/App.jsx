@@ -5565,9 +5565,15 @@ function PieChart({data,stockCount,size=220}){
 
 
 // ── MARKET DETECTION — Auto-detect portfolio region ──────────────────────────
-function detectMarket(ticker){
+const CRYPTO_TICKERS=["BTC","ETH","SOL","BNB","XRP","ADA","DOGE","AVAX","DOT","MATIC",
+  "LINK","UNI","ATOM","LTC","BCH","ALGO","TRX","SHIB","NEAR","APT","ARB","OP","SUI","INJ",
+  "USDT","USDC","BUSD","PEPE","WIF","BONK","JTO","PYTH","TIA","SEI"];
+
+function detectMarket(ticker, assetType){
+  if(assetType==="crypto") return "CRYPTO";
   if(!ticker) return "USA";
   const t = ticker.toUpperCase().trim();
+  if(CRYPTO_TICKERS.includes(t)) return "CRYPTO";
   if(t.endsWith(".PA")||t.endsWith(".DE")||t.endsWith(".L")||t.endsWith(".AS")||
      t.endsWith(".MC")||t.endsWith(".MI")||t.endsWith(".BR")||t.endsWith(".SW")) return "EUR";
   const latamTickers = Object.values(LATAM_MARKETS).flatMap(m=>Object.keys(m.tickers||{}));
@@ -5575,6 +5581,19 @@ function detectMarket(ticker){
   if(t.endsWith(".CL")||t.endsWith(".MX")||t.endsWith(".SA")||t.endsWith(".BA")||
      t.endsWith(".SN")||t.endsWith(".LM")||t.endsWith(".CR")) return "LATAM";
   return "USA";
+}
+
+
+// ── FETCH CRYPTO PRICES ───────────────────────────────────────────────────────
+async function fetchCryptoPrices(tickers){
+  if(!tickers?.length) return {};
+  try{
+    const symbols = tickers.join(',');
+    const res = await fetch(`/api/crypto?symbols=${encodeURIComponent(symbols)}`);
+    if(!res.ok) return {};
+    const data = await res.json();
+    return data.prices || {};
+  }catch(e){ return {}; }
 }
 
 function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null,currencyTick=0}){
@@ -5587,7 +5606,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   const [positions,setPositions]=useState([]); // legacy — kept for CSV/paste compat
   const [transactions,setTransactions]=useState([]);
   const [sellTarget,setSellTarget]=useState(null);
-  const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD"});
+  const [form,setForm]=useState({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD",assetType:"stock",exchange:""});
   const [prices,setPrices]=useState({});
   const [loadingPrices,setLoadingPrices]=useState(false);
   const [aiAnalysis,setAiAnalysis]=useState(null);
@@ -6059,10 +6078,10 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
     const txnCurrency=form.priceCurrency||"USD";
     const txnRate=txnCurrency==="USD"?1:(CURRENCIES[txnCurrency]?.rate||1);
     const priceInUSD=txnCurrency==="USD"?rawPrice:(rawPrice/txnRate);
-    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:priceInUSD,priceOriginal:rawPrice,priceCurrency:txnCurrency,date:form.date||new Date().toISOString().split("T")[0]};
+    const newTxn={id:Date.now(),ticker,type:"buy",shares:parseFloat(form.shares),price:priceInUSD,priceOriginal:rawPrice,priceCurrency:txnCurrency,date:form.date||new Date().toISOString().split("T")[0],assetType:form.assetType||"stock",exchange:form.exchange||null};
     const updated=[...transactions,newTxn];
     setTransactions(updated);saveTxns(updated);
-    setForm({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD"});setErr("");
+    setForm({ticker:"",shares:"",buyPrice:"",date:"",priceCurrency:"USD",assetType:"stock",exchange:""});setErr("");
     // Fetch price for the new ticker immediately
     setTimeout(()=>fetchPrices(),300);
   };
@@ -6095,6 +6114,16 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
         const d=await res.json();
         if(d.c)results[ticker]={price:d.c,change:d.d,changePct:d.dp,high:d.h,low:d.l,currency:"USD",isBVC:false};
       }catch(e){}
+    }
+    // Also fetch crypto prices
+    const cryptoTickers=[...new Set(transactions.map(t=>t.ticker.toUpperCase()).filter(t=>
+      CRYPTO_TICKERS.includes(t)||detectMarket(t)==="CRYPTO"
+    ))];
+    if(cryptoTickers.length>0){
+      const cryptoPrices=await fetchCryptoPrices(cryptoTickers);
+      Object.entries(cryptoPrices).forEach(([ticker,data])=>{
+        results[ticker]={price:data.price,change:data.change24h||0,changePct:0,currency:"USD",isCrypto:true};
+      });
     }
     setPrices(results);setLoadingPrices(false);
   };
@@ -6206,12 +6235,13 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   const FREE_PORTFOLIO_LIMIT=5;
   const allPositions=calcPositionsFromTxns(transactions);
   const grouped=allPositions.filter(p=>p.totalShares>0.0001);
-  const filteredGrouped=marketFilter==="ALL"?grouped:grouped.filter(p=>detectMarket(p.ticker)===marketFilter);
+  const filteredGrouped=marketFilter==="ALL"?grouped:grouped.filter(p=>detectMarket(p.ticker,p.assetType)===marketFilter);
   // Market counts for tab badges
   const mktCounts={
-    USA: grouped.filter(p=>detectMarket(p.ticker)==="USA").length,
-    LATAM: grouped.filter(p=>detectMarket(p.ticker)==="LATAM").length,
-    EUR: grouped.filter(p=>detectMarket(p.ticker)==="EUR").length,
+    USA: grouped.filter(p=>detectMarket(p.ticker,p.assetType)==="USA").length,
+    LATAM: grouped.filter(p=>detectMarket(p.ticker,p.assetType)==="LATAM").length,
+    EUR: grouped.filter(p=>detectMarket(p.ticker,p.assetType)==="EUR").length,
+    CRYPTO: grouped.filter(p=>detectMarket(p.ticker,p.assetType)==="CRYPTO").length,
   };
 
   const enriched=filteredGrouped.map(g=>{
@@ -6510,6 +6540,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
             {key:"USA",label:"🇺🇸 USA",count:mktCounts.USA},
             {key:"LATAM",label:"🇲🇽 LATAM",count:mktCounts.LATAM},
             {key:"EUR",label:"🇪🇺 Europa",count:mktCounts.EUR},
+            {key:"CRYPTO",label:"₿ Crypto",count:mktCounts.CRYPTO||0},
           ].filter(t=>t.key==="ALL"||t.count>0).map(({key,label,count})=>(
             <button key={key} onClick={()=>setMarketFilter(key)}
               style={{
@@ -6531,7 +6562,26 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
 
         {/* MANUAL */}
         {importMode==="manual"&&<>
-          <Lbl>Ticker {form.ticker&&KNOWN_TICKERS[form.ticker.toUpperCase()]&&form.ticker.toUpperCase()!==KNOWN_TICKERS[form.ticker.toUpperCase()]&&<span style={{fontSize:10,color:T.green,marginLeft:6}}>→ Se usará {KNOWN_TICKERS[form.ticker.toUpperCase()]}</span>}</Lbl>
+          {/* Asset type toggle */}
+          <div style={{display:"flex",gap:6,marginBottom:10}}>
+            {[{v:"stock",l:"📈 Acción"},{v:"crypto",l:"₿ Crypto"}].map(({v,l})=>(
+              <button key={v} onClick={()=>setF("assetType",v)}
+                style={{flex:1,padding:"6px",borderRadius:8,fontSize:12,cursor:"pointer",fontWeight:600,
+                  background:form.assetType===v?`linear-gradient(135deg,#6d3fdc,#4f2db0)`:T.accent,
+                  border:`1px solid ${form.assetType===v?"transparent":T.border}`,
+                  color:form.assetType===v?"#fff":T.muted}}>
+                {l}
+              </button>
+            ))}
+          </div>
+          {form.assetType==="crypto"&&<div style={{marginBottom:10}}>
+            <Lbl>Exchange</Lbl>
+            <select value={form.exchange} onChange={e=>setF("exchange",e.target.value)}>
+              <option value="">Selecciona exchange</option>
+              {["Binance","Coinbase","Kraken","eToro","Otro"].map(e=><option key={e}>{e}</option>)}
+            </select>
+          </div>}
+          <Lbl>{form.assetType==="crypto"?"Símbolo (BTC, ETH, SOL...)":"Ticker"} {form.ticker&&KNOWN_TICKERS[form.ticker.toUpperCase()]&&form.ticker.toUpperCase()!==KNOWN_TICKERS[form.ticker.toUpperCase()]&&<span style={{fontSize:10,color:T.green,marginLeft:6}}>→ Se usará {KNOWN_TICKERS[form.ticker.toUpperCase()]}</span>}</Lbl>
           <input type="text" value={form.ticker}
             onChange={e=>{
               const raw=e.target.value.toUpperCase();
