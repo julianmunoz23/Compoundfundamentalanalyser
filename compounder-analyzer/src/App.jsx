@@ -5563,8 +5563,23 @@ function PieChart({data,stockCount,size=220}){
   </svg>;
 }
 
+
+// ── MARKET DETECTION — Auto-detect portfolio region ──────────────────────────
+function detectMarket(ticker){
+  if(!ticker) return "USA";
+  const t = ticker.toUpperCase().trim();
+  if(t.endsWith(".PA")||t.endsWith(".DE")||t.endsWith(".L")||t.endsWith(".AS")||
+     t.endsWith(".MC")||t.endsWith(".MI")||t.endsWith(".BR")||t.endsWith(".SW")) return "EUR";
+  const latamTickers = Object.values(LATAM_MARKETS).flatMap(m=>Object.keys(m.tickers||{}));
+  if(latamTickers.includes(t)) return "LATAM";
+  if(t.endsWith(".CL")||t.endsWith(".MX")||t.endsWith(".SA")||t.endsWith(".BA")||
+     t.endsWith(".SN")||t.endsWith(".LM")||t.endsWith(".CR")) return "LATAM";
+  return "USA";
+}
+
 function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=null,userPlan="free",onBalanceChange=null,currencyTick=0}){
   const isMobile = typeof window!=="undefined" && window.innerWidth <= 768;
+  const [marketFilter,setMarketFilter]=useState("ALL"); // ALL | USA | LATAM | EUR
   const [paywallCtx,setPaywallCtx]=useState(null);
   const [portTab,setPortTab]=useState("positions");
   // Read risk profile if user came from Risk Profile tab
@@ -6191,8 +6206,15 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
   const FREE_PORTFOLIO_LIMIT=5;
   const allPositions=calcPositionsFromTxns(transactions);
   const grouped=allPositions.filter(p=>p.totalShares>0.0001);
+  const filteredGrouped=marketFilter==="ALL"?grouped:grouped.filter(p=>detectMarket(p.ticker)===marketFilter);
+  // Market counts for tab badges
+  const mktCounts={
+    USA: grouped.filter(p=>detectMarket(p.ticker)==="USA").length,
+    LATAM: grouped.filter(p=>detectMarket(p.ticker)==="LATAM").length,
+    EUR: grouped.filter(p=>detectMarket(p.ticker)==="EUR").length,
+  };
 
-  const enriched=grouped.map(g=>{
+  const enriched=filteredGrouped.map(g=>{
     const lp=prices[g.ticker];
     const currentPrice=lp?lp.price:null;
     const currentValue=currentPrice?g.totalShares*currentPrice:null;
@@ -6481,6 +6503,26 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     )}
 
         <div id="import-form"/>
+        {/* ── MARKET FILTER TABS ── */}
+        {grouped.length>0&&<div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+          {[
+            {key:"ALL",label:lang==="es"?"🌎 Todo":"🌎 All",count:grouped.length},
+            {key:"USA",label:"🇺🇸 USA",count:mktCounts.USA},
+            {key:"LATAM",label:"🇲🇽 LATAM",count:mktCounts.LATAM},
+            {key:"EUR",label:"🇪🇺 Europa",count:mktCounts.EUR},
+          ].filter(t=>t.key==="ALL"||t.count>0).map(({key,label,count})=>(
+            <button key={key} onClick={()=>setMarketFilter(key)}
+              style={{
+                padding:"6px 14px",borderRadius:20,fontSize:12,cursor:"pointer",fontWeight:600,
+                background:marketFilter===key?`linear-gradient(135deg,#6d3fdc,#4f2db0)`:`${T.accent}`,
+                border:`1px solid ${marketFilter===key?"transparent":T.border}`,
+                color:marketFilter===key?"#fff":T.muted,
+                transition:"all 0.15s"
+              }}>
+              {label} <span style={{fontSize:10,opacity:0.7}}>({count})</span>
+            </button>
+          ))}
+        </div>}
         <div className="portfolio-grid compound-layout" style={{display:"grid",gridTemplateColumns:"280px 1fr",gap:18,alignItems:"start"}}>
 
       {/* Add Position Form */}
@@ -6777,6 +6819,10 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                                 {brokerFlag} {p.broker||"—"}
                               </span>
                               <EarningsIndicator ticker={p.ticker}/>
+                              <span style={{fontSize:9,color:T.muted,background:T.accent,
+                                padding:"1px 4px",borderRadius:4}}>
+                                {(p.market||detectMarket(p.ticker))==="USA"?"🇺🇸":(p.market||detectMarket(p.ticker))==="LATAM"?"🇲🇽":"🇪🇺"}
+                              </span>
                             </div>
                             <div style={{fontSize:11,color:T.muted,marginTop:2}}>
                               {p.totalShares.toFixed(2)} acc · costo {fmt(p.avgCost)}
@@ -6841,7 +6887,23 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                           <div style={{width:8,height:8,borderRadius:"50%",background:pc?.color||T.muted,margin:"0 auto"}}/>
                         </td>
                         <td style={{padding:"8px 12px",textAlign:"center",minWidth:90}}>
-                          <div style={{fontWeight:700,fontSize:13,color:T.text,fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",gap:5}}>{p.ticker}<EarningsIndicator ticker={p.ticker}/></div>
+                          <div style={{fontWeight:700,fontSize:13,color:T.text,fontFamily:"'DM Mono',monospace",display:"flex",alignItems:"center",gap:5}}>
+  {p.ticker}
+  <EarningsIndicator ticker={p.ticker}/>
+  <span style={{fontSize:9,color:T.muted,background:T.accent,padding:"1px 5px",borderRadius:4,
+    cursor:"pointer",fontFamily:"sans-serif"}}
+    title={lang==="es"?"Click para cambiar mercado":"Click to change market"}
+    onClick={(e)=>{
+      e.stopPropagation();
+      const curr=p.market||detectMarket(p.ticker);
+      const next=curr==="USA"?"LATAM":curr==="LATAM"?"EUR":"USA";
+      const updated=transactions.map(t=>t.ticker===p.ticker?{...t,market:next}:t);
+      setTransactions(updated);
+      try{localStorage.setItem("inversoria_transactions",JSON.stringify(updated));}catch(e){}
+    }}>
+    {(p.market||detectMarket(p.ticker))==="USA"?"🇺🇸":(p.market||detectMarket(p.ticker))==="LATAM"?"🇲🇽":"🇪🇺"}
+  </span>
+</div>
                           {p.realizedPnL!==0&&<div style={{fontSize:8,color:p.realizedPnL>=0?T.green:T.red,marginTop:1}}>Real: {p.realizedPnL>=0?"+":""}${Math.abs(p.realizedPnL).toFixed(0)}</div>}
                           <TxnHistory entries={p.entries||[]} avgCost={p.avgCost} lang={lang}/>
                         </td>
