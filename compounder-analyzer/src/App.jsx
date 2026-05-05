@@ -6740,10 +6740,11 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               {portTab==="positions"&&(isMobile ? (
                 <div style={{display:"flex",flexDirection:"column",gap:8,padding:"8px 12px 12px"}}>
                   {grouped.map(p=>{
+                    // Use enriched computed values (already has live prices applied)
                     const cur=p.currentPrice&&p.currentPrice>0?p.currentPrice:null;
-                    const pct=cur&&p.avgCost>0?((cur-p.avgCost)/p.avgCost*100):null;
-                    const pnlDollar=cur&&p.totalShares?((cur-p.avgCost)*p.totalShares):null;
-                    const isPos=pct>=0;
+                    const pct=p.pnlPct!=null?p.pnlPct:null;
+                    const pnlDollar=p.pnlDollar!=null?p.pnlDollar:null;
+                    const isPos=pct!=null?pct>=0:true;
                     const barW=pct!=null?Math.min(Math.abs(pct),100):0;
                     const brokerFlag={"Trii":"🇨🇴","HAPI":"🇲🇽","XTB":"🌎","IBKR":"🇺🇸","Manual":"✏️"}[p.broker]||"📊";
                     return(
@@ -6764,7 +6765,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                           </div>
                           <div style={{textAlign:"right"}}>
                             <div style={{fontFamily:"'DM Mono',monospace",fontSize:14,color:T.gold,fontWeight:500}}>
-                              {cur?fmt(cur):<span style={{color:T.muted,fontSize:11}}>Sin precio</span>}
+                              {cur?fmt(cur):loadingPrices?<span style={{color:T.gold,fontSize:11}}>⟳ Cargando...</span>:<span style={{color:T.muted,fontSize:11}}>—</span>}
                             </div>
                             {pct!=null&&<div style={{fontSize:12,color:isPos?T.green:T.red,fontWeight:500}}>
                               {isPos?"+":""}{pct.toFixed(1)}%
