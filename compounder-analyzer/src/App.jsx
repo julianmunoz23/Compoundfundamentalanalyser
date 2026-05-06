@@ -7042,7 +7042,7 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
               ) : <div style={{overflowX:"auto"}}>
                 <table style={{width:"100%",borderCollapse:"collapse",minWidth:860}}>
                   <thead><tr style={{background:T.accent,borderBottom:`1px solid ${T.border}`}}>
-                    {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price","P&G No Real.","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
+                    {["","Ticker",lang==="es"?"Acciones":"Shares",lang==="es"?"Costo Prom.":"Avg Cost",lang==="es"?"Precio Actual":"Current Price",lang==="es"?"Valor Hoy":"Value Today","P&G $","P&G %",lang==="es"?"Veredicto IA":"AI Verdict",lang==="es"?"Acción":"Action"].map((h,i)=>(
                       <th key={i} style={{padding:"12px 16px",textAlign:i<=1||i===11?"center":"right",fontSize:9,color:h==="P&L $"||h==="P&L %"?T.green:T.muted,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:600}}>{h}</th>
                     ))}
                   </tr></thead>
@@ -7083,6 +7083,9 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
                         <td style={{padding:"12px 16px",textAlign:"right"}}><Mn sz={12} c={T.muted}>${p.avgCost.toFixed(2)}</Mn></td>
                         <td style={{padding:"12px 16px",textAlign:"right"}}>
                           {p.currentPrice?<Mn sz={13} c={T.gold} s={{fontWeight:700}}>${p.currentPrice.toFixed(2)}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
+                        </td>
+                        <td style={{padding:"12px 16px",textAlign:"right"}}>
+                          {p.currentValue!=null?<Mn sz={12} c={T.text} s={{fontWeight:600}}>{fmt(p.currentValue)}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
                         </td>
                         <td style={{padding:"12px 16px",textAlign:"right"}}>
                           {p.pnlDollar!=null?<Mn sz={12} c={p.pnlDollar>=0?T.green:T.red} s={{fontWeight:600}}>{p.pnlDollar>=0?"+":""}${Math.abs(p.pnlDollar).toLocaleString("en-US",{maximumFractionDigits:0})}</Mn>:<span style={{fontSize:11,color:T.muted}}>—</span>}
@@ -8125,9 +8128,10 @@ export default function App(){
               </span>
 
               <button onClick={signOut}
-                style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"0 2px",display:"flex",alignItems:"center"}}
-                title={lang==="es"?"Cerrar sesión":"Sign out"}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                style={{background:"none",border:`1px solid ${T.border}`,borderRadius:6,cursor:"pointer",
+                  color:T.muted,padding:"2px 8px",display:"flex",alignItems:"center",gap:4,fontSize:10}}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                {lang==="es"?"Salir":"Sign out"}
               </button>
             </div>}
             {!user&&<button onClick={()=>{setAuthMode("login");setShowAuth(true);}} style={{background:`${T.purple}12`,border:`1px solid ${T.gold}35`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:11,color:T.gold,fontWeight:600,letterSpacing:"0.03em"}}>
