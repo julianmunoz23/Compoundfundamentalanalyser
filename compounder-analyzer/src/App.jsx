@@ -1235,9 +1235,21 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
       } else if (mode === "login") {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Check if user has 2FA enabled
-        const has2FA = localStorage.getItem(`2fa_enabled_${data.user.id}`) === "true";
-        if(has2FA){
+        // Auto 2FA: if user has saved portfolio, require verification
+        let hasSavedPortfolio = false;
+        try{
+          const saved = localStorage.getItem("inversoria_transactions");
+          if(saved){const p=JSON.parse(saved);hasSavedPortfolio=Array.isArray(p)&&p.length>0;}
+        }catch(e){}
+        // Also check Supabase
+        if(!hasSavedPortfolio && supabase){
+          try{
+            const {data:d2} = await supabase.from("user_data").select("id")
+              .eq("user_id",data.user.id).eq("key","inversoria_transactions").limit(1).maybeSingle();
+            if(d2) hasSavedPortfolio = true;
+          }catch(e){}
+        }
+        if(hasSavedPortfolio){
           // Generate 6-digit code and send via email
           const code = String(Math.floor(100000 + Math.random() * 900000));
           const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
@@ -8111,22 +8123,7 @@ export default function App(){
               <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.03em",color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted}}>
                 {userPlan==="premium"?"★ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
               </span>
-              {/* 2FA Toggle */}
-              {user&&<button
-                onClick={()=>{
-                  const key=`2fa_enabled_${user.id}`;
-                  const current=localStorage.getItem(key)==="true";
-                  localStorage.setItem(key,(!current).toString());
-                  alert(isEs
-                    ?(!current?"✅ Verificación en 2 pasos activada":"❌ Verificación en 2 pasos desactivada")
-                    :(!current?"✅ Two-step verification enabled":"❌ Two-step verification disabled"));
-                }}
-                style={{background:"none",border:`1px solid ${localStorage.getItem(`2fa_enabled_${user?.id}`)===`true`?T.green:T.border}`,
-                  borderRadius:6,cursor:"pointer",color:localStorage.getItem(`2fa_enabled_${user?.id}`)===`true`?T.green:T.muted,
-                  padding:"1px 7px",fontSize:9,fontWeight:600}}
-                title={lang==="es"?"Verificación en 2 pasos":"Two-factor authentication"}>
-                {localStorage.getItem(`2fa_enabled_${user?.id}`)===`true`?"🔐 2FA":"🔓 2FA"}
-              </button>}
+
               <button onClick={signOut}
                 style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"0 2px",display:"flex",alignItems:"center"}}
                 title={lang==="es"?"Cerrar sesión":"Sign out"}>
