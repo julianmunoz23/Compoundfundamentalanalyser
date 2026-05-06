@@ -1165,18 +1165,23 @@ function ResetPasswordModal({onClose, lang}){
           </div>
         )}
       </div>
+      </>}
     </div>
   );
 }
 
 // ── AUTH MODAL ────────────────────────────────────────────────────────────────
 function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
-  const [mode, setMode] = useState(initialMode); // signup | login | reset
+  const [mode, setMode] = useState(initialMode); // signup | login | reset | verify2fa
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
+  const [pendingUser, setPendingUser] = useState(null); // user waiting for 2FA
+  const [twoFACode, setTwoFACode] = useState("");
+  const [expectedCode, setExpectedCode] = useState(null);
+  const [codeExpiry, setCodeExpiry] = useState(null);
   const isEs = lang === "es";
 
   const handleSubmit = async () => {
@@ -1231,8 +1236,37 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
       } else if (mode === "login") {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        onAuth(data.user);
-        onClose();
+        // Check if user has 2FA enabled
+        const has2FA = localStorage.getItem(`2fa_enabled_${data.user.id}`) === "true";
+        if(has2FA){
+          // Generate 6-digit code and send via email
+          const code = String(Math.floor(100000 + Math.random() * 900000));
+          const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+          setExpectedCode(code);
+          setCodeExpiry(expiry);
+          setPendingUser(data.user);
+          // Send code via email
+          await fetch("/api/email", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+              from: "Inversoria <noreply@inversoria.lat>",
+              to: [email],
+              subject: isEs ? "🔐 Tu código de verificación — Inversoria" : "🔐 Your verification code — Inversoria",
+              html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;background:#1a1540;border-radius:12px;padding:32px;text-align:center">
+                <div style="font-size:22px;color:#e8c96d;font-weight:700;margin-bottom:8px">📈 Inversoria</div>
+                <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:24px">${isEs?"Verificación de dos pasos":"Two-step verification"}</div>
+                <div style="font-size:48px;font-weight:800;color:#fff;letter-spacing:12px;background:rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-bottom:16px">${code}</div>
+                <div style="font-size:13px;color:rgba(255,255,255,0.5)">${isEs?"Este código expira en 10 minutos":"This code expires in 10 minutes"}</div>
+              </div>`
+            })
+          });
+          setMode("verify2fa");
+          setSuccess(isEs ? `📧 Código enviado a ${email}` : `📧 Code sent to ${email}`);
+        } else {
+          onAuth(data.user);
+          onClose();
+        }
       } else if (mode === "reset") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin,
@@ -1252,11 +1286,67 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
     setLoading(false);
   };
 
+  // Handle 2FA code verification
+  const verify2FACode = () => {
+    if(!expectedCode || !codeExpiry) return;
+    if(Date.now() > codeExpiry){setErr(isEs?"Código expirado. Intenta de nuevo.":"Code expired. Try again.");return;}
+    if(twoFACode.trim() === expectedCode){
+      onAuth(pendingUser);
+      onClose();
+    } else {
+      setErr(isEs?"Código incorrecto. Verifica tu email.":"Incorrect code. Check your email.");
+    }
+  };
+
   return (
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.92)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div className="auth-modal" style={{background:T.card,border:`2px solid ${T.goldDim}`,borderRadius:20,padding:"36px 40px",maxWidth:420,width:"100%",position:"relative",maxHeight:"90vh",overflowY:"auto"}}>
         <button onClick={onClose} style={{position:"absolute",top:14,right:16,background:"none",border:"none",cursor:"pointer",color:T.muted,fontSize:20}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
 
+        {/* 2FA Verification Screen */}
+        {mode==="verify2fa"&&<div style={{textAlign:"center"}}>
+          <div style={{fontSize:48,marginBottom:12}}>🔐</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:20,color:T.gold,fontWeight:700,marginBottom:8}}>
+            {isEs?"Verificación de seguridad":"Security verification"}
+          </div>
+          <div style={{fontSize:13,color:T.muted,marginBottom:24,lineHeight:1.6}}>
+            {success||""}
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
+            {[0,1,2,3,4,5].map(i=>(
+              <input key={i} id={`code-${i}`} maxLength={1} type="tel"
+                value={twoFACode[i]||""}
+                onChange={e=>{
+                  const val=e.target.value.replace(/\D/g,"");
+                  const arr=twoFACode.split("");
+                  arr[i]=val;
+                  const newCode=arr.join("").slice(0,6);
+                  setTwoFACode(newCode);
+                  if(val&&i<5) document.getElementById(`code-${i+1}`)?.focus();
+                }}
+                onKeyDown={e=>{
+                  if(e.key==="Backspace"&&!twoFACode[i]&&i>0) document.getElementById(`code-${i-1}`)?.focus();
+                }}
+                style={{width:44,height:52,textAlign:"center",fontSize:22,fontWeight:700,
+                  borderRadius:10,border:`2px solid ${twoFACode[i]?T.gold:T.border}`,
+                  background:T.accent,color:T.text,outline:"none"}}/>
+            ))}
+          </div>
+          {err&&<div style={{padding:"8px 12px",background:`${T.red}15`,borderRadius:8,fontSize:12,color:T.red,marginBottom:12}}>{err}</div>}
+          <button onClick={verify2FACode} disabled={twoFACode.length<6}
+            style={{width:"100%",padding:"12px",borderRadius:10,fontSize:14,fontWeight:700,
+              background:"linear-gradient(135deg,#6d3fdc,#4f2db0)",color:"#fff",border:"none",cursor:"pointer",
+              opacity:twoFACode.length<6?0.5:1}}>
+            {isEs?"✅ Verificar código":"✅ Verify code"}
+          </button>
+          <button onClick={()=>{setMode("login");setTwoFACode("");setErr("");}}
+            style={{marginTop:10,background:"none",border:"none",color:T.muted,fontSize:12,cursor:"pointer"}}>
+            {isEs?"← Volver al login":"← Back to login"}
+          </button>
+        </div>}
+
+        {/* Normal login/signup/reset */}
+        {mode!=="verify2fa"&&<>
         {/* Logo */}
         <div style={{textAlign:"center",marginBottom:24}}>
           <div style={{fontSize:32,marginBottom:8}}>📈</div>
@@ -8021,6 +8111,22 @@ export default function App(){
               <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.03em",color:userPlan==="premium"?T.gold:userPlan==="basic"?T.green:T.muted}}>
                 {userPlan==="premium"?"★ Premium":userPlan==="basic"?"✓ Basic":lang==="es"?"Gratis":"Free"}
               </span>
+              {/* 2FA Toggle */}
+              {user&&<button
+                onClick={()=>{
+                  const key=`2fa_enabled_${user.id}`;
+                  const current=localStorage.getItem(key)==="true";
+                  localStorage.setItem(key,(!current).toString());
+                  alert(isEs
+                    ?(!current?"✅ Verificación en 2 pasos activada":"❌ Verificación en 2 pasos desactivada")
+                    :(!current?"✅ Two-step verification enabled":"❌ Two-step verification disabled"));
+                }}
+                style={{background:"none",border:`1px solid ${localStorage.getItem(`2fa_enabled_${user?.id}`)===`true`?T.green:T.border}`,
+                  borderRadius:6,cursor:"pointer",color:localStorage.getItem(`2fa_enabled_${user?.id}`)===`true`?T.green:T.muted,
+                  padding:"1px 7px",fontSize:9,fontWeight:600}}
+                title={lang==="es"?"Verificación en 2 pasos":"Two-factor authentication"}>
+                {localStorage.getItem(`2fa_enabled_${user?.id}`)===`true`?"🔐 2FA":"🔓 2FA"}
+              </button>}
               <button onClick={signOut}
                 style={{background:"none",border:"none",cursor:"pointer",color:T.muted,padding:"0 2px",display:"flex",alignItems:"center"}}
                 title={lang==="es"?"Cerrar sesión":"Sign out"}>
