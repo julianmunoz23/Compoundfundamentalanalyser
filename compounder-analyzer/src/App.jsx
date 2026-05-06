@@ -6029,6 +6029,17 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
   };
 
   // Load saved positions — cloud first, localStorage fallback
+  // Load from localStorage immediately (before user session loads)
+  useEffect(()=>{
+    try{
+      const localTxns=localStorage.getItem("inversoria_transactions");
+      if(localTxns){
+        const parsed=JSON.parse(localTxns);
+        if(parsed&&parsed.length>0) setTransactions(parsed);
+      }
+    }catch(e){}
+  },[]);
+
   useEffect(()=>{
     const load=async()=>{
       try{
