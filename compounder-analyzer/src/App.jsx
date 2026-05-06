@@ -1412,7 +1412,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
             ?<>Al registrarte aceptas nuestros <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowTerms&&setShowTerms(true)}>Términos de Uso</span> y <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}} onClick={()=>setShowPrivacy&&setShowPrivacy(true)}>Política de Privacidad</span>. Tus datos están protegidos y nunca los vendemos.</>
             :<>By signing up you agree to our <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}>Terms of Use</span> and <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}>Privacy Policy</span>. Your data is protected and never sold.</>}
         </div>
-      </div>
+      </>}
     </div>
   );
 }
