@@ -5569,10 +5569,10 @@ const CRYPTO_TICKERS=["BTC","ETH","SOL","BNB","XRP","ADA","DOGE","AVAX","DOT","M
   "LINK","UNI","ATOM","LTC","BCH","ALGO","TRX","SHIB","NEAR","APT","ARB","OP","SUI","INJ",
   "USDT","USDC","BUSD","PEPE","WIF","BONK","JTO","PYTH","TIA","SEI"];
 
-function detectMarket(ticker, assetType){
+function detectMarket(ticker, assetType="stock"){
   if(assetType==="crypto") return "CRYPTO";
   if(!ticker) return "USA";
-  const t = ticker.toUpperCase().trim();
+  const t = (ticker||"").toUpperCase().trim();
   if(CRYPTO_TICKERS.includes(t)) return "CRYPTO";
   if(t.endsWith(".PA")||t.endsWith(".DE")||t.endsWith(".L")||t.endsWith(".AS")||
      t.endsWith(".MC")||t.endsWith(".MI")||t.endsWith(".BR")||t.endsWith(".SW")) return "EUR";
@@ -6945,13 +6945,14 @@ Provide a concise but actionable analysis. If a risk profile is available, expli
     title={lang==="es"?"Click para cambiar mercado":"Click to change market"}
     onClick={(e)=>{
       e.stopPropagation();
-      const curr=p.market||detectMarket(p.ticker);
-      const next=curr==="USA"?"LATAM":curr==="LATAM"?"EUR":"USA";
+      const curr=p.market||detectMarket(p.ticker,p.assetType);
+      const opts=["USA","LATAM","EUR","CRYPTO"];
+      const next=opts[(opts.indexOf(curr)+1)%opts.length];
       const updated=transactions.map(t=>t.ticker===p.ticker?{...t,market:next}:t);
       setTransactions(updated);
       try{localStorage.setItem("inversoria_transactions",JSON.stringify(updated));}catch(e){}
     }}>
-    {(p.market||detectMarket(p.ticker))==="USA"?"🇺🇸":(p.market||detectMarket(p.ticker))==="LATAM"?"🇲🇽":"🇪🇺"}
+    {(()=>{const m=p.market||detectMarket(p.ticker,p.assetType);return m==="USA"?"🇺🇸":m==="LATAM"?"🇲🇽":m==="EUR"?"🇪🇺":"₿";})()}
   </span>
 </div>
                           {p.realizedPnL!==0&&<div style={{fontSize:8,color:p.realizedPnL>=0?T.green:T.red,marginTop:1}}>Real: {p.realizedPnL>=0?"+":""}${Math.abs(p.realizedPnL).toFixed(0)}</div>}
