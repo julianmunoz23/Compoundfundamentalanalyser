@@ -1413,6 +1413,7 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
             :<>By signing up you agree to our <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}>Terms of Use</span> and <span style={{color:T.gold,cursor:"pointer",textDecoration:"underline"}}>Privacy Policy</span>. Your data is protected and never sold.</>}
         </div>
       </>}
+      </div>
     </div>
   );
 }
