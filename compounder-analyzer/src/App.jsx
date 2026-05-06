@@ -1165,7 +1165,6 @@ function ResetPasswordModal({onClose, lang}){
           </div>
         )}
       </div>
-      </>}
     </div>
   );
 }
