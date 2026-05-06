@@ -29,9 +29,15 @@ async function cloudLoad(table, key, userId) {
     try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
   }
   try {
-    const { data } = await supabase.from(table).select("data").eq("user_id", userId).eq("key", key).single();
+    const { data } = await supabase.from(table).select("data").eq("user_id", userId).eq("key", key).order("updated_at", {ascending:false}).limit(1).maybeSingle();
     if (data?.data) return data.data;
-  } catch(e) {}
+  } catch(e) {
+    // Try without ordering if updated_at doesn't exist
+    try {
+      const { data:d2 } = await supabase.from(table).select("data").eq("user_id", userId).eq("key", key).limit(1).maybeSingle();
+      if (d2?.data) return d2.data;
+    } catch(e2) {}
+  }
   // fallback to localStorage
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch(e) { return null; }
 }
@@ -6046,7 +6052,9 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
             saveTxns(migrated);
           }
         }
-      }catch(e){}
+      }catch(e){
+        console.error("Portfolio load error:", e);
+      }
     };
     load();
   },[user?.id]);
