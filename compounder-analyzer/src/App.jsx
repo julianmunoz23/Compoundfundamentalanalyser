@@ -3319,10 +3319,21 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         return;
       }
 
-      // Run Finnhub + AI in parallel (original working flow)
-      const[fhResult,aiResult]=await Promise.allSettled([
-        callFinnhub(tickerToUse),
-        isLatamStock
+      // Step 1: Fetch Finnhub first — show chart immediately
+      let fhData = null;
+      try{
+        fhData = await callFinnhub(tickerToUse);
+        if(fhData) setFh(fhData);
+      }catch(e){ console.warn("Finnhub failed:", e.message); }
+
+      // Step 2: Show TradingView immediately with Finnhub data
+      setCompany(tickerToUse);
+      setLocked(true);
+
+      // Step 3: Try AI analysis (may fail if no credits)
+      let aiResult = null;
+      try{
+        aiResult = await (isLatamStock
           ? (async()=>{
               const r=await fetch("/api/analyze",{
                 method:"POST",
@@ -3337,21 +3348,40 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               return JSON.parse(t);
             })()
           : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR). JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`)
-      ]);
-      let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
-      // Enrich AI prompt context from Finnhub fundamentals (for future consensus call)
-      const fundamentalsCtx = ""; // FMP integration pending — Phase 2
-      // Set Finnhub data immediately — before any AI calls that might throw
-      if(fhData) setFh(fhData);
-      // If Finnhub has no analyst data, use AI to estimate consensus
+        );
+      }catch(aiErr){
+        console.warn("AI failed:", aiErr.message);
+        setErr(lang==="es"
+          ?"ℹ️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
+          :"ℹ️ AI analysis unavailable — showing chart and live price.");
+        setLoading(false);
+        onAnalysis();
+        return;
+      }
+
+      // Step 4: AI consensus if needed
       if(!fhData||fhData.totalAnalysts===0||fhData.rating==="N/A"||!fhData.rating){
         try{
           const consensusPrompt = "Wall Street consensus for " + tickerToUse + ". Return JSON only: rating, totalAnalysts, bullish, bearish, hold, currentPrice, targetMean, targetHigh, targetLow, upside, epsGrowthNext, breakdown with strongBuy buy hold sell strongSell, isAiEstimate true.";
           const consensus = await callAI(consensusPrompt);
           if(consensus && consensus.rating && consensus.totalAnalysts){
             fhData={...consensus,source:"AI Consensus Estimate",isAiEstimate:true};
+            setFh(fhData);
           }
         }catch(e){console.warn("AI consensus failed:",e.message);}
+      }
+
+      // Step 5: Apply AI results
+      if(aiResult){
+        setM(prev=>({...prev,...aiResult.metrics}));
+        setMoat(prev=>({...prev,...aiResult.moat}));
+        if(aiResult.sector)setSector(aiResult.sector);
+        setInfo(aiResult);
+        setCachedAnalysis(tickerToUse, aiResult).catch(()=>{});
+      }
+      onAnalysis();
+
+    }catch(e){console.warn("AI consensus failed:",e.message);}
       }
       if(aiResult.status==="fulfilled"){
         const p=aiResult.value;
@@ -3370,19 +3400,8 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     }catch(e){
       const msg = e.message||"";
       setErr(lang==="es"
-        ?"ℹ️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
-        :"ℹ️ AI analysis unavailable — showing chart and live price.");
-      // Ensure company is set for TradingView
-      if(companyToUse) setCompany(companyToUse.trim().toUpperCase());
-      // Still fetch Finnhub prices for TradingView
-      try{
-        const ticker = companyToUse?.trim()?.toUpperCase()||"";
-        if(ticker){
-          const fhLive = await callFinnhub(ticker);
-          if(fhLive) setFh(fhLive);
-        }
-      }catch(e2){}
-      setLocked(true); // Show TradingView even on error
+        ?"ℹ️ Error inesperado. Intenta de nuevo."
+        :"ℹ️ Unexpected error. Please try again.");
       setLoading(false);
     }
     setLoading(false);
