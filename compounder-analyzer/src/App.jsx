@@ -3389,14 +3389,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         if(p.sector)setSector(p.sector);setInfo(p);
         // Save to shared Supabase cache
         setCachedAnalysis(tickerToUse, p).catch(()=>{});
-      }else{
-        // AI failed — still show TradingView + price data
-        setErr(lang==="es"
-          ?"ℹ️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
-          :"ℹ️ AI analysis unavailable — showing chart and live price.");
-        setLocked(true);
-      }
-      onAnalysis();
     }catch(e){
       const msg = e.message||"";
       setErr(lang==="es"
