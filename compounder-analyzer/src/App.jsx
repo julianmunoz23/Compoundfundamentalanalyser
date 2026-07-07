@@ -3381,14 +3381,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       }
       onAnalysis();
 
-    }catch(e){console.warn("AI consensus failed:",e.message);}
-      }
-      if(aiResult.status==="fulfilled"){
-        const p=aiResult.value;
-        setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
-        if(p.sector)setSector(p.sector);setInfo(p);
-        // Save to shared Supabase cache
-        setCachedAnalysis(tickerToUse, p).catch(()=>{});
     }catch(e){
       const msg = e.message||"";
       setErr(lang==="es"
