@@ -576,7 +576,7 @@ async function callAI(prompt){
   const cKey=_cacheKey(prompt);
   if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
   const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
+    body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
   const d=await res.json();
   if(d.error){
     const t=d.error.type||""; const m=d.error.message||"";
@@ -3294,7 +3294,9 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
 
   const analyze=async(overrideTicker)=>{
     const companyToUse = overrideTicker || company;
-    if(!companyToUse.trim()){setErr("Enter a company name or ticker.");return;}
+    if(!companyToUse || typeof companyToUse !== 'string' || !companyToUse.trim()){
+      setErr(lang==="es"?"Escribe un ticker o nombre":"Enter a company name or ticker.");return;
+    }
     if(!canAnalyze())return;
     setLoading(true);setErr("");setInfo(null);setFh(null);setLocked(false);
     try{
@@ -3325,7 +3327,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               const r=await fetch("/api/analyze",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1800,
+                body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:1800,
                   tools:[{"type":"web_search_20250305","name":"web_search"}],
                   messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
                 })
@@ -3356,8 +3358,21 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         if(p.sector)setSector(p.sector);setInfo(p);
         // Save to shared Supabase cache
         setCachedAnalysis(tickerToUse, p).catch(()=>{});
-      }else{throw new Error(aiResult.reason?.message||"AI analysis failed");}
-      setLocked(true);onAnalysis();
+      }else{
+        // AI failed (no credits?) — still show TradingView + price data
+        const msg = aiResult.reason?.message||"";
+        const isNoCredits = msg.includes("credit")||msg.includes("balance")||msg.includes("400");
+        if(isNoCredits){
+          setErr(lang==="es"
+            ?"⚠️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
+            :"⚠️ AI analysis unavailable — showing chart and live price.");
+        } else {
+          setErr(lang==="es"?"⚠️ No se pudo completar el análisis IA.":"⚠️ AI analysis failed.");
+        }
+        // Still lock to show TradingView + Finnhub consensus
+        setLocked(true);
+      }
+      onAnalysis();
     }catch(e){
       const msg = e.message||"";
       // Show full error temporarily for diagnosis
@@ -4826,7 +4841,7 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
+          model:"claude-sonnet-4-5-20251001",
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
@@ -6360,7 +6375,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const portfolioRes=await fetch("/api/analyze",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,
+        body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:3000,
         ...(hasLatam?{tools:[{"type":"web_search_20250305","name":"web_search"}]}:{}),
         messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment).${hasLatam?` Before analyzing, search for recent news on: ${latamTickers.join(", ")} using queries like "[TICKER] resultados financieros 2025 2026 dividendo analistas". Use sources: bloomberglinea.com, valoraanalitik.com, stockanalysis.com. Then analyze this portfolio:`:" Analyze this portfolio:"}
 ${summary}
