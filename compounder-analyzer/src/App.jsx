@@ -3341,6 +3341,8 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       let fhData=fhResult.status==="fulfilled"?fhResult.value:null;
       // Enrich AI prompt context from Finnhub fundamentals (for future consensus call)
       const fundamentalsCtx = ""; // FMP integration pending — Phase 2
+      // Set Finnhub data immediately — before any AI calls that might throw
+      if(fhData) setFh(fhData);
       // If Finnhub has no analyst data, use AI to estimate consensus
       if(!fhData||fhData.totalAnalysts===0||fhData.rating==="N/A"||!fhData.rating){
         try{
@@ -3351,7 +3353,6 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           }
         }catch(e){console.warn("AI consensus failed:",e.message);}
       }
-      if(fhData)setFh(fhData);
       if(aiResult.status==="fulfilled"){
         const p=aiResult.value;
         setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
