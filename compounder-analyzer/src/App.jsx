@@ -3371,12 +3371,18 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       setErr(lang==="es"
         ?"ℹ️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
         :"ℹ️ AI analysis unavailable — showing chart and live price.");
+      // Ensure company is set for TradingView
+      if(companyToUse) setCompany(companyToUse.trim().toUpperCase());
       // Still fetch Finnhub prices for TradingView
       try{
-        const fhLive = await callFinnhub(company?.trim()?.toUpperCase()||"");
-        if(fhLive) setFh(fhLive);
+        const ticker = companyToUse?.trim()?.toUpperCase()||"";
+        if(ticker){
+          const fhLive = await callFinnhub(ticker);
+          if(fhLive) setFh(fhLive);
+        }
       }catch(e2){}
       setLocked(true); // Show TradingView even on error
+      setLoading(false);
     }
     setLoading(false);
   };
