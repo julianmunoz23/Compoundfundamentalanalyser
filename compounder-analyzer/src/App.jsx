@@ -3359,24 +3359,24 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         // Save to shared Supabase cache
         setCachedAnalysis(tickerToUse, p).catch(()=>{});
       }else{
-        // AI failed (no credits?) — still show TradingView + price data
-        const msg = aiResult.reason?.message||"";
-        const isNoCredits = msg.includes("credit")||msg.includes("balance")||msg.includes("400");
-        if(isNoCredits){
-          setErr(lang==="es"
-            ?"⚠️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
-            :"⚠️ AI analysis unavailable — showing chart and live price.");
-        } else {
-          setErr(lang==="es"?"⚠️ No se pudo completar el análisis IA.":"⚠️ AI analysis failed.");
-        }
-        // Still lock to show TradingView + Finnhub consensus
+        // AI failed — still show TradingView + price data
+        setErr(lang==="es"
+          ?"ℹ️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
+          :"ℹ️ AI analysis unavailable — showing chart and live price.");
         setLocked(true);
       }
       onAnalysis();
     }catch(e){
       const msg = e.message||"";
-      // Show full error temporarily for diagnosis
-      setErr(`Error: ${msg}`);
+      setErr(lang==="es"
+        ?"ℹ️ Análisis IA no disponible — mostrando gráfica y precio en tiempo real."
+        :"ℹ️ AI analysis unavailable — showing chart and live price.");
+      // Still fetch Finnhub prices for TradingView
+      try{
+        const fhLive = await callFinnhub(company?.trim()?.toUpperCase()||"");
+        if(fhLive) setFh(fhLive);
+      }catch(e2){}
+      setLocked(true); // Show TradingView even on error
     }
     setLoading(false);
   };
@@ -3588,13 +3588,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       <AdBanner size="leaderboard"/>
     </>}
 
-    {!info&&<div style={{display:"flex",alignItems:"center",gap:20,padding:"14px 20px",background:T.card,border:`1px solid ${T.border}`,borderRadius:12}}>
-      <ScoreRing score={score} size={100} lang={lang}/>
-      <div style={{flex:1}}>{catS.map(({cat,s})=><div key={cat} style={{marginBottom:8}}>
-        <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:2}}><span style={{color:T.muted}}>{cat}</span><Mn sz={11} c={s>=60?T.green:s>=40?T.gold:T.red}>{s}%</Mn></div>
-        <div style={{height:3,background:T.border,borderRadius:2}}><div style={{height:"100%",width:`${s}%`,background:s>=60?T.green:s>=40?T.gold:T.red,borderRadius:2,transition:"width 0.5s"}}/></div>
-      </div>)}</div>
-    </div>}
+    {/* Score preview hidden before first analysis */}
 
     {/* ── INLINE EXPECTED RETURN — auto-fills from AI analysis ── */}
     {info&&<InlineExpectedReturn company={company} sector={sector} onAnalysis={onAnalysis} canAnalyze={canAnalyze} lang={lang}/>}
@@ -3602,7 +3596,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     {/* ── INLINE DCF — auto-fills from AI analysis ── */}
     {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze} lang={lang}/>}
 
-    <div className="compound-layout" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+    {(info||locked)&&<div className="compound-layout" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {Object.entries(CRITERIA).map(([cat,cs])=><Card key={cat}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -3638,7 +3632,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           </div>
         </Card>
       </div>
-    </div>
+    </div>}
   </div>;
 }
 
