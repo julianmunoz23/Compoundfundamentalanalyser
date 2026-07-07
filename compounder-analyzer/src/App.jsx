@@ -576,7 +576,7 @@ async function callAI(prompt){
   const cKey=_cacheKey(prompt);
   if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
   const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
+    body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1400,messages:[{role:"user",content:prompt}]})});
   const d=await res.json();
   if(d.error){
     const t=d.error.type||""; const m=d.error.message||"";
@@ -3338,7 +3338,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
               const r=await fetch("/api/analyze",{
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:1800,
+                body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1800,
                   tools:[{"type":"web_search_20250305","name":"web_search"}],
                   messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economías de Escala":<1-5>,"Costos de Cambio":<1-5>,"Efectos de Red":<1-5>,"Dominio de Marca":<1-5>,"Tecnología Propia":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
                 })
@@ -4834,7 +4834,7 @@ function BrokerImportWizard({lang,importMode,setImportMode,importErr,setImportEr
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          model:"claude-sonnet-4-5-20251001",
+          model:"claude-sonnet-4-6",
           max_tokens:1000,
           messages:[{role:"user",content:[
             {type:"image",source:{type:"base64",media_type:mediaType,data:b64}},
@@ -6368,7 +6368,7 @@ function PortfolioTab({canAnalyze,onShowPaywall,onGoToProfile,lang="en",user=nul
       const portfolioRes=await fetch("/api/analyze",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:3000,
+        body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:3000,
         ...(hasLatam?{tools:[{"type":"web_search_20250305","name":"web_search"}]}:{}),
         messages:[{role:"user",content:`You are a patient investor portfolio analyst (quality businesses, long-term compounding, risk profile alignment).${hasLatam?` Before analyzing, search for recent news on: ${latamTickers.join(", ")} using queries like "[TICKER] resultados financieros 2025 2026 dividendo analistas". Use sources: bloomberglinea.com, valoraanalitik.com, stockanalysis.com. Then analyze this portfolio:`:" Analyze this portfolio:"}
 ${summary}
