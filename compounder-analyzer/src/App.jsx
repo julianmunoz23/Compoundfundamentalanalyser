@@ -531,6 +531,47 @@ function _cacheKey(prompt){
   return _marketSessionId(ticker);
 }
 
+
+// ── SUPABASE ANALYSIS CACHE ───────────────────────────────────────────────────
+// TTL: 2h market open, 12h market closed — shared across all users
+function getCacheTTL(){
+  const now = new Date();
+  const hour = now.getUTCHours(); // UTC
+  const day = now.getUTCDay(); // 0=Sun, 6=Sat
+  // NYSE open: 13:30-20:00 UTC (9:30am-4pm ET)
+  const isMarketOpen = day>=1&&day<=5&&hour>=13&&hour<20;
+  return isMarketOpen ? 2*60*60*1000 : 12*60*60*1000; // ms
+}
+
+async function getCachedAnalysis(ticker){
+  if(!supabase||!ticker) return null;
+  try{
+    const {data} = await supabase
+      .from('analysis_cache')
+      .select('result, created_at')
+      .eq('ticker', ticker.toUpperCase())
+      .order('created_at', {ascending:false})
+      .limit(1)
+      .maybeSingle();
+    if(!data) return null;
+    const age = Date.now() - new Date(data.created_at).getTime();
+    if(age > getCacheTTL()) return null; // expired
+    console.log(`📦 Cache hit for ${ticker} (${Math.round(age/60000)}min old)`);
+    return data.result;
+  }catch(e){ return null; }
+}
+
+async function setCachedAnalysis(ticker, result){
+  if(!supabase||!ticker||!result) return;
+  try{
+    await supabase.from('analysis_cache').upsert({
+      ticker: ticker.toUpperCase(),
+      result,
+      created_at: new Date().toISOString()
+    }, {onConflict:'ticker'});
+  }catch(e){}
+}
+
 async function callAI(prompt){
   const cKey=_cacheKey(prompt);
   if(_aiCache[cKey]){ console.log("📦 Cache hit:",cKey); return _aiCache[cKey]; }
@@ -1199,8 +1240,8 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setSuccess(isEs
-          ? "✅ ¡Cuenta creada! Tienes 30 días Premium gratis. Revisa tu email."
-          : "✅ Account created! You have 30 days of free Premium. Check your email.");
+          ? "✅ ¡Cuenta creada! Tienes 60 días Premium gratis. Revisa tu email."
+          : "✅ Account created! You have 60 days of free Premium. Check your email.");
         // Send welcome email via Resend
         if (data.user) {
           try {
@@ -1210,10 +1251,10 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
               body: JSON.stringify({
                 from: "Inversoria <noreply@inversoria.lat>",
                 to: [email],
-                subject: isEs ? "🎁 Bienvenido a Inversoria — 30 días Premium gratis" : "🎁 Welcome to Inversoria — 30 free Premium days",
+                subject: isEs ? "🎁 Bienvenido a Inversoria — 60 días Premium gratis" : "🎁 Welcome to Inversoria — 60 free Premium days",
                 html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1c1b2e;color:#f0eeff;padding:32px;border-radius:12px">
                   <div style="font-size:28px;margin-bottom:8px">📈 Inversoria</div>
-                  <h1 style="color:#a78bfa;font-size:22px;margin-bottom:16px">${isEs?"¡Bienvenido! Tienes 30 días Premium gratis 🎁":"Welcome! You have 30 free Premium days 🎁"}</h1>
+                  <h1 style="color:#a78bfa;font-size:22px;margin-bottom:16px">${isEs?"¡Bienvenido! Tienes 60 días Premium gratis 🎁":"Welcome! You have 60 free Premium days 🎁"}</h1>
                   <p style="color:#8585a8;line-height:1.7;margin-bottom:20px">${isEs?"Tu cuenta está activa con acceso Premium completo durante 30 días — sin tarjeta, sin compromisos.":"Your account is active with full Premium access for 30 days — no credit card, no commitment."}</p>
                   <div style="background:#242338;border-radius:8px;padding:16px;margin-bottom:20px">
                     <p style="color:#4ade80;font-weight:600;margin-bottom:8px">${isEs?"✓ Lo que tienes desbloqueado:":"✓ What you have unlocked:"}</p>
@@ -1715,7 +1756,7 @@ function Hero({onStart,lang="en"}){
       {/* Badge social proof */}
       <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:T.green,fontWeight:500}}>
-          🎁 {isEs?"30 días Premium GRATIS al registrarte — sin tarjeta":"30 days FREE Premium when you sign up — no credit card"}
+          🎁 {isEs?"60 días Premium GRATIS al registrarte — sin tarjeta":"30 days FREE Premium when you sign up — no credit card"}
         </span>
       </div>
 
@@ -3264,6 +3305,18 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       const tickerToUse=resolvedTicker;
       const isLatamStock = getLatamSymbol(tickerToUse) !== null;
 
+      // Check Supabase cache first — saves Anthropic credits
+      const cachedResult = await getCachedAnalysis(tickerToUse);
+      if(cachedResult){
+        setInfo(cachedResult);
+        setLocked(true);
+        // Still fetch live prices from Finnhub (free)
+        const fhLive = await callFinnhub(tickerToUse).catch(()=>null);
+        if(fhLive) setFh(fhLive);
+        setLoading(false);
+        return;
+      }
+
       // Run Finnhub + AI in parallel (original working flow)
       const[fhResult,aiResult]=await Promise.allSettled([
         callFinnhub(tickerToUse),
@@ -3301,6 +3354,8 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
         const p=aiResult.value;
         setM(prev=>({...prev,...p.metrics}));setMoat(prev=>({...prev,...p.moat}));
         if(p.sector)setSector(p.sector);setInfo(p);
+        // Save to shared Supabase cache
+        setCachedAnalysis(tickerToUse, p).catch(()=>{});
       }else{throw new Error(aiResult.reason?.message||"AI analysis failed");}
       setLocked(true);onAnalysis();
     }catch(e){
@@ -7760,7 +7815,7 @@ const TABS=[
 const FREE_LIMIT=3;
 
 // ── TRIAL SYSTEM — 30 days premium from registration date ───────────────────
-const TRIAL_DAYS = 30;
+const TRIAL_DAYS = 60;
 function getTrialInfo(user) {
   if (!user?.created_at) return { active: false, daysLeft: 0 };
   const created = new Date(user.created_at);
