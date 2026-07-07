@@ -401,23 +401,23 @@ function PaywallModal({onClose,context="stock",lang="en",onSignUp}){
 const CL=(en,es)=>({en,es}); // bilingual label helper
 const CRITERIA={
   growth:[
-    {key:"revenueCAGR",label:"Revenue CAGR",unit:"%",threshold:15,max:50,weight:20},
-    {key:"fcfGrowth",label:"FCF Growth Rate (CAGR)",unit:"%",threshold:15,max:100,weight:10},
-    {key:"tamGrowth",label:"TAM Growth",unit:"%",threshold:10,max:30,weight:5},
+    {key:"revenueCAGR",label:"Crecimiento de Ingresos",unit:"%",threshold:15,max:50,weight:20},
+    {key:"fcfGrowth",label:"Crecimiento FCF (CAGR)",unit:"%",threshold:15,max:100,weight:10},
+    {key:"tamGrowth",label:"Crecimiento del Mercado",unit:"%",threshold:10,max:30,weight:5},
   ],
   profitability:[
     {key:"roic",label:"ROIC",unit:"%",threshold:20,max:60,weight:20},
-    {key:"grossMargin",label:"Gross Margin",unit:"%",threshold:40,max:90,weight:8},
-    {key:"opMargin",label:"Operating Margin",unit:"%",threshold:18,max:50,weight:7},
+    {key:"grossMargin",label:"Margen Bruto",unit:"%",threshold:40,max:90,weight:8},
+    {key:"opMargin",label:"Margen Operativo",unit:"%",threshold:18,max:50,weight:7},
   ],
-  cashflow:[{key:"fcfMarginPct",label:"FCF Margin",unit:"%",threshold:15,max:60,weight:20}],
+  cashflow:[{key:"fcfMarginPct",label:"Margen FCF",unit:"%",threshold:15,max:60,weight:20}],
   balance:[
-    {key:"debtEbitda",label:"Debt/EBITDA",unit:"x",threshold:2,max:5,invert:true,weight:8},
-    {key:"interestCover",label:"Interest Coverage",unit:"x",threshold:6,max:20,weight:2},
+    {key:"debtEbitda",label:"Deuda/EBITDA",unit:"x",threshold:2,max:5,invert:true,weight:8},
+    {key:"interestCover",label:"Cobertura de Intereses",unit:"x",threshold:6,max:20,weight:2},
   ],
 };
-const MOAT_KEYS=["Economies of Scale","Switching Costs","Network Effects","Brand Dominance","Proprietary Technology","Market Leadership"];
-const MOAT_ES={"Economies of Scale":"Economías de Escala","Switching Costs":"Costos de Cambio","Network Effects":"Efectos de Red","Brand Dominance":"Dominio de Marca","Proprietary Technology":"Tecnología Propia","Market Leadership":"Liderazgo de Mercado"};
+const MOAT_KEYS=["Economías de Escala","Costos de Cambio","Efectos de Red","Dominio de Marca","Tecnología Propia","Liderazgo de Mercado"];
+const MOAT_ES={"Economías de Escala":"Economías de Escala","Costos de Cambio":"Costos de Cambio","Efectos de Red":"Efectos de Red","Dominio de Marca":"Dominio de Marca","Tecnología Propia":"Tecnología Propia","Liderazgo de Mercado":"Liderazgo de Mercado"};
 const moatLabel=(k,lang)=>lang==="es"?(MOAT_ES[k]||k):k;
 const SECTORS=["Technology","Healthcare","Consumer","Finance","Industrials","Energy","Other"];
 const defM=()=>({revenueCAGR:20,fcfGrowth:25,tamGrowth:12,roic:25,grossMargin:55,opMargin:22,fcfMarginPct:20,debtEbitda:1.2,interestCover:10});
@@ -3288,7 +3288,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   const score=calcScore(m,moat);const g=grade(score,lang);
   const catLabel=(cat)=>lang==="es"
     ?cat==="growth"?"📈 Crecimiento":cat==="profitability"?"💎 Rentabilidad":cat==="cashflow"?"💵 Flujo de Caja":"🏦 Balance General"
-    :cat==="growth"?"📈 Growth":cat==="profitability"?"💎 Profitability":cat==="cashflow"?"💵 Cash Flow":"🏦 Balance Sheet";
+    :cat==="growth"?"📈 Crecimiento":cat==="profitability"?"💎 Rentabilidad":cat==="cashflow"?"💵 Flujo de Caja":"🏦 Balance General";
   const catS=Object.entries(CRITERIA).map(([cat,cs])=>({cat:catLabel(cat),s:Math.round(cs.reduce((a,c)=>a+sm(c,m[c.key]||0),0)/cs.length)}));
   const radarD=MOAT_KEYS.map(k=>({subject:moatLabel(k,lang).split(" ")[0],value:moat[k],fullMark:5}));
 
@@ -3340,14 +3340,14 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
                 headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({model:"claude-sonnet-4-5-20251001",max_tokens:1800,
                   tools:[{"type":"web_search_20250305","name":"web_search"}],
-                  messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
+                  messages:[{role:"user",content:`Search for recent data on "${tickerToUse}" from bloomberglinea.com, valoraanalitik.com, stockanalysis.com (query: "${tickerToUse} resultados financieros dividendo 2025 2026"). Then act as a value investing analyst and respond ONLY with valid JSON (no markdown): {"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economías de Escala":<1-5>,"Costos de Cambio":<1-5>,"Efectos de Red":<1-5>,"Dominio de Marca":<1-5>,"Tecnología Propia":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<s>","summary":"<2-3 sentences>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<v>","roicDisplay":"<v>","fcfGrowthDisplay":"<v>","fcfMarginDisplay":"<v>","debtEquity":"<v>","epsGrowth":"<v>"}}`}]
                 })
               });
               const d=await r.json();
               const t=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").replace(/```json|```/g,"").trim();
               return JSON.parse(t);
             })()
-          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR). JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economies of Scale":<1-5>,"Switching Costs":<1-5>,"Network Effects":<1-5>,"Brand Dominance":<1-5>,"Proprietary Technology":<1-5>,"Market Leadership":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`)
+          : callAI(`Value investing analyst. Analyze "${tickerToUse}". Use FCF GROWTH RATE (3-5Y CAGR). JSON only, no markdown:{"metrics":{"revenueCAGR":<n>,"fcfGrowth":<n>,"tamGrowth":<n>,"roic":<n>,"grossMargin":<n>,"opMargin":<n>,"fcfMarginPct":<n>,"debtEbitda":<n>,"interestCover":<n>},"moat":{"Economías de Escala":<1-5>,"Costos de Cambio":<1-5>,"Efectos de Red":<1-5>,"Dominio de Marca":<1-5>,"Tecnología Propia":<1-5>,"Liderazgo de Mercado":<1-5>},"sector":"<s>","summary":"<2-3 sentence thesis+risk>","catalysts":["<1>","<2>","<3>"],"keyMetrics":{"revenueGrowth5y":"<+56% CAGR>","roicDisplay":"<18%>","fcfGrowthDisplay":"<+67% CAGR>","fcfMarginDisplay":"<19%>","debtEquity":"<0.2x>","epsGrowth":"<+38%>"}}`)
         );
       }catch(aiErr){
         console.warn("AI failed:", aiErr.message);
@@ -3392,14 +3392,14 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
   };
 
   const checklist=[
-    {l:{en:"Revenue CAGR ≥ 15%",es:"Ingresos CAGR ≥ 15%"},p:m.revenueCAGR>=15},
+    {l:{en:"Ingresos CAGR ≥ 15%",es:"Ingresos CAGR ≥ 15%"},p:m.revenueCAGR>=15},
     {l:{en:"ROIC ≥ 20%",es:"ROIC ≥ 20%"},p:m.roic>=20},
-    {l:{en:"Gross Margin ≥ 40%",es:"Margen Bruto ≥ 40%"},p:m.grossMargin>=40},
-    {l:{en:"Operating Margin ≥ 18%",es:"Margen Operativo ≥ 18%"},p:m.opMargin>=18},
-    {l:{en:"FCF Growth Rate ≥ 15%",es:"Crecimiento FCF ≥ 15%"},p:m.fcfGrowth>=15},
-    {l:{en:"FCF Margin ≥ 15%",es:"Margen FCF ≥ 15%"},p:m.fcfMarginPct>=15},
-    {l:{en:"Debt/EBITDA ≤ 2x",es:"Deuda/EBITDA ≤ 2x"},p:m.debtEbitda<=2},
-    {l:{en:"Avg Moat ≥ 3/5",es:"Moat Promedio ≥ 3/5"},p:Object.values(moat).reduce((a,v)=>a+v,0)/MOAT_KEYS.length>=3},
+    {l:{en:"Margen Bruto ≥ 40%",es:"Margen Bruto ≥ 40%"},p:m.grossMargin>=40},
+    {l:{en:"Margen Operativo ≥ 18%",es:"Margen Operativo ≥ 18%"},p:m.opMargin>=18},
+    {l:{en:"Crecimiento FCF ≥ 15%",es:"Crecimiento FCF ≥ 15%"},p:m.fcfGrowth>=15},
+    {l:{en:"Margen FCF ≥ 15%",es:"Margen FCF ≥ 15%"},p:m.fcfMarginPct>=15},
+    {l:{en:"Deuda/EBITDA ≤ 2x",es:"Deuda/EBITDA ≤ 2x"},p:m.debtEbitda<=2},
+    {l:{en:"Ventaja Competitiva ≥ 3/5",es:"Moat Promedio ≥ 3/5"},p:Object.values(moat).reduce((a,v)=>a+v,0)/MOAT_KEYS.length>=3},
   ];
 
   const ratingColor=r=>{if(!r)return T.muted;if(r.includes("Strong Buy")||r.includes("Buy")||r.includes("Over"))return T.green;if(r.includes("Sell")||r.includes("Under"))return T.red;return T.gold;};
@@ -3569,7 +3569,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
             {info.keyMetrics&&<div className="kpi-3" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
               {[{l:{en:"Revenue CAGR 5Y",es:"Ingresos CAGR 5A"},v:info.keyMetrics.revenueGrowth5y,c:T.green},
               {l:{en:"FCF Growth (CAGR)",es:"FCF Growth (CAGR)"},v:info.keyMetrics.fcfGrowthDisplay,c:T.green},
-              {l:{en:"FCF Margin",es:"Margen FCF"},v:info.keyMetrics.fcfMarginDisplay,c:T.blue},
+              {l:{en:"Margen FCF",es:"Margen FCF"},v:info.keyMetrics.fcfMarginDisplay,c:T.blue},
               {l:{en:"ROIC",es:"ROIC"},v:info.keyMetrics.roicDisplay,c:T.gold},
               {l:{en:"Debt/Equity",es:"Deuda/Capital"},v:info.keyMetrics.debtEquity,c:T.muted},
               {l:{en:"EPS Growth",es:"Crecimiento EPS"},v:info.keyMetrics.epsGrowth,c:T.green}].map(({l,v,c},ki)=>{
@@ -3607,7 +3607,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
       </div>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🏰 La Fosa del Negocio</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:14}}>🏆 Ventaja Competitiva</div>
           <div style={{height:200}}><ResponsiveContainer width="100%" height="100%"><RadarChart data={radarD}><PolarGrid stroke={T.border}/><PolarAngleAxis dataKey="subject" tick={{fill:T.muted,fontSize:10}}/><Radar dataKey="value" stroke={T.gold} fill={T.gold} fillOpacity={0.15}/></RadarChart></ResponsiveContainer></div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
             {MOAT_KEYS.map(k=><div key={k}>
@@ -3617,7 +3617,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
           </div>
         </Card>
         <Card>
-          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>{lang==="es"?"📋 Los 8 Filtros del Inversor Paciente":"📋 The 8 Filters of the Patient Investor"}</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontSize:13,color:T.gold,marginBottom:10}}>{lang==="es"?"📋 Los 8 Filtros del Inversor":"📋 Los 8 Filtros del Inversor"}</div>
           {checklist.map(({l,p},ci)=>{
             const lText=typeof l==="object"?l[lang]||l.en:l;
             return<div key={ci} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:`1px solid ${T.border}22`}}>
@@ -3781,7 +3781,7 @@ Respond ONLY with valid JSON, no markdown:
           <div style={{fontFamily:"'Playfair Display',serif",fontSize:14,color:T.gold,marginBottom:12}}>⚙️ Assumptions{ticker?` — ${ticker}`:""}</div>
           <F l={lang==="es"?"Ingresos Base (M$)":"Base Revenue (M$)"} k="rev" u="M" min={10} max={50000} st={10}/>
           <F l="Revenue Growth" k="rg" u="%" min={0} max={50}/>
-          <F l="FCF Margin" k="mt" u="%" min={5} max={50}/>
+          <F l="Margen FCF" k="mt" u="%" min={5} max={50}/>
           <F l={lang==="es"?"Conversión FCF":"FCF Conversion"} k="fc" u="x" min={0.5} max={1} st={0.05}/>
           <F l={lang==="es"?"Crecimiento Terminal":"Terminal Growth"} k="tg" u="%" min={1} max={4} st={0.5}/>
           <F l="WACC" k="w" u="%" min={6} max={15} st={0.5}/>
