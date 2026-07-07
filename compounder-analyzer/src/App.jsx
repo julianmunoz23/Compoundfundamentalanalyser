@@ -3595,7 +3595,7 @@ function ScoreTab({m,setM,moat,setMoat,company,setCompany,sector,setSector,onAna
     {/* ── INLINE DCF — auto-fills from AI analysis ── */}
     {info&&<InlineDCF company={company} onAnalysis={onAnalysis} canAnalyze={canAnalyze} lang={lang}/>}
 
-    {(info||locked)&&<div className="compound-layout" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
+    {info&&<div className="compound-layout" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {Object.entries(CRITERIA).map(([cat,cs])=><Card key={cat}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
