@@ -41,8 +41,8 @@ export default async function handler(req, res) {
     const body = req.body;
     if (!body?.messages?.length) return res.status(400).json({error: 'Invalid request'});
     
-    // Use latest working model
-    body.model = 'claude-sonnet-4-5-20251001';
+    // Use claude-sonnet-4-6 — current model
+    body.model = 'claude-sonnet-4-6';
     if (!body.max_tokens) body.max_tokens = 1400;
     if (body.max_tokens > 3500) body.max_tokens = 3500;
 
@@ -52,7 +52,6 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'x-api-key': key,
         'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'interleaved-thinking-2025-05-14',
       },
       body: JSON.stringify(body),
     });
