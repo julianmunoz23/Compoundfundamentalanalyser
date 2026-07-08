@@ -925,7 +925,7 @@ const LANG = {
   en: {
     nav_brand: "Inversoria",
     nav_sub: "Invierte con inteligencia · Para LATAM",
-    nav_free: (n) => n > 0 ? `${n} free analyses left` : "Free plan",
+    nav_free: (n) => n > 0 ? `${n} análisis gratis restante` : "Free plan",
     nav_premium: "🚀 Go Premium",
     tab_compound: "Calculator",
     tab_whatif: "What If?",
@@ -1240,8 +1240,8 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setSuccess(isEs
-          ? "✅ ¡Cuenta creada! Tienes 60 días Premium gratis. Revisa tu email."
-          : "✅ Account created! You have 60 days of free Premium. Check your email.");
+          ? "✅ ¡Cuenta creada! Tienes 2 meses Premium gratis. Revisa tu email."
+          : "✅ Account created! You have 2 months of free Premium. Check your email.");
         // Send welcome email via Resend
         if (data.user) {
           try {
@@ -1251,10 +1251,10 @@ function AuthModal({onClose, onAuth, lang="en", initialMode="signup"}){
               body: JSON.stringify({
                 from: "Inversoria <noreply@inversoria.lat>",
                 to: [email],
-                subject: isEs ? "🎁 Bienvenido a Inversoria — 60 días Premium gratis" : "🎁 Welcome to Inversoria — 60 free Premium days",
+                subject: isEs ? "🎁 Bienvenido a Inversoria — 2 meses Premium gratis" : "🎁 Welcome to Inversoria — 2 months of free Premium",
                 html: `<div style="font-family:sans-serif;max-width:520px;margin:0 auto;background:#1c1b2e;color:#f0eeff;padding:32px;border-radius:12px">
                   <div style="font-size:28px;margin-bottom:8px">📈 Inversoria</div>
-                  <h1 style="color:#a78bfa;font-size:22px;margin-bottom:16px">${isEs?"¡Bienvenido! Tienes 60 días Premium gratis 🎁":"Welcome! You have 60 free Premium days 🎁"}</h1>
+                  <h1 style="color:#a78bfa;font-size:22px;margin-bottom:16px">${isEs?"¡Bienvenido! Tienes 2 meses Premium gratis 🎁":"Welcome! You have 2 months of free Premium 🎁"}</h1>
                   <p style="color:#8585a8;line-height:1.7;margin-bottom:20px">${isEs?"Tu cuenta está activa con acceso Premium completo durante 30 días — sin tarjeta, sin compromisos.":"Your account is active with full Premium access for 30 days — no credit card, no commitment."}</p>
                   <div style="background:#242338;border-radius:8px;padding:16px;margin-bottom:20px">
                     <p style="color:#4ade80;font-weight:600;margin-bottom:8px">${isEs?"✓ Lo que tienes desbloqueado:":"✓ What you have unlocked:"}</p>
@@ -1756,7 +1756,7 @@ function Hero({onStart,lang="en"}){
       {/* Badge social proof */}
       <div style={{display:"inline-flex",alignItems:"center",gap:6,background:`${T.green}15`,border:`1px solid ${T.green}33`,borderRadius:20,padding:"5px 16px",marginBottom:20}}>
         <span style={{fontSize:12,color:T.green,fontWeight:500}}>
-          🎁 {isEs?"60 días Premium GRATIS al registrarte — sin tarjeta":"30 days FREE Premium when you sign up — no credit card"}
+          🎁 {isEs?"2 meses Premium GRATIS al registrarte — sin tarjeta":"30 days FREE Premium when you sign up — no credit card"}
         </span>
       </div>
 
@@ -7820,7 +7820,7 @@ const TABS=[
   {id:"compound",es:"Calculadora",en:"Calculator",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>},
   {id:"whatif",es:"¿Y si...?",en:"What If?",icon:<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>},
 ];
-const FREE_LIMIT=3;
+const FREE_LIMIT=1;
 
 // ── TRIAL SYSTEM — 30 days premium from registration date ───────────────────
 const TRIAL_DAYS = 60;
