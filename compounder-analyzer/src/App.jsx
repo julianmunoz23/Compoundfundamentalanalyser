@@ -1138,6 +1138,9 @@ function ResetPasswordModal({onClose, lang}){
     if(pwd !== pwd2){ setErr(isEs?"Las contraseñas no coinciden":"Passwords don't match"); return; }
     setLoading(true);
     try{
+      // Ensure session is active before updating password
+      const {data:{session}} = await supabase.auth.getSession();
+      if(!session) throw new Error(isEs?"Sesión expirada. Solicita un nuevo link de recuperación.":"Session expired. Please request a new password reset link.");
       const {error} = await supabase.auth.updateUser({password: pwd});
       if(error) throw error;
       setSuccess(true);
@@ -8053,11 +8056,13 @@ export default function App(){
   useEffect(()=>{
     if(!supabase)return;
 
-    // Detect recovery BEFORE Supabase processes the hash
+    // Detect recovery from URL hash
     const rawHash = window.location.hash;
     const isRecovery = rawHash.includes('type=recovery');
     if(isRecovery){
-      setShowResetModal(true);
+      // Let Supabase process the token first, then show modal
+      setTimeout(()=>setShowResetModal(true), 500);
+      window.history.replaceState(null,'',window.location.pathname);
     }
 
     supabase.auth.getSession().then(({data:{session}})=>{
